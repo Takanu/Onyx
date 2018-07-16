@@ -72,17 +72,17 @@ script = ExtResource( 1 )
 origin_setting = 1
 x_plus_position = 17.9184
 x_minus_position = -17.9184
-y_plus_position = 11.7294
+y_plus_position = 9.98292
 y_minus_position = 0.0
 z_plus_position = 23.4605
 z_minus_position = -23.4605
 
 [node name="OnyxSprinkle" type="Spatial" parent="." index="1"]
 
-transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -9.80315, 0, -11.0747 )
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0.734554, 6, 0.650905 )
 script = ExtResource( 2 )
-volume_type = 0
-volume_handles = [ Vector3( 4.71189, 0, 0 ), Vector3( 0, 23.1494, 0 ), Vector3( 0, 0, 5.5799 ) ]
+volume_type = 1
+volume_handles = [ Vector3( 7.77228, 0, 0 ), Vector3( 0, 24.0513, 0 ) ]
 
 [node name="OmniLight" type="OmniLight" parent="OnyxSprinkle" index="0"]
 
@@ -108,10 +108,10 @@ omni_shadow_detail = 1
 
 [node name="OnyxSprinkle2" type="Spatial" parent="." index="2"]
 
-transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -2.47411, 0 )
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 9.10434, 0 )
 script = ExtResource( 2 )
 volume_type = 0
-volume_handles = [ Vector3( 28.1981, 0, 0 ), Vector3( 0, 1.11969, 0 ), Vector3( 0, 0, -27.661 ) ]
+volume_handles = [ Vector3( 30.4246, 0, 0 ), Vector3( 0, 10.0631, 0 ), Vector3( 0, 0, 15.4846 ) ]
 
 [node name="MeshInstance" type="MeshInstance" parent="." index="3"]
 

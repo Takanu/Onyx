@@ -18,8 +18,6 @@ extends Node
 # PROPERTIES
 var faces = {}
 
-var utilities = preload("res://addons/onyx/utilities/face_utilities.gd").new()
-
 # ////////////////////////////////////////////////////////////
 # ADDITIONS
 
@@ -114,6 +112,30 @@ func render_geometry(geom):
 		
 		geom.end()
 			
+			
+# Renders the available geometry as a wireframe, using a provided ImmediateGeometry node.
+func render_wireframe(geom, color):
+	
+	var edges = get_face_edges()
+	var count = edges.size() / 2
+	
+	geom.clear()
+	
+	for i in count:
+		var pos = ((i + 1) * 2) - 2
+		var point1 = edges[pos]
+		var point2 = edges[pos + 1]
+		
+		geom.begin(Mesh.PRIMITIVE_LINES, null)
+		
+		geom.set_color(color)
+		geom.add_vertex(point1)
+			
+		geom.set_color(color)
+		geom.add_vertex(point2)
+		
+		geom.end()
+	
 
 # ////////////////////////////////////////////////////////////
 # GETTERS
@@ -172,15 +194,13 @@ func get_face_edges():
 		var face = faces[i]
 		var vertices = face[0]
 		
-		results.append(vertices[0])
-		results.append(vertices[1])
-		results.append(vertices[2])
-		results.append(vertices[3])
-		
-		results.append(vertices[0])
-		results.append(vertices[2])
-		results.append(vertices[1])
-		results.append(vertices[3])
+		for v in vertices.size():
+			results.append(vertices[v])
+			
+			if v + 1 >= vertices.size():
+				results.append(vertices[0])
+			else:
+				results.append(vertices[v + 1])
 		
 	return results
 	
@@ -205,13 +225,42 @@ func get_all_centre_points():
 	#print("RETURN: ", results)
 	return results
 	
+	
+# Returns an AABB that encapsulates the boundaries of the geometry stored.
+func get_bounds():
+	
+	var lowest_bound = Vector3()
+	var highest_bound = Vector3()
+	
+	for i in faces:
+		var face = faces[i]
+		var vertices = face[0]
+		
+		for vertex in vertices:
+			if vertex.x > highest_bound.x:
+				highest_bound.x = vertex.x
+			if vertex.y > highest_bound.y: 
+				highest_bound.y = vertex.y
+			if vertex.z > highest_bound.z:
+				highest_bound.z = vertex.z
+				
+			if vertex.x < lowest_bound.x:
+				lowest_bound.x = vertex.x
+			if vertex.y < lowest_bound.y:
+				lowest_bound.y = vertex.y
+			if vertex.z < lowest_bound.z:
+				lowest_bound.z = vertex.z
+	
+	var size = highest_bound - lowest_bound	
+	return AABB(lowest_bound, size)
+	
 # ////////////////////////////////////////////////////////////
 # BUILDERS
 
 # Replaces any geometry held with a cuboid that fits inside a maximum and minimum point.
 func build_cuboid(max_point, min_point):
 	
-	var cube_faces = []
+	faces.clear()
 	
 	# Build 8 vertex points
 	var top_x = Vector3(max_point.x, min_point.y, max_point.z)
@@ -228,16 +277,16 @@ func build_cuboid(max_point, min_point):
 	var colors = [Color(1, 1, 1), Color(1, 1, 1), Color(1, 1, 1), Color(1, 1, 1)]
 	
 	# X
-	faces["x_plus"] = [[top_x, top_xy, bottom_x, bottom_xy], colors, [], [], Vector3(1, 0, 0)]
-	faces["x_minus"] = [[top_minus_x, top_minus_xy, bottom_minus_x, bottom_minus_xy], colors, [], [], Vector3(-1, 0, 0)]
+	faces["x_plus"] = [[top_x, top_xy, bottom_xy, bottom_x], colors, [], [], Vector3(1, 0, 0)]
+	faces["x_minus"] = [[top_minus_x, top_minus_xy, bottom_minus_xy, bottom_minus_x], colors, [], [], Vector3(-1, 0, 0)]
 	
 	# Y
-	faces["y_plus"] = [[top_xy, top_minus_x, bottom_xy, bottom_minus_x], colors, [], [], Vector3(0, 1, 0)]
-	faces["y_minus"] = [[top_x, top_minus_xy, bottom_x, bottom_minus_xy], colors, [], [], Vector3(0, -1, 0)]
+	faces["y_plus"] = [[top_xy, top_minus_x, bottom_minus_x, bottom_xy], colors, [], [], Vector3(0, 1, 0)]
+	faces["y_minus"] = [[top_x, bottom_x, bottom_minus_xy, top_minus_xy], colors, [], [], Vector3(0, -1, 0)]
 	
 	# Z
-	faces["z_plus"] = [[top_x, top_xy, top_minus_xy, top_minus_x], colors, [], [], Vector3(0, 0, 1)]
-	faces["z_minus"] = [[bottom_x, bottom_xy, bottom_minus_xy, bottom_minus_x], colors, [], [], Vector3(0, 0, -1)]
+	faces["z_plus"] = [[top_x, top_minus_xy, top_minus_x, top_xy], colors, [], [], Vector3(0, 0, 1)]
+	faces["z_minus"] = [[bottom_x, bottom_xy, bottom_minus_x, bottom_minus_xy], colors, [], [], Vector3(0, 0, -1)]
 	
 	return faces
 	
@@ -246,7 +295,7 @@ func build_cuboid(max_point, min_point):
 # Returns an array in the format of face_array.
 func build_cylinder(height, radius, points, rings):
 	
-	var results = []
+	faces.clear()
 	
 	# generate the initial circle
 	var angle_step = (2.0 * PI) / points
@@ -258,15 +307,15 @@ func build_cylinder(height, radius, points, rings):
 		
 		# get coordinates
 		var x = radius * cos(current_angle)
-		var y = radius * sin(current_angle)
-		circle_points.append(Vector3(x, y, 0))
+		var z = radius * sin(current_angle)
+		circle_points.append(Vector3(x, 0, z))
 		
 		current_angle += angle_step
 	
-	var circle_normals = []
-	
 	
 	# get the normals of all current edges
+	var circle_normals = []
+	
 	for i in circle_points.size():
 	
 		var a = circle_points[i]
@@ -284,9 +333,77 @@ func build_cylinder(height, radius, points, rings):
 		circle_normals.append(face_normal)
 		
 	
-	# based on the number of rings, build the faces.
+		
+	# get the tangents for the face wrap
+	var circle_tangents = []
 	
-	pass
+	for i in circle_normals.size():
+		
+		var a = circle_points[i]
+		var b = Vector3()
+		
+		if i == circle_points.size() - 1:
+			b = circle_points[0]
+		else:
+			b = circle_points[i + 1]
+		
+		circle_tangents.append( (a + b) / 2 )
+		
+	var first_tangent = circle_tangents.pop_front()
+	circle_tangents.append(first_tangent)
+		
+	
+	# based on the number of rings, build the faces.
+	var base_height = (height / 2) * -1
+	var height_step = height / rings
+	var face_count = 0
+	
+	for i in rings:
+		
+		# go roooound the circle.
+		for i in circle_points.size():
+			
+			var c_1 = circle_points[i]
+			var t_1 = circle_tangents[i]
+			var c_2 = Vector3()
+			var t_2 = Vector3()
+			var normal = circle_normals[i]
+			
+			if i == circle_points.size() - 1:
+				c_2 = circle_points[0]
+				t_2 = circle_tangents[0]
+			else:
+				c_2 = circle_points[i + 1]
+				t_2 = circle_tangents[i + 1]
+				
+			var v_1 = Vector3(c_1.x, base_height, c_1.z)
+			var v_2 = Vector3(c_1.x, base_height + height_step, c_1.z)
+			var v_3 = Vector3(c_2.x, base_height + height_step, c_2.z)
+			var v_4 = Vector3(c_2.x, base_height, c_2.z)
+			
+			var vertices = [v_1, v_2, v_3, v_4]
+			var tangents = [t_1, t_1, t_2, t_2]
+			
+			faces[face_count] = [vertices, [], tangents, [], normal]
+			
+			face_count += 1
+		
+		
+		base_height += height_step
+		
+	# now render the top and bottom caps
+	var v_cap_bottom = []
+	var v_cap_top = []
+	for i in circle_points.size():
+		
+		var vertex = circle_points[i]
+		v_cap_bottom.append( Vector3(vertex.x, (height / 2) * -1, vertex.z) )
+		v_cap_top.append( Vector3(vertex.x, (height / 2), vertex.z) )
+		
+	faces[face_count] = [v_cap_bottom, [], [], [], Vector3(0, -1, 0)]
+	faces[face_count + 1] = [v_cap_top, [], [], [], Vector3(0, 1, 0)]
+	
+	
 	
 
 # ////////////////////////////////////////////////////////////

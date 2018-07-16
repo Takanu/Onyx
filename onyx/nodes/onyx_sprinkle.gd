@@ -5,7 +5,7 @@ extends "res://addons/onyx/nodes/onyx_node.gd"
 # ////////////////////////////////////////////////////////////
 # TOOL ENUMS
 
-enum VolumeShape {BOX}
+enum VolumeShape {BOX, CYLINDER}
 export(VolumeShape) var volume_type = BOX setget set_volume_type
 
 # ////////////////////////////////////////////////////////////
@@ -22,7 +22,6 @@ var gizmo_handles = []
 
 # The faces used to generate the shape.
 var face_set = load("res://addons/onyx/utilities/face_dictionary.gd").new()
-var test = load("res://addons/onyx/utilities/face_utilities.gd").new()
 
 # The debug shape, used to represent the volume in the editor.
 var volume_geom = ImmediateGeometry.new()
@@ -56,10 +55,9 @@ func _enter_tree():
 	update_sprinkler()
 	
 	
-	# TEST SOME GEOMETRY
-	test.build_cylinder(1, 5, 20)
-	
-	
+# Initialises the node that will be used to parent 
+func initialise_hierarchy():
+	pass
 
 
 # Initialises volume_handles and handle data for the first time.
@@ -97,10 +95,8 @@ func update_sprinkler():
 	
 	# update the volume based on the current volume_handles
 	update_volume()
-	build_volume()
 	
 	# get the child nodes it currently has
-	
 	
 	
 	
@@ -120,40 +116,13 @@ func update_volume():
 			var maxPoint = Vector3(volume_handles[0].x, volume_handles[1].y, volume_handles[2].z)
 			var minPoint = maxPoint * -1
 			
-			# Build 8 vertex points
-			var top_x = Vector3(maxPoint.x, minPoint.y, maxPoint.z)
-			var top_xy = Vector3(maxPoint.x, maxPoint.y, maxPoint.z)
-			var top_minus_x = Vector3(minPoint.x, maxPoint.y, maxPoint.z)
-			var top_minus_xy = Vector3(minPoint.x, minPoint.y, maxPoint.z)
-			
-			var bottom_x = Vector3(maxPoint.x, minPoint.y, minPoint.z)
-			var bottom_xy = Vector3(maxPoint.x, maxPoint.y, minPoint.z)
-			var bottom_minus_x = Vector3(minPoint.x, maxPoint.y, minPoint.z)
-			var bottom_minus_xy = Vector3(minPoint.x, minPoint.y, minPoint.z)
-			
-			
-			# Build and draw new faces
-			face_set.clear()
-			
-			# X
-			face_set.add_face("x_plus", [top_x, top_xy, bottom_x, bottom_xy], Vector3(1, 0, 0))
-			face_set.add_face("x_minus", [top_minus_x, top_minus_xy, bottom_minus_x, bottom_minus_xy], Vector3(-1, 0, 0))
-			
-			# Y
-			face_set.add_face("y_plus", [top_xy, top_minus_x, bottom_xy, bottom_minus_x], Vector3(0, 1, 0))
-			face_set.add_face("y_minus", [top_x, top_minus_xy, bottom_x, bottom_minus_xy], Vector3(0, -1, 0))
-			
-			# Z
-			face_set.add_face("z_plus", [top_x, top_xy, top_minus_xy, top_minus_x], Vector3(0, 0, 1))
-			face_set.add_face("z_minus", [bottom_x, bottom_xy, bottom_minus_xy, bottom_minus_x], Vector3(0, 0, -1))
+			face_set.build_cuboid(maxPoint, minPoint)
+			face_set.render_wireframe(volume_geom, volume_inactive_color)
 			
 			# Re-submit the handle positions based on the built faces, so other volume_handles that aren't the
 			# focus of a handle operation are being updated
 			var centre_points = face_set.get_all_centre_points()
 			volume_handles = [centre_points[0], centre_points[2], centre_points[4]]
-			
-			#print("HANDLES: ", volume_handles)
-			#print("CENTRE POINTS: ", centre_points)
 			
 			# Build handle points in the required gizmo format.
 			var face_list = face_set.get_face_vertices()
@@ -163,46 +132,34 @@ func update_volume():
 			gizmo_handles.append([volume_handles[1], face_list[2] ])
 			gizmo_handles.append([volume_handles[2], face_list[4] ])
 			
-				
-			# Build lines to draw the volume shape.
-			#var gizmo_lines = []
-			#gizmo_lines.append( [face_set.get_face_edges(), Color(1, 1, 0)] ) 
-			
-			
 			# Submit the changes to the gizmo
 			if gizmo:
 				gizmo.handle_points = gizmo_handles
 				#gizmo.lines = gizmo_lines
-				
-
-# Builds the volume shape for use in the editor.
-func build_volume():
-	
-	if Engine.editor_hint == false:
-		return
 		
-	var edges = face_set.get_face_edges()
-	var count = edges.size() / 2
-	volume_geom.clear()
-	
-	for i in count:
-		var pos = ((i + 1) * 2) - 2
-		var point1 = edges[pos]
-		var point2 = edges[pos + 1]
-		
-		volume_geom.begin(Mesh.PRIMITIVE_LINES, null)
-		
-		volume_geom.set_color(volume_active_color)
-		volume_geom.add_vertex(point1)
+		VolumeShape.CYLINDER:
 			
-		volume_geom.set_color(volume_active_color)
-		volume_geom.add_vertex(point2)
-		
-		volume_geom.end()
-	
-		
-	
-	
+			var width = volume_handles[0].x
+			var height = volume_handles[1].y * 2
+			
+			# Build the volume geometry and render it.
+			face_set.build_cylinder(height, width, 20, 1)
+			face_set.render_wireframe(volume_geom, volume_inactive_color)
+			
+			# Volume handles must always be re-generated to ensure accurate snaps.
+			var bounds = face_set.get_bounds()
+			volume_handles = []
+			volume_handles.append( Vector3(bounds.size.x + bounds.position.x, 0, 0) )
+			volume_handles.append( Vector3(0, bounds.size.y + bounds.position.y, 0) )
+			
+			# Build handle points in the required gizmo format with snap surfaces.
+			gizmo_handles = []
+			gizmo_handles.append( [volume_handles[0], [Vector3(0, -1, -1), Vector3(0, 1, -1), Vector3(0, 1, 1)] ])
+			gizmo_handles.append( [volume_handles[1], [Vector3(-1, 0, -1), Vector3(1, 0, -1), Vector3(1, 0, 1)] ])
+			
+			# Submit the changes to the gizmo
+			if gizmo:
+				gizmo.handle_points = gizmo_handles
 
 # ////////////////////////////////////////////////////////////
 # HANDLES
@@ -238,8 +195,25 @@ func restore_state(state):
 	
 
 func set_volume_type(new_value):
-	volume_type = new_value
 	
+	# Set new volume handles depending on the change made.
+	var area = face_set.get_bounds()
+	volume_handles = []
+	
+	# Generate new handles based on the new volume type.
+	match new_value:
+		VolumeShape.BOX:
+			volume_handles.append(Vector3(area.size.x / 2, 0, 0))
+			volume_handles.append(Vector3(0, area.size.y / 2, 0))
+			volume_handles.append(Vector3(0, 0, area.size.z / 2))
+		
+		VolumeShape.CYLINDER:
+			volume_handles.append(Vector3(area.size.x / 2, 0, 0))
+			volume_handles.append(Vector3(0, area.size.y / 2, 0))
+			
+	
+	volume_type = new_value
+	update_sprinkler()
 	
 # ////////////////////////////////////////////////////////////
 # HELPERS

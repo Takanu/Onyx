@@ -227,15 +227,18 @@ func make_planes(triangle, handle_loc):
 	
 	var vec_1 = (vertex_2 - vertex_1).normalized()
 	var vec_2 = (vertex_3 - vertex_1).normalized()
-	var cross = vec_1.cross(vec_2)
+	var cross = vec_1.cross(vec_2).normalized()
 	var vertex_4 = (cross * 2) + vertex_1
 	
-	#print("VECTORS: ", vec_1, vec_2, cross)
+	print("VECTORS: ", vec_1, vec_2, cross)
 	#print("FINAL VERTICES: ", vertex_1, vertex_2, vertex_3, vertex_4)
 	
 	# Build the planes
 	var plane_1 = Plane(vertex_1, vertex_2, vertex_4)
 	var plane_2 = Plane(vertex_1, vertex_3, vertex_4)
+	
+	print("PLANE 1 : ", plane_1)
+	print("PLANE 2 : ", plane_2)
 	
 	return [plane_1, plane_2]
 
