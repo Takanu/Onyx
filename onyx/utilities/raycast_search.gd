@@ -6,13 +6,15 @@ extends Node
 # Used by Onyx to collect objects within areas, perform raycasts and get hit information within the Editor.
 # Here's hoping Editor scripting evolves more in the future <3
 
-# ////////////////////////////////////////////////////////////
-# PROPERTIES
-# used to fetch the bounds
-var bounds_fetch = load("res://addons/onyx/utilities/raycast_bounds.gd").new()
 
 # ////////////////////////////////////////////////////////////
-# AREA SEARCH
+# PROPERTIES
+# used to fetch the bounds of nodes
+var bounds_fetch = load("res://addons/onyx/utilities/raycast_bounds.gd").new()
+
+
+# ////////////////////////////////////////////////////////////
+# BOUNDS SEARCH
 
 # Returns an array of nodes that had collision shapes and are found to be inside an axis-aligned bounding box.
 # WARNING - This is expensive on large scenes, as it has to search through all nodes in the scene.
@@ -38,7 +40,7 @@ func find_collision_in_bounds(bounds):
 	
 # Returns an array of nodes that has collision or geometry and are found to be inside an axis-aligned bounding box.
 # WARNING - This is expensive on large scenes, as it has to search through all nodes in the scene.
-func find_nodes_in_area(area):
+func find_nodes_in_bounds(area):
 	
 	# get the root scene node
 	var nodes_to_search = []
@@ -56,3 +58,6 @@ func find_nodes_in_area(area):
 				found_nodes.append(target)
 	
 	return found_nodes
+	
+	
+	

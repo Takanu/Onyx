@@ -288,6 +288,43 @@ func get_bounds():
 	var size = highest_bound - lowest_bound	
 	return AABB(lowest_bound, size)
 	
+
+# ////////////////////////////////////////////////////////////
+# TRANSFORMS
+
+# Apply a Transformation Matrix to all vertices, normals and tangents currently held.
+func apply_transform(tform):
+	
+	var new_faces = {}
+	
+	for key in faces.keys:
+		var face = faces[key]
+		var vertices = face[0]
+		var tangents = face[2]
+		var normal = face[4]
+		
+		var new_vertices = []
+		var new_tangents = []
+		var new_normal = Vector3()
+		
+		for i in vertices.size():
+			
+			new_vertices.append( tform.xform(vertices[i]) )
+			new_normal = tform.xform(normal)
+			
+			if tangents.size() > i:
+				pass
+				
+		if new_tangents.size() == 0 && tangents.size() != 0:
+			new_tangents = tangents
+			
+		new_faces[key] = [new_normal, face[1], new_tangents, face[3], new_normal]
+			
+	# replace the old set with the new one
+	faces = new_faces
+	
+	
+	
 # ////////////////////////////////////////////////////////////
 # BUILDERS
 
@@ -495,6 +532,58 @@ func is_point_inside_convex_hull(point):
 			
 	return true
 	
+
+# Performs a raycast using two points to see if it intersects with the convex hull this
+# face dictionary represents.  Returns the closest intersection if true.
+# Solution taken from - https://stackoverflow.com/questions/30486312/intersection-of-nd-line-with-convex-hull-in-python
+
+# NOTE - ONLY USE IT IF THE SHAPE IS CONVEX, THIS WONT WORK OTHERWISE.
+func raycast_convex_hull(to, from):
+	
+	var unit_ray = (to - from).normalized()
+	var closest_plane = null
+	var closest_plane_distance = 0
+	
+	# build a plane for every face
+	var planes = []
+	for i in faces.size():
+		var face = faces[i]
+		var vertices = face[0]
+		planes.append( Plane(vertices[0], vertices[1], vertices[2]) )
+	
+	# search through the planes to find the closest intersection point
+	for plane in planes:
+		var normal = plane.normal
+		var distance = plane.distance_to(from)
+		
+		# if the origin of the ray already sits on the plane, just return now.
+		if distance == 0:
+			return from
+		
+		# If it's minus, flip it.
+		if distance < 0:
+			normal = normal.inverse()
+			distance = distance * -1
+		
+		# Get the dot product to figure out how much we move along the plane
+		# normal for every unit distance along the ray normal
+		var dot = unit_ray.dot(normal)
+		
+		# Make sure the dot product is positive, otherwise it's facing the wrong way
+		# and it can be ignored.
+		if dot > 0:
+			var ray_distance = distance / dot
+			
+			# If we have no plane or it's smaller than the distance we have, replace the old with the new.
+			if closest_plane == null || ray_distance < closest_plane_distance:
+				closest_plane = plane
+				closest_plane_distance = ray_distance
+				
+	if closest_plane == null:
+		return null
+		
+	
+	return closest_plane.intersects_segment(from, to) 
 	
 # ////////////////////////////////////////////////////////////
 # CLEAN-UP

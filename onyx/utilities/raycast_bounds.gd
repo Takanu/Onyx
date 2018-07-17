@@ -34,7 +34,7 @@ func get_node_bounds(node):
 	if node is MeshInstance:
 		return extract_from_mesh_instance(node)
 		
-	if node is MultimeshInstance:
+	if node is MultiMeshInstance:
 		return extract_from_multi_mesh_instance(node)
 		
 	if node is CSGShape:
@@ -50,16 +50,37 @@ func extract_from_collision_shape(node):
 		var shape = node.get_shape()
 		
 		if shape is BoxShape:
+			# Get the points for the upper and lower bounds.
 			var extents = shape.get_extents()
-			return AABB(extents * -1, extents * 2)
+			var lb = (extents / 2) * -1
+			var ub = Vector3((extents.x / 2), (extents.y / 2), (extents.z / 2))
+			lb = lb + node.translation
+			ub = ub + node.translation
+			
+			# Apply the transform to them
+			var transform = node.global_transform
+			lb = transform.xform(lb)
+			ub = transform.xform(ub)
+			
+			# Return!
+			return AABB(lb, ub - lb)
 			
 			
 		if shape is CapsuleShape || shape is CylinderShape:
 			var radius = node.get_radius()
 			var height = node.get_height()
-			var position = Vector3((radius / 2) * -1, height * -1, (radius / 2) * -1)
-			var size = Vector3(radius, height * 2, radius)
-			return AABB(position, size)
+			var lb = Vector3((radius / 2) * -1, height * -1, (radius / 2) * -1)
+			var ub = Vector3(radius, height * 2, radius)
+			lb = lb + node.translation
+			ub = ub + node.translation
+			
+			# Apply the transform to them
+			var transform = node.global_transform
+			lb = transform.xform(lb)
+			ub = transform.xform(ub)
+			
+			# Return!
+			return AABB(lb, ub - lb)
 			
 			
 		if shape is ConcavePolygonShape:
@@ -82,8 +103,13 @@ func extract_from_collision_shape(node):
 				if point.z < lb.z: 
 					lb.z = point.z
 		
-			var size = ub - lb
-			return AABB(lb, size)
+			# Apply the transform to them
+			var transform = node.global_transform
+			lb = transform.xform(lb)
+			ub = transform.xform(ub)
+			
+			# Return!
+			return AABB(lb, ub - lb)
 			
 			
 		if shape is ConvexPolygonShape:
@@ -106,8 +132,13 @@ func extract_from_collision_shape(node):
 				if point.z < lb.z: 
 					lb.z = point.z
 		
-			var size = ub - lb
-			return AABB(lb, size)
+			# Apply the transform to them
+			var transform = node.global_transform
+			lb = transform.xform(lb)
+			ub = transform.xform(ub)
+			
+			# Return!
+			return AABB(lb, ub - lb)
 			
 #		if shape is CylinderShape:
 #			pass
@@ -117,9 +148,16 @@ func extract_from_collision_shape(node):
 			
 		if shape is SphereShape:
 			var radius = shape.get_radius()
-			var position = Vector3((radius / 2) * -1, (radius / 2) * -1, (radius / 2) * -1)
-			var size = Vector3(radius, radius, radius)
-			return AABB(position, size)
+			var lb = Vector3((radius / 2) * -1, (radius / 2) * -1, (radius / 2) * -1)
+			var ub = Vector3(radius, radius, radius)
+			
+			# Apply the transform to them
+			var transform = node.global_transform
+			lb = transform.xform(lb)
+			ub = transform.xform(ub)
+			
+			# Return!
+			return AABB(lb, ub - lb)
 		
 	return null
 	
