@@ -102,7 +102,8 @@ func render_geometry(geom):
 				geom.set_color(colors[i])
 				
 			if tangents.size() > i:
-				geom.set_tangent(tangents[i])
+				pass
+				#geom.set_tangent(tangents[i])
 				
 			if uvs.size() > i:
 				geom.set_uv(uvs[i])
@@ -111,6 +112,39 @@ func render_geometry(geom):
 			geom.add_vertex(vertices[i])
 		
 		geom.end()
+		
+		
+# Renders available face geometry using SurfaceTool and returns a mesh.
+func render_surface_geometry():
+	
+	var surface = SurfaceTool.new()
+	surface.begin(Mesh.PRIMITIVE_TRIANGLES)
+	
+	for key in faces:
+		var face = faces[key]
+		var vertices = face[0]
+		var colors = face[1]
+		var tangents = face[2]
+		var uvs = face[3]
+		var normal = face[4]
+		
+		var normals = []
+		for i in vertices.size():
+			normals.append(normal)
+		
+		var indexes = [0, 1, 2, 2, 3, 0]
+		
+		surface.add_triangle_fan(PoolVector3Array(vertices), 
+			PoolVector2Array(uvs), 
+			PoolColorArray(colors), 
+			PoolVector2Array(), 
+			PoolVector3Array(normals),
+			tangents)
+			
+	surface.index()
+	# This generates a lot of errors, not sure why.
+	#surface.generate_tangents()
+	return surface.commit()
 			
 			
 # Renders the available geometry as a wireframe, using a provided ImmediateGeometry node.
@@ -376,10 +410,10 @@ func build_cylinder(height, radius, points, rings):
 				c_2 = circle_points[i + 1]
 				t_2 = circle_tangents[i + 1]
 				
-			var v_1 = Vector3(c_1.x, base_height, c_1.z)
-			var v_2 = Vector3(c_1.x, base_height + height_step, c_1.z)
-			var v_3 = Vector3(c_2.x, base_height + height_step, c_2.z)
-			var v_4 = Vector3(c_2.x, base_height, c_2.z)
+			var v_1 = Vector3(c_1.x, base_height + height_step, c_1.z)
+			var v_2 = Vector3(c_1.x, base_height, c_1.z)
+			var v_3 = Vector3(c_2.x, base_height, c_2.z)
+			var v_4 = Vector3(c_2.x, base_height + height_step, c_2.z)
 			
 			var vertices = [v_1, v_2, v_3, v_4]
 			var tangents = [t_1, t_1, t_2, t_2]
@@ -399,6 +433,8 @@ func build_cylinder(height, radius, points, rings):
 		var vertex = circle_points[i]
 		v_cap_bottom.append( Vector3(vertex.x, (height / 2) * -1, vertex.z) )
 		v_cap_top.append( Vector3(vertex.x, (height / 2), vertex.z) )
+		
+	v_cap_bottom.invert()
 		
 	faces[face_count] = [v_cap_bottom, [], [], [], Vector3(0, -1, 0)]
 	faces[face_count + 1] = [v_cap_top, [], [], [], Vector3(0, 1, 0)]
@@ -441,7 +477,24 @@ func sort_face(face):
 	
 	return new_face
 
-
+# (this could be better optimised with an algorithm that doesn't rely on planes)
+# NOTE - ONLY USE IT IF THE SHAPE IS CONVEX, THIS WONT WORK OTHERWISE.
+func is_point_inside_convex_hull(point):
+	
+	# build a plane for every face
+	var planes = []
+	for i in faces.size():
+		var face = faces[i]
+		var vertices = face[0]
+		planes.append( Plane(vertices[0], vertices[1], vertices[2]) )
+	
+	# check if the point lies in front of the plane
+	for plane in planes:
+		if plane.is_point_over(point) == true:
+			return false
+			
+	return true
+	
 	
 # ////////////////////////////////////////////////////////////
 # CLEAN-UP

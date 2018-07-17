@@ -1,5 +1,5 @@
 tool
-extends Spatial
+extends CSGMesh
 
 # ////////////////////////////////////////////////////////////
 # TOOL ENUMS
@@ -27,7 +27,6 @@ var origin_offset = Vector3(0, 0, 0)
 # Used to decide whether to update the geometry.  Enables parents to be moved without forcing updates.
 var local_tracked_pos = Vector3(0, 0, 0)
 
-var geom = ImmediateGeometry.new()
 var color = Vector3(1, 1, 1)
 
 # Exported variables representing all usable handles for re-shaping the cube, in order.
@@ -41,6 +40,9 @@ export(float) var y_minus_position = -0.5 setget update_y_minus
 export(float) var z_plus_position = 0.5 setget update_z_plus
 export(float) var z_minus_position = -0.5 setget update_z_minus
 
+# The material that will be mapped to the shape.
+export(Material) var material
+
 
 # ////////////////////////////////////////////////////////////
 # FUNCTIONS
@@ -48,32 +50,28 @@ export(float) var z_minus_position = -0.5 setget update_z_minus
 
 # Global initialisation
 func _enter_tree():
-	#print("****************")
-	#print("entering tree...")
-	
-	# load gizmos
-	var plugin = get_node("/root/EditorNode/Onyx")
-	gizmo = plugin.create_spatial_gizmo(self)
-	#print(face_set)
-	#print(gizmo)
-	
-	# load geometry
-	geom.set_name("geom")
-	add_child(geom)
+		
+	# Load and generate geometry
 	generate_geometry(true) 
-	
+		
 	# set gizmo stuff
 	old_handles = face_set.get_all_centre_points()
-	
-	set_notify_local_transform(true)
-	set_notify_transform(true)
-	set_ignore_transform_notification(false)
+		
+	# If this is being run in the editor, sort out the gizmo.
+	if Engine.editor_hint == true:
+		
+		# load gizmos
+		var plugin = get_node("/root/EditorNode/Onyx")
+		gizmo = plugin.create_spatial_gizmo(self)
+		
+		set_notify_local_transform(true)
+		set_notify_transform(true)
+		set_ignore_transform_notification(false)
+		
 	
 func _ready():
-	# Called when the node is added to the scene for the first time.
-	# Initialization here
-	
 	pass
+
 	
 func _notification(what):
 	if what == Spatial.NOTIFICATION_TRANSFORM_CHANGED:
@@ -139,10 +137,17 @@ func generate_geometry(fix_to_origin_setting):
 					(z_plus_position + (z_minus_position * -1))
 					)
 				minPoint = Vector3(0, 0, 0)
-				
-	face_set.build_cuboid(maxPoint, minPoint)
-	face_set.render_geometry(geom)
 	
+	# Generate the geometry
+	face_set.build_cuboid(maxPoint, minPoint)
+	
+	var array_mesh = face_set.render_surface_geometry()
+	var helper = MeshDataTool.new()
+	var mesh = Mesh.new()
+	
+	helper.create_from_surface(array_mesh, 0)
+	helper.commit_to_surface(mesh)
+	set_mesh(mesh)
 	
 	# Re-submit the handle positions based on the built faces, so other handles that aren't the
 	# focus of a handle operation are being updated
@@ -269,11 +274,20 @@ func set_origin_mode(new_value):
 	update_origin()
 	balance_handles()
 	generate_geometry(true)
-		
+	
+
+func set_use_collision(new_value):
+	
+	use_collision = new_value
+	set_use_collision(use_collision) 
+
 
 # Updates the origin during generate_geometry() as well as the currently defined handles, 
 # to ensure it's anchored where it needs to be.
 func update_origin():
+	
+	if handles.size() == 0:
+		return
 	
 	# Get all handle positions in global terms.
 	var global_handles = []

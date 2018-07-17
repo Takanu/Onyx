@@ -23,7 +23,7 @@ func _enter_tree():
 	
     # Initialization of the plugin goes here
 	add_custom_type("OnyxNode", "Spatial", preload("./nodes/onyx_node.gd"), null)
-	add_custom_type("OnyxCube", "Spatial", preload("./nodes/onyx_cube.gd"), null)
+	add_custom_type("OnyxCube", "CSGMesh", preload("./nodes/onyx_cube.gd"), null)
 	add_custom_type("OnyxSprinkle", "Spatial", preload("./nodes/onyx_sprinkle.gd"), null)
 	
 	pass

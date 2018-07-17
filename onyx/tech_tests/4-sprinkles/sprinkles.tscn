@@ -1,133 +1,99 @@
-[gd_scene load_steps=5 format=2]
+[gd_scene load_steps=6 format=2]
 
-[ext_resource path="res://addons/onyx/nodes/onyx_cube.gd" type="Script" id=1]
-[ext_resource path="res://addons/onyx/nodes/onyx_sprinkle.gd" type="Script" id=2]
+[ext_resource path="res://addons/onyx/nodes/onyx_sprinkle.gd" type="Script" id=1]
+[ext_resource path="res://addons/onyx/tech_tests/4-sprinkles/rigid_ball.tscn" type="PackedScene" id=2]
+[ext_resource path="res://addons/onyx/nodes/onyx_cube.gd" type="Script" id=3]
 
-[sub_resource type="CubeMesh" id=1]
+[sub_resource type="ArrayMesh" id=1]
 
+blend_shape_mode = 1
 custom_aabb = AABB( 0, 0, 0, 0, 0, 0 )
-size = Vector3( 2, 2, 2 )
-subdivide_width = 0
-subdivide_height = 0
-subdivide_depth = 0
+surfaces/0 = {
+"aabb": AABB( -11.66, 0, -22.97, 12.16, 7.96, 52.41 ),
+"array_data": PoolByteArray( 0, 0, 0, 63, 0, 0, 0, 0, 31, 133, 235, 65, 127, 0, 0, 0, 255, 255, 255, 255, 0, 0, 0, 63, 82, 184, 254, 64, 31, 133, 235, 65, 127, 0, 0, 0, 255, 255, 255, 255, 0, 0, 0, 63, 82, 184, 254, 64, 143, 194, 183, 193, 127, 0, 0, 0, 255, 255, 255, 255, 0, 0, 0, 63, 0, 0, 0, 0, 143, 194, 183, 193, 127, 0, 0, 0, 255, 255, 255, 255, 92, 143, 58, 193, 82, 184, 254, 64, 31, 133, 235, 65, 129, 0, 0, 0, 255, 255, 255, 255, 92, 143, 58, 193, 0, 0, 0, 0, 31, 133, 235, 65, 129, 0, 0, 0, 255, 255, 255, 255, 92, 143, 58, 193, 0, 0, 0, 0, 143, 194, 183, 193, 129, 0, 0, 0, 255, 255, 255, 255, 92, 143, 58, 193, 82, 184, 254, 64, 143, 194, 183, 193, 129, 0, 0, 0, 255, 255, 255, 255, 0, 0, 0, 63, 82, 184, 254, 64, 31, 133, 235, 65, 0, 127, 0, 0, 255, 255, 255, 255, 92, 143, 58, 193, 82, 184, 254, 64, 31, 133, 235, 65, 0, 127, 0, 0, 255, 255, 255, 255, 92, 143, 58, 193, 82, 184, 254, 64, 143, 194, 183, 193, 0, 127, 0, 0, 255, 255, 255, 255, 0, 0, 0, 63, 82, 184, 254, 64, 143, 194, 183, 193, 0, 127, 0, 0, 255, 255, 255, 255, 0, 0, 0, 63, 0, 0, 0, 0, 31, 133, 235, 65, 0, 129, 0, 0, 255, 255, 255, 255, 0, 0, 0, 63, 0, 0, 0, 0, 143, 194, 183, 193, 0, 129, 0, 0, 255, 255, 255, 255, 92, 143, 58, 193, 0, 0, 0, 0, 143, 194, 183, 193, 0, 129, 0, 0, 255, 255, 255, 255, 92, 143, 58, 193, 0, 0, 0, 0, 31, 133, 235, 65, 0, 129, 0, 0, 255, 255, 255, 255, 0, 0, 0, 63, 0, 0, 0, 0, 31, 133, 235, 65, 0, 0, 127, 0, 255, 255, 255, 255, 92, 143, 58, 193, 0, 0, 0, 0, 31, 133, 235, 65, 0, 0, 127, 0, 255, 255, 255, 255, 92, 143, 58, 193, 82, 184, 254, 64, 31, 133, 235, 65, 0, 0, 127, 0, 255, 255, 255, 255, 0, 0, 0, 63, 82, 184, 254, 64, 31, 133, 235, 65, 0, 0, 127, 0, 255, 255, 255, 255, 0, 0, 0, 63, 0, 0, 0, 0, 143, 194, 183, 193, 0, 0, 129, 0, 255, 255, 255, 255, 0, 0, 0, 63, 82, 184, 254, 64, 143, 194, 183, 193, 0, 0, 129, 0, 255, 255, 255, 255, 92, 143, 58, 193, 82, 184, 254, 64, 143, 194, 183, 193, 0, 0, 129, 0, 255, 255, 255, 255, 92, 143, 58, 193, 0, 0, 0, 0, 143, 194, 183, 193, 0, 0, 129, 0, 255, 255, 255, 255 ),
+"array_index_data": PoolByteArray( 0, 0, 1, 0, 2, 0, 0, 0, 2, 0, 3, 0, 4, 0, 5, 0, 6, 0, 4, 0, 6, 0, 7, 0, 8, 0, 9, 0, 10, 0, 8, 0, 10, 0, 11, 0, 12, 0, 13, 0, 14, 0, 12, 0, 14, 0, 15, 0, 16, 0, 17, 0, 18, 0, 16, 0, 18, 0, 19, 0, 20, 0, 21, 0, 22, 0, 20, 0, 22, 0, 23, 0 ),
+"blend_shape_data": [  ],
+"format": 97547,
+"index_count": 36,
+"primitive": 4,
+"skeleton_aabb": [  ],
+"vertex_count": 24
+}
 
-[sub_resource type="SpatialMaterial" id=2]
+[sub_resource type="PlaneShape" id=2]
 
-render_priority = 0
-flags_transparent = true
-flags_unshaded = true
-flags_vertex_lighting = false
-flags_no_depth_test = true
-flags_use_point_size = false
-flags_world_triplanar = false
-flags_fixed_size = false
-flags_albedo_tex_force_srgb = false
-vertex_color_use_as_albedo = false
-vertex_color_is_srgb = false
-params_diffuse_mode = 0
-params_specular_mode = 0
-params_blend_mode = 0
-params_cull_mode = 0
-params_depth_draw_mode = 1
-params_line_width = 1.0
-params_point_size = 1.0
-params_billboard_mode = 0
-params_grow = false
-params_use_alpha_scissor = false
-albedo_color = Color( 1, 1, 1, 0.268039 )
-metallic = 0.0
-metallic_specular = 0.5
-metallic_texture_channel = 0
-roughness = 0.0
-roughness_texture_channel = 0
-emission_enabled = false
-normal_enabled = false
-rim_enabled = false
-clearcoat_enabled = false
-anisotropy_enabled = false
-ao_enabled = false
-depth_enabled = false
-subsurf_scatter_enabled = false
-transmission_enabled = false
-refraction_enabled = false
-detail_enabled = false
-uv1_scale = Vector3( 1, 1, 1 )
-uv1_offset = Vector3( 0, 0, 0 )
-uv1_triplanar = false
-uv1_triplanar_sharpness = 1.0
-uv2_scale = Vector3( 1, 1, 1 )
-uv2_offset = Vector3( 0, 0, 0 )
-uv2_triplanar = false
-uv2_triplanar_sharpness = 1.0
-proximity_fade_enable = false
-distance_fade_enable = false
-_sections_unfolded = [ "Albedo", "Flags", "Vertex Color" ]
+plane = Plane( 0, 1, 0, 0 )
 
-[node name="root" type="Spatial" index="0"]
+[node name="scene" type="Spatial" index="0"]
 
-[node name="OnyxCube" type="Spatial" parent="." index="0"]
-
-transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -0.729604, -11.8694, -0.902104 )
+[node name="OnyxSprinkle" type="Spatial" parent="." index="0"]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -37.4821, 14.0907, 0.29018 )
 script = ExtResource( 1 )
-origin_setting = 1
-x_plus_position = 17.9184
-x_minus_position = -17.9184
-y_plus_position = 9.98292
-y_minus_position = 0.0
-z_plus_position = 23.4605
-z_minus_position = -23.4605
-
-[node name="OnyxSprinkle" type="Spatial" parent="." index="1"]
-
-transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0.734554, 6, 0.650905 )
-script = ExtResource( 2 )
-volume_type = 1
-volume_handles = [ Vector3( 7.77228, 0, 0 ), Vector3( 0, 24.0513, 0 ) ]
-
-[node name="OmniLight" type="OmniLight" parent="OnyxSprinkle" index="0"]
-
-transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 6, 0 )
-layers = 1
-light_color = Color( 1, 1, 1, 1 )
-light_energy = 1.0
-light_indirect_energy = 1.0
-light_negative = false
-light_specular = 0.5
-light_bake_mode = 1
-light_cull_mask = -1
-shadow_enabled = false
-shadow_color = Color( 0, 0, 0, 1 )
-shadow_bias = 0.15
-shadow_contact = 0.0
-shadow_reverse_cull_face = false
-editor_only = false
-omni_range = 5.0
-omni_attenuation = 1.0
-omni_shadow_mode = 1
-omni_shadow_detail = 1
-
-[node name="OnyxSprinkle2" type="Spatial" parent="." index="2"]
-
-transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 9.10434, 0 )
-script = ExtResource( 2 )
 volume_type = 0
-volume_handles = [ Vector3( 30.4246, 0, 0 ), Vector3( 0, 10.0631, 0 ), Vector3( 0, 0, 15.4846 ) ]
+spawn_count = 20
+sprinkle_across_surfaces = true
+update_during_movement = true
+volume_handles = [ Vector3( 5.51607, 0, 0 ), Vector3( 0, 10.2747, 0 ), Vector3( 0, 0, 24.762 ) ]
+spawn_locations = [ Vector3( -1.78025, 9.02211, 22.6988 ), Vector3( -2.22912, 9.02211, 1.97649 ), Vector3( -5.11498, 9.02211, -23.8966 ), Vector3( -3.90409, 9.02211, 6.25877 ) ]
 
-[node name="MeshInstance" type="MeshInstance" parent="." index="3"]
+[node name="ball" parent="OnyxSprinkle" index="0" instance=ExtResource( 2 )]
 
-transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.81986, 0 )
+[node name="CSGBox" type="CSGBox" parent="." index="1"]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -37.4634, 0, 0 )
 layers = 1
-material_override = null
-cast_shadow = 1
-extra_cull_margin = 0.0
-use_in_baked_light = false
-lod_min_distance = 0.0
-lod_min_hysteresis = 0.0
-lod_max_distance = 0.0
-lod_max_hysteresis = 0.0
-mesh = SubResource( 1 )
-skeleton = NodePath("..")
-material/0 = SubResource( 2 )
-_sections_unfolded = [ "material" ]
+operation = 0
+use_collision = true
+snap = 1.0
+invert_faces = false
+width = 10.3027
+height = 9.59606
+depth = 29.6597
+material = null
 
+[node name="StaticBody" type="Spatial" parent="." index="2"]
+_sections_unfolded = [ "Collision" ]
+
+[node name="Camera" type="Camera" parent="." index="3"]
+transform = Transform( -4.2222e-08, -0.258819, 0.965926, -1.13133e-08, 0.965926, 0.258819, -1, 0, -4.37114e-08, 40, 37, 0 )
+keep_aspect = 1
+cull_mask = 1048575
+environment = null
+h_offset = 0.0
+v_offset = 0.0
+doppler_tracking = 0
+projection = 0
+current = false
+fov = 70.0
+size = 1.0
+near = 0.05
+far = 100.0
+
+[node name="OnyxCube" type="CSGMesh" parent="." index="4"]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -0.711918, 1.06211, -4.96019 )
+layers = 1
+operation = 0
+use_collision = true
+snap = 0.001
+invert_faces = false
+mesh = SubResource( 1 )
+script = ExtResource( 3 )
+origin_setting = 1
+x_plus_position = 0.5
+x_minus_position = -11.66
+y_plus_position = 7.96
+y_minus_position = 0.0
+z_plus_position = 29.44
+z_minus_position = -22.97
+material = null
+
+[node name="CollisionPolygon" type="CollisionPolygon" parent="." index="5"]
+depth = 30.0
+disabled = false
+polygon = PoolVector2Array( 20.4586, 2.18231, 23.76, 9.47955, 28.142, 15.242, 21.7568, 19.9642, 13.2559, 18.1989, 11.3186, 8.5839, 17.5962, 3.97266 )
+
+[node name="CollisionShape" type="CollisionShape" parent="." index="6"]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 20.6139, 0, 0 )
+shape = SubResource( 2 )
+disabled = false
+_sections_unfolded = [ "shape" ]
 
