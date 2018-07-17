@@ -4,9 +4,13 @@ extends Node
 # ////////////////////////////////////////////////////////////
 # INFO
 # Used by Onyx exclusively to fetch a set of geometry from a collision or geometric type.
-# The geometry returned will always be defined as a face_dictionary type.
+# The geometry returned will be defined as a face_dictionary or triangle_array type.
 
-var FaceDictionary = load("res://addons/onyx/utilities/face_dictionary.gd").new()
+var FaceDictionary = load("res://addons/onyx/utilities/face_dictionary.gd")
+var TriangleArray = load("res://addons/onyx/utilities/triangle_array.gd")
+
+# ////////////////////////////////////////////////////////////
+# BASE FUNCTION
 
 # Attempts to extract collision information from the node as a standard set of geometric faces.
 func get_collision_as_geometry(node):
@@ -23,6 +27,11 @@ func get_collision_as_geometry(node):
 	
 	return null
 	
+	
+# ////////////////////////////////////////////////////////////
+# GETTERS
+	
+# Extracts and returns geometric information from the CollisionShape type.
 func extract_from_collision_shape(node):
 	
 	if node is CollisionShape:
@@ -39,7 +48,8 @@ func extract_from_collision_shape(node):
 			ub = ub + node.translation
 			
 			# Generate a set of faces using it
-			var face_set = FaceDictionary.build_cuboid(ub, lb)
+			var face_set = FaceDictionary.new()
+			face_set.build_cuboid(ub, lb)
 			
 			# Apply the world transform to it.
 			face_set.apply_transform(node.global_transform)
@@ -48,79 +58,136 @@ func extract_from_collision_shape(node):
 			return face_set
 			
 			
-		if shape is CapsuleShape || shape is CylinderShape:
-			var radius = node.get_radius()
-			var height = node.get_height()
-			var position = Vector3((radius / 2) * -1, height * -1, (radius / 2) * -1)
-			var size = Vector3(radius, height * 2, radius)
-			return AABB(position, size)
+		if shape is CapsuleShape:
+			
+			# build a capsule mesh that fits the shape
+			pass
 			
 			
 		if shape is ConcavePolygonShape:
+			
+			print("Getting ConcavePolygonShape geometry...")
 			var faces = node.get_faces()
-			var lb = Vector3()
-			var ub = Vector3()
-		
-			for point in faces:
-				if point.x > ub.x:
-					ub.x = point.x
-				if point.y > ub.y: 
-					ub.y = point.y
-				if point.z > ub.z: 
-					ub.z = point.z
-					
-				if point.x < lb.x:
-					lb.x = point.x
-				if point.y < lb.y:
-					lb.y = point.y
-				if point.z < lb.z: 
-					lb.z = point.z
-		
-			var size = ub - lb
-			return AABB(lb, size)
+			print("FACES: ", faces)
+			
+			var triangles = TriangleArray.new()
+			triangles.add_triangle_vertices(faces)
+			
+			return triangles
 			
 			
 		if shape is ConvexPolygonShape:
+			print("Getting ConcavePolygonShape geometry...")
 			var points = node.get_points()
-			var lb = Vector3()
-			var ub = Vector3()
-		
-			for point in points:
-				if point.x > ub.x:
-					ub.x = point.x
-				if point.y > ub.y: 
-					ub.y = point.y
-				if point.z > ub.z: 
-					ub.z = point.z
-					
-				if point.x < lb.x:
-					lb.x = point.x
-				if point.y < lb.y:
-					lb.y = point.y
-				if point.z < lb.z: 
-					lb.z = point.z
-		
-			var size = ub - lb
-			return AABB(lb, size)
+			print("POINTS: ", points)
 			
-#		if shape is CylinderShape:
-#			pass
+			return null
 			
+		if shape is CylinderShape:
+			
+			# build a cylindrical mesh that fits the shape
+			pass
+			
+			
+		# planes just encompass everything, they don't fit well into the scope of Onyx currently.
 		if shape is PlaneShape:
 			pass
 			
+			
 		if shape is SphereShape:
-			var radius = shape.get_radius()
-			var position = Vector3((radius / 2) * -1, (radius / 2) * -1, (radius / 2) * -1)
-			var size = Vector3(radius, radius, radius)
-			return AABB(position, size)
+			
+			# build a cylindrical mesh that fits the shape
+			pass
+		
 		
 	return null
 	
-
+# Extracts and returns geometric information from the CollisionPolygon type.
 func extract_from_collision_polygon(node):
-	pass
 	
+	if node is CollisionPolygon:
+		
+		var lb = Vector3()
+		var ub = Vector3()
+		
+		var depth = node.get_depth()
+		
+		# define the points in 3D terms.
+		var poly_points = []
+		var normal = Vector3(0, 0, 1)
+		for point in node.get_polygon():
+			var vertex = Vector3(point.x, point.y, (depth / 2) * -1)
+			poly_points.append(vertex)
+			
+			
+		# build a geometric model and apply it in world space
+		var world_space = node.global_transform
+		var world_space_normal = world_space.xform(normal)
+		var world_space_points = []
+		
+		for point in poly_points:
+			var vertex = world_space.xform(point)
+			world_space_points.append(vertex)
+			
+		# build the capped 
+			
+			
+		# build faces that fit the polygon
+		var face_set = FaceDictionary.new()
+		face_set.build_polygon_extrusion(
+				
+				
+		
+			
+			
+	return null
 	
+# Extracts and returns geometric information from the CSGPrimitive type.
 func extract_from_csg(node):
+	
+	if node is CSGPolygon:
+		
+		match node.mode:
+			
+			CSGPolygon.Mode.DEPTH:
+				var lb = Vector3()
+				var ub = Vector3()
+				
+				var depth = node.get_depth()
+				
+				# define the points in 3D terms.
+				var poly_points = []
+				var normal = Vector3(0, 0, 1)
+				for point in node.get_polygon():
+					var vertex = Vector3(point.x, point.y, (depth / 2) * -1)
+					poly_points.append(vertex)
+					
+					
+				# build a geometric model and apply it in world space
+				var world_space = node.global_transform
+				var world_space_normal = world_space.xform(normal)
+				var world_space_points = []
+				
+				for point in poly_points:
+					var vertex = world_space.xform(point)
+					world_space_points.append(vertex)
+					
+				# build the capped 
+					
+					
+				# build faces that fit the polygon
+				var face_set = FaceDictionary.new()
+				face_set.build_polygon_extrusion(
+				
+				
+			CSGPolygon.Mode.SPIN:
+				pass
+				
+			
+		
+		
+			
+			
+	return null
+	
 	pass

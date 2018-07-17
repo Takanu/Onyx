@@ -6,6 +6,9 @@ extends Node
 # Used by Onyx exclusively to fetch the area of any kind of type that has one, returning an AABB type.
 
 
+# ////////////////////////////////////////////////////////////
+# BASE FUNCTION
+
 # Gets the area of the node if possible, only if it's a collision type.  If not, returns null.
 func get_collision_bounds(node):
 	
@@ -21,6 +24,9 @@ func get_collision_bounds(node):
 		
 	return null
 	
+	
+# ////////////////////////////////////////////////////////////
+# GETTERS
 
 # Gets the area of any node if possible.  If not, returns null.
 func get_node_bounds(node):
@@ -205,9 +211,7 @@ func extract_from_collision_polygon(node):
 			if point.z < lb.z: 
 				lb.z = point.z
 		
-		var size = ub - lb
-		
-		return AABB(lb, size)
+		return AABB(lb, ub - lb)
 		
 	return null
 	

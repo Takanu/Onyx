@@ -1,0 +1,42 @@
+[gd_scene load_steps=2 format=2]
+
+[sub_resource type="GDScript" id=1]
+
+script/source = "tool
+extends Spatial
+
+# Declare member variables here. Examples:
+# var a = 2
+# var b = \"text\"
+
+# Called when the node enters the scene tree for the first time.
+func _ready():
+	print_tree_pretty()
+
+# Called every frame. 'delta' is the elapsed time since the previous frame.
+#func _process(delta):
+#	pass
+"
+
+[node name="Spatial" type="Spatial"]
+script = SubResource( 1 )
+
+[node name="CSGPolygon" type="CSGPolygon" parent="." index="0"]
+visible = false
+layers = 1
+operation = 0
+use_collision = true
+snap = 0.001
+invert_faces = false
+polygon = PoolVector2Array( 0.360575, 0.00508761, 0.905711, 1.06991, 1, 1, 0.451268, 0.00342107 )
+mode = 1
+spin_degrees = 360.0
+spin_sides = 24
+smooth_faces = false
+material = null
+
+[node name="CollisionPolygon" type="CollisionPolygon" parent="." index="1"]
+depth = 20.0
+disabled = false
+polygon = PoolVector2Array( -0.578112, 0.62711, -0.0326918, 0.0164886, 0.863902, 0.578837, 1.09088, 1.7296, 0.19283, 2.33192, -1.32596, 1.69791 )
+

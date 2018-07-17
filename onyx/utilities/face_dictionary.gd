@@ -16,6 +16,7 @@ extends Node
 
 # ////////////////////////////////////////////////////////////
 # PROPERTIES
+
 var faces = {}
 
 # ////////////////////////////////////////////////////////////
@@ -364,7 +365,7 @@ func build_cuboid(max_point, min_point):
 	
 # Builds a cylinder given the height, width and number of points.  
 # Returns an array in the format of face_array.
-func build_cylinder(height, radius, points, rings):
+func build_cylinder(points, height, radius, rings, position):
 	
 	faces.clear()
 	
@@ -378,105 +379,119 @@ func build_cylinder(height, radius, points, rings):
 		
 		# get coordinates
 		var x = radius * cos(current_angle)
-		var z = radius * sin(current_angle)
-		circle_points.append(Vector3(x, 0, z))
+		var y = radius * sin(current_angle)
+		circle_points.append(Vector2(x, y))
 		
 		current_angle += angle_step
-	
-	
-	# get the normals of all current edges
-	var circle_normals = []
-	
-	for i in circle_points.size():
-	
-		var a = circle_points[i]
-		var b = Vector3()
 		
-		if i == circle_points.size() - 1:
-			b = circle_points[0]
-		else:
-			b = circle_points[i + 1]
+	build_polygon_extrusion(circle_points, height, rings, position, Vector3(0, 1, 0))
+	
+	
+# Builds a "polygon extrusion" which takes a series of 2D points and extrudes them along the provided axis.
+func build_polygon_extrusion(points, depth, rings, position, extrusion_axis):
+	
+	faces.clear()
+	
+	# make the points given three-dimensional.
+	var start_vertices = []
+	var start_point_normal = Vector3(0, 0, 1)
+	for point in points:
+		start_vertices.append(Vector3(point.x, point.y, 0))
+	
+	var base_vertices = []
+	
+	# Build a basis and rotate it to the normal we desire.
+	var dot = start_point_normal.dot(extrusion_axis)
+	var cross = start_point_normal.cross(extrusion_axis).normalized()
+	
+	#print("DOT/CROSS: ", dot, cross)
+	
+	# If the face angle is where we want it, do nothing.
+	if dot == 1 || dot == -1:
+		#print("No need to rotate!") 
+		for vertex in start_vertices:
+			base_vertices.append(vertex + position)
+
+	# Otherwise rotate it!
+	else:
+		#("Rotating!")
+		var matrix = Basis()
+		matrix = matrix.rotated(cross, PI*((dot + 1) / 2))
+		
+		for vertex in start_vertices:
+			var t_vertex = matrix.xform(vertex)
+			base_vertices.append(t_vertex + position)
 			
+	#print("BASE: ", base_vertices)
+	# get the normals for all current edges
+	var normals = []
+
+	for i in base_vertices.size():
+
+		var a = base_vertices[i]
+		var b = Vector3()
+
+		if i == base_vertices.size() - 1:
+			b = base_vertices[0]
+		else:
+			b = base_vertices[i + 1]
+
 		var line_a = (b - a).normalized()
 		var line_b = Vector3(0, 1, 0)
 		var face_normal = line_a.cross(line_b)
-		
-		circle_normals.append(face_normal)
-		
-	
-		
-	# get the tangents for the face wrap
-	var circle_tangents = []
-	
-	for i in circle_normals.size():
-		
-		var a = circle_points[i]
-		var b = Vector3()
-		
-		if i == circle_points.size() - 1:
-			b = circle_points[0]
-		else:
-			b = circle_points[i + 1]
-		
-		circle_tangents.append( (a + b) / 2 )
-		
-	var first_tangent = circle_tangents.pop_front()
-	circle_tangents.append(first_tangent)
-		
-	
+
+		normals.append(face_normal)
+
+
 	# based on the number of rings, build the faces.
-	var base_height = (height / 2) * -1
-	var height_step = height / rings
+	var extrusion_step = depth / rings
+	var base_extrusion_depth = Vector3()
+	var distance_vec = extrusion_axis * extrusion_step
 	var face_count = 0
-	
+
 	for i in rings:
-		
-		# go roooound the circle.
-		for i in circle_points.size():
-			
-			var c_1 = circle_points[i]
-			var t_1 = circle_tangents[i]
+
+		# go roooound the extrusion
+		for i in base_vertices.size():
+
+			var c_1 = base_vertices[i]
 			var c_2 = Vector3()
-			var t_2 = Vector3()
-			var normal = circle_normals[i]
-			
-			if i == circle_points.size() - 1:
-				c_2 = circle_points[0]
-				t_2 = circle_tangents[0]
+			var normal = normals[i]
+
+			if i == base_vertices.size() - 1:
+				c_2 = base_vertices[0]
 			else:
-				c_2 = circle_points[i + 1]
-				t_2 = circle_tangents[i + 1]
-				
-			var v_1 = Vector3(c_1.x, base_height + height_step, c_1.z)
-			var v_2 = Vector3(c_1.x, base_height, c_1.z)
-			var v_3 = Vector3(c_2.x, base_height, c_2.z)
-			var v_4 = Vector3(c_2.x, base_height + height_step, c_2.z)
-			
-			var vertices = [v_1, v_2, v_3, v_4]
-			var tangents = [t_1, t_1, t_2, t_2]
-			
+				c_2 = base_vertices[i + 1]
+
+			c_1 += base_extrusion_depth
+			c_2 += base_extrusion_depth
+			var c_3 = c_1 + distance_vec
+			var c_4 = c_2 + distance_vec
+
+			var vertices = [c_3, c_1, c_2, c_4]
+			var tangents = []
+
+
 			faces[face_count] = [vertices, [], tangents, [], normal]
-			
 			face_count += 1
-		
-		
-		base_height += height_step
+
+		base_extrusion_depth += distance_vec
 		
 	# now render the top and bottom caps
 	var v_cap_bottom = []
 	var v_cap_top = []
-	for i in circle_points.size():
+	var total_extrusion_vec = extrusion_axis * depth
+	
+	for i in base_vertices.size():
 		
-		var vertex = circle_points[i]
-		v_cap_bottom.append( Vector3(vertex.x, (height / 2) * -1, vertex.z) )
-		v_cap_top.append( Vector3(vertex.x, (height / 2), vertex.z) )
+		var vertex = base_vertices[i]
+		v_cap_bottom.append( vertex )
+		v_cap_top.append( vertex + total_extrusion_vec )
 		
 	v_cap_bottom.invert()
 		
-	faces[face_count] = [v_cap_bottom, [], [], [], Vector3(0, -1, 0)]
-	faces[face_count + 1] = [v_cap_top, [], [], [], Vector3(0, 1, 0)]
-	
-	
+	faces[face_count] = [v_cap_bottom, [], [], [], extrusion_axis.inverse()]
+	faces[face_count + 1] = [v_cap_top, [], [], [], extrusion_axis]
 	
 
 # ////////////////////////////////////////////////////////////

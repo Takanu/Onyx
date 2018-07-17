@@ -179,7 +179,8 @@ func update_volume():
 			var height = volume_handles[1].y * 2
 			
 			# Build the volume geometry and render it.
-			face_set.build_cylinder(height, width, 20, 1)
+			var position = Vector3(0, (height / 2) * -1, 0)
+			face_set.build_cylinder(20, height, width, 1, position)
 			
 			# if we're in the editor, show the visual representation and update the gizmo.
 			if Engine.editor_hint == true:
