@@ -133,7 +133,7 @@ func update_sprinkler():
 	
 	# update the spawner
 	build_location_array()
-	spawn_children()
+	#spawn_children()
 	
 # Updates the geometry of the volume and the volume_handles responsible.
 func update_volume():

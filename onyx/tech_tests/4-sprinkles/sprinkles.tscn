@@ -1,8 +1,8 @@
-[gd_scene load_steps=6 format=2]
+[gd_scene load_steps=5 format=2]
 
-[ext_resource path="res://addons/onyx/tech_tests/4-sprinkles/rigid_ball.tscn" type="PackedScene" id=1]
-[ext_resource path="res://addons/onyx/nodes/onyx_cube.gd" type="Script" id=2]
-[ext_resource path="res://addons/onyx/nodes/onyx_sprinkle.gd" type="Script" id=3]
+[ext_resource path="res://addons/onyx/nodes/onyx_cube.gd" type="Script" id=1]
+[ext_resource path="res://addons/onyx/nodes/onyx_sprinkle.gd" type="Script" id=2]
+[ext_resource path="res://addons/onyx/tech_tests/4-sprinkles/rigid_ball.tscn" type="PackedScene" id=3]
 
 [sub_resource type="ArrayMesh" id=1]
 
@@ -20,16 +20,9 @@ surfaces/0 = {
 "vertex_count": 24
 }
 
-[sub_resource type="PlaneShape" id=2]
+[node name="scene" type="Spatial" index="0"]
 
-plane = Plane( 0, 1, 0, 0 )
-
-[node name="scene" type="Spatial"]
-
-[node name="ball" parent="." index="0" instance=ExtResource( 1 )]
-transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -37.482, 23.1422, 0.29018 )
-
-[node name="CSGBox" type="CSGBox" parent="." index="1"]
+[node name="CSGBox" type="CSGBox" parent="." index="0"]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -37.4634, 0, 0 )
 layers = 1
 operation = 0
@@ -41,10 +34,7 @@ height = 9.59606
 depth = 29.6597
 material = null
 
-[node name="StaticBody" type="Spatial" parent="." index="2"]
-_sections_unfolded = [ "Collision" ]
-
-[node name="Camera" type="Camera" parent="." index="3"]
+[node name="Camera" type="Camera" parent="." index="1"]
 transform = Transform( -4.2222e-08, -0.258819, 0.965926, -1.13133e-08, 0.965926, 0.258819, -1, 0, -4.37114e-08, 40, 37, 0 )
 keep_aspect = 1
 cull_mask = 1048575
@@ -59,7 +49,7 @@ size = 1.0
 near = 0.05
 far = 100.0
 
-[node name="OnyxCube" type="CSGMesh" parent="." index="4"]
+[node name="OnyxCube" type="CSGMesh" parent="." index="2"]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -0.711918, 1.06211, -4.96019 )
 layers = 1
 operation = 0
@@ -67,7 +57,7 @@ use_collision = true
 snap = 0.001
 invert_faces = false
 mesh = SubResource( 1 )
-script = ExtResource( 2 )
+script = ExtResource( 1 )
 origin_setting = 1
 x_plus_position = 0.5
 x_minus_position = -11.66
@@ -77,35 +67,27 @@ z_plus_position = 29.44
 z_minus_position = -22.97
 material = null
 
-[node name="CollisionPolygon" type="CollisionPolygon" parent="." index="5"]
-depth = 30.0
-disabled = false
-polygon = PoolVector2Array( 20.4586, 2.18231, 23.76, 9.47955, 28.142, 15.242, 21.7568, 19.9642, 13.2559, 18.1989, 11.3186, 8.5839, 17.5962, 3.97266 )
-
-[node name="CollisionShape" type="CollisionShape" parent="." index="6"]
-transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 20.6139, 0, 0 )
-shape = SubResource( 2 )
-disabled = false
-_sections_unfolded = [ "shape" ]
-
-[node name="OnyxSprinkle" type="Spatial" parent="." index="7"]
-script = ExtResource( 3 )
-volume_type = 1
-spawn_count = 0
+[node name="OnyxSprinkle" type="Spatial" parent="." index="3"]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -39.2817, 25.0435, 0 )
+script = ExtResource( 2 )
+volume_type = 0
+spawn_count = 100
 sprinkle_across_surfaces = false
 update_during_movement = false
-volume_handles = [ Vector3( 13.2807, 0, 0 ), Vector3( 0, 14.864, 0 ) ]
-spawn_locations = [  ]
+volume_handles = [ Vector3( 13.2807, 0, 0 ), Vector3( 0, 14.864, 0 ), Vector3( 0, 0, 13.2807 ) ]
+spawn_locations = [ Vector3( -9.6792, -2.81635, -5.60094 ), Vector3( -10.446, 7.53011, -1.45052 ), Vector3( 4.78603, 4.7828, -9.09913 ), Vector3( -3.40242, 13.5389, 9.63072 ), Vector3( 10.6484, 13.8344, -7.39311 ), Vector3( 4.39708, 10.2109, -4.52742 ), Vector3( -10.1245, -4.77715, 7.00948 ), Vector3( -8.13952, 12.228, -0.052327 ), Vector3( -5.2142, 3.17586, 3.51102 ), Vector3( 4.9872, -2.46069, -10.8687 ), Vector3( 4.55237, -3.37979, -2.56618 ), Vector3( -0.21058, -3.93703, 6.80788 ), Vector3( -12.9994, 2.75455, -6.60452 ), Vector3( 6.84556, 14.6383, -7.2949 ), Vector3( 9.30259, -7.87861, -3.35391 ), Vector3( 7.06475, -0.210544, 5.68074 ), Vector3( -6.83392, -9.52858, 5.53814 ), Vector3( 12.5346, -4.58335, -10.5386 ), Vector3( 7.76603, -6.77321, -10.1581 ), Vector3( -7.75617, -11.6418, 2.84953 ), Vector3( 1.92676, -0.301759, -6.58253 ), Vector3( 4.47741, -12.8237, -7.66225 ), Vector3( -8.17332, 8.13736, -2.9391 ), Vector3( 10.8144, 2.88782, -12.4351 ), Vector3( -2.4385, 2.12449, -9.40553 ), Vector3( 3.8387, -13.2678, -1.36197 ), Vector3( -2.93523, -5.45157, -10.8428 ), Vector3( 11.9723, -1.84007, 1.37249 ), Vector3( 0.901588, -6.68207, -5.31721 ), Vector3( 7.38413, -6.94028, -5.5473 ), Vector3( 2.89477, -7.45187, -1.66734 ), Vector3( -11.9594, 11.7613, -0.297396 ), Vector3( -10.8726, -7.39245, -12.9823 ), Vector3( 10.6006, -2.47839, 12.8265 ), Vector3( -12.5902, 4.17824, 11.1713 ), Vector3( 6.99475, -2.82243, 12.2735 ), Vector3( 4.27719, 2.56475, 2.87525 ), Vector3( -0.844948, 12.8888, -1.56147 ), Vector3( 12.5907, 8.73845, -10.4545 ), Vector3( -3.68279, 12.9213, -3.75326 ), Vector3( 6.85339, -6.05881, 6.45331 ), Vector3( -8.48883, -4.86068, -5.85162 ), Vector3( 6.08176, -1.43695, -8.65804 ), Vector3( 1.60683, -2.82393, 5.95749 ), Vector3( -1.14398, 11.308, 3.51899 ), Vector3( -9.01024, -10.1777, 7.39219 ), Vector3( -2.22033, -0.341128, 3.94589 ), Vector3( -5.21386, -14.0979, 5.82191 ), Vector3( 13.1744, 13.5814, 10.7663 ), Vector3( 1.01715, 10.9387, 2.6632 ), Vector3( -6.657, -1.88507, 10.6712 ), Vector3( -12.7708, 0.231215, 12.5605 ), Vector3( -0.230062, 9.90307, 2.43658 ), Vector3( -2.90393, 2.09969, -10.1817 ), Vector3( -3.08015, 0.311249, -4.27766 ), Vector3( 8.67661, 11.7814, -5.72488 ), Vector3( 1.04434, 11.6339, -4.65661 ), Vector3( 2.42372, 2.46034, -12.6561 ), Vector3( 6.13201, -0.553045, 1.39262 ), Vector3( 4.19369, 4.56333, 7.30703 ), Vector3( -9.72629, -9.06184, 7.69141 ), Vector3( 11.9497, -7.59525, 2.55967 ), Vector3( 4.38666, 1.2219, -0.375551 ), Vector3( 11.897, -2.23746, -8.91029 ), Vector3( 8.62776, -9.36955, 8.77515 ), Vector3( -6.11285, 6.39915, 10.989 ), Vector3( -5.63849, 4.31826, 3.11834 ), Vector3( 4.53014, -0.281344, 3.7056 ), Vector3( 5.01049, 10.8934, 3.74126 ), Vector3( 4.4516, -8.29946, 4.20816 ), Vector3( -10.5826, 1.77561, -6.63378 ), Vector3( -7.23069, -11.5981, 9.95744 ), Vector3( -4.37253, 11.9228, 5.15399 ), Vector3( -2.15438, -9.52013, 3.20431 ), Vector3( 2.01824, -1.60323, 12.4774 ), Vector3( -0.588582, -5.5694, -0.469747 ), Vector3( -6.67473, 7.76829, 6.9119 ), Vector3( -1.40976, -13.2491, 2.53489 ), Vector3( -5.13866, 9.23552, -3.68728 ), Vector3( 11.837, -12.0663, -0.270813 ), Vector3( 13.0922, 0.115825, 11.4599 ), Vector3( 11.2431, -12.0173, 8.63874 ), Vector3( 0.174092, -4.64883, -0.363942 ), Vector3( -7.57598, -8.26973, 10.8694 ), Vector3( -10.8796, -14.3242, 5.68777 ), Vector3( -7.20364, 8.42347, -9.00796 ), Vector3( -10.9485, 10.9691, -3.32291 ), Vector3( -6.20447, 8.9154, -11.4144 ), Vector3( 4.9676, -9.50721, 0.978868 ), Vector3( -2.39839, -9.84592, -1.95771 ), Vector3( 1.05945, -9.1314, 7.52386 ), Vector3( -7.04662, 3.00025, 6.89962 ), Vector3( 8.58671, -12.2776, -9.05913 ), Vector3( -9.05038, -1.58885, -3.63567 ), Vector3( 5.1596, 2.82217, -9.14876 ), Vector3( -6.45428, -0.955869, 8.67451 ), Vector3( 11.6176, -6.53242, -7.47901 ), Vector3( -11.0048, 6.49249, 5.28968 ), Vector3( -8.45199, -8.28809, -3.88255 ), Vector3( 4.26957, 1.84124, -4.51285 ) ]
 
-[node name="CSGPolygon" type="CSGPolygon" parent="." index="8"]
-layers = 1
-operation = 0
-use_collision = false
-snap = 0.001
-invert_faces = false
-polygon = PoolVector2Array( 0, 0, 0, 1, 1, 1, 1, 0 )
-mode = 0
-depth = 1.0
-smooth_faces = false
-material = null
+[node name="ball" parent="OnyxSprinkle" index="0" instance=ExtResource( 3 )]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 1.79965, 3.57594, 0.29018 )
+
+[node name="StaticBody" type="StaticBody" parent="." index="4"]
+input_ray_pickable = true
+input_capture_on_drag = false
+collision_layer = 1
+collision_mask = 1
+friction = 1.0
+bounce = 0.0
+constant_linear_velocity = Vector3( 0, 0, 0 )
+constant_angular_velocity = Vector3( 0, 0, 0 )
+_sections_unfolded = [ "Collision" ]
 
