@@ -133,7 +133,7 @@ func update_sprinkler():
 	
 	# update the spawner
 	build_location_array()
-	#spawn_children()
+	spawn_children()
 	
 # Updates the geometry of the volume and the volume_handles responsible.
 func update_volume():
@@ -234,7 +234,8 @@ func build_location_array():
 		else:
 			if face_set.is_point_inside_convex_hull(point) == true:
 				results.append(point)
-				points_found += 1
+				
+			points_found += 1
 	
 	#print("location calculations finished.")
 	spawn_locations = results

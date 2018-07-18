@@ -468,7 +468,7 @@ func build_polygon_extrusion(points, depth, rings, position, extrusion_axis):
 			var c_3 = c_1 + distance_vec
 			var c_4 = c_2 + distance_vec
 
-			var vertices = [c_3, c_1, c_2, c_4]
+			var vertices = [c_1, c_3, c_4, c_2]
 			var tangents = []
 
 
@@ -488,7 +488,7 @@ func build_polygon_extrusion(points, depth, rings, position, extrusion_axis):
 		v_cap_bottom.append( vertex )
 		v_cap_top.append( vertex + total_extrusion_vec )
 		
-	v_cap_bottom.invert()
+	v_cap_top.invert()
 		
 	faces[face_count] = [v_cap_bottom, [], [], [], extrusion_axis.inverse()]
 	faces[face_count + 1] = [v_cap_top, [], [], [], extrusion_axis]
@@ -543,8 +543,10 @@ func is_point_inside_convex_hull(point):
 	# check if the point lies in front of the plane
 	for plane in planes:
 		if plane.is_point_over(point) == true:
+			print("point outside hull!")
 			return false
-			
+	
+	print("point inside hull!")
 	return true
 	
 
