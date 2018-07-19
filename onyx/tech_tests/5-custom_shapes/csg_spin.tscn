@@ -18,11 +18,10 @@ func _ready():
 #	pass
 "
 
-[node name="Spatial" type="Spatial"]
+[node name="Spatial" type="Spatial" index="0"]
 script = SubResource( 1 )
 
 [node name="CSGPolygon" type="CSGPolygon" parent="." index="0"]
-visible = false
 layers = 1
 operation = 0
 use_collision = true

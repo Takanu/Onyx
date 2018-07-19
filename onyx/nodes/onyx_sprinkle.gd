@@ -30,6 +30,11 @@ export(Array) var spawn_locations = []
 # ////////////////////////////////////////////////////////////
 # PROPERTIES
 
+# The plugin this node belongs to.
+var plugin
+
+var control = preload("res://addons/onyx/ui/tools/fence_toolbar.tscn")
+
 # Used to decide whether to update the geometry.  Enables parents to be moved without forcing updates.
 var local_tracked_pos = Vector3(0, 0, 0)
 
@@ -41,7 +46,6 @@ var face_set = load("res://addons/onyx/utilities/face_dictionary.gd").new()
 
 # The debug shape, used to represent the volume in the editor.
 var volume_geom = ImmediateGeometry.new()
-var volume_active_color = Color(1, 1, 0, 1)
 var volume_inactive_color = Color(1, 1, 0, 0.4)
 
 # The node that all spawned nodes will be a child of.
@@ -62,13 +66,13 @@ func _enter_tree():
 	if Engine.editor_hint == true:
 		
 		# get the gizmo
-		var plugin = get_node("/root/EditorNode/Onyx")
+		plugin = get_node("/root/EditorNode/Onyx")
 		gizmo = plugin.create_spatial_gizmo(self)
 	
 		# load geometry
 		volume_geom.set_name("volume")
 		add_child(volume_geom)
-		volume_geom.material_override = mat_solid_color(volume_inactive_color)
+		volume_geom.material_override = mat_solid_color(plugin.WireframeUtility_Unselected)
 	
 		# Initialise volume data if we have none
 		if volume_handles.size() == 0:
@@ -316,9 +320,6 @@ func handle_update(index, coord):
 		update_sprinkler()
 	else:
 		update_volume()
-		
-		
-
 	
 	
 	
@@ -370,6 +371,18 @@ func set_spawn_count(new_value):
 	spawn_count = new_value
 	build_location_array()
 	spawn_children()
+	
+	
+# ////////////////////////////////////////////////////////////
+# SELECTION
+
+func editor_select():
+	volume_geom.material_override = mat_solid_color(plugin.WireframeUtility_Selected)
+	
+	
+func editor_deselect():
+	volume_geom.material_override = mat_solid_color(plugin.WireframeUtility_Unselected)
+	
 	
 # ////////////////////////////////////////////////////////////
 # HELPERS

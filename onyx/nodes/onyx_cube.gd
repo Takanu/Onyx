@@ -10,6 +10,9 @@ export(OriginPosition) var origin_setting = BASE setget set_origin_mode
 # ////////////////////////////////////////////////////////////
 # PROPERTIES
 
+# The plugin this node belongs to
+var plugin
+
 var face_set = load("res://addons/onyx/utilities/face_dictionary.gd").new()
 
 # The handle points that will be used to resize the cube (NOT built in the format required by the gizmo)
@@ -61,7 +64,7 @@ func _enter_tree():
 	if Engine.editor_hint == true:
 		
 		# load gizmos
-		var plugin = get_node("/root/EditorNode/Onyx")
+		plugin = get_node("/root/EditorNode/Onyx")
 		gizmo = plugin.create_spatial_gizmo(self)
 		
 		set_notify_local_transform(true)
@@ -331,6 +334,19 @@ func get_gizmo_collision():
 		return_t.append(triangle * 10)
 		
 	return return_t
+	
+	
+# ////////////////////////////////////////////////////////////
+# SELECTION
+
+func editor_select():
+	pass
+	
+	
+func editor_deselect():
+	pass
+	
+	
 
 # ////////////////////////////////////////////////////////////
 # HELPERS
