@@ -3,7 +3,8 @@ extends Node
 
 # ////////////////////////////////////////////////////////////
 # INFO
-# Used for the generation, storage and rendering of geometry with ImmediateGeometry, to compliment Onyx.
+# Like FaceDictionary, but for geometry building that requires an "additive" approach (AKA - stacking draw calls on top
+# of each other)
 
 # {"name": [[vertices], [colors], [tangents], [uv], normal]}
 
@@ -17,13 +18,14 @@ extends Node
 # ////////////////////////////////////////////////////////////
 # PROPERTIES
 
-var faces = {}
+var faces = []
+
 
 # ////////////////////////////////////////////////////////////
 # ADDITIONS
 
 # Adds a new face with a name, list of vertices and normal.
-func add_face(face_name, vertices, colors, tangents, uvs, normal):
+func add_face(vertices, colors, tangents, uvs, normal):
 	
 	if vertices == null:
 		return
@@ -31,20 +33,19 @@ func add_face(face_name, vertices, colors, tangents, uvs, normal):
 	if vertices.size() < 2:
 		return
 		
-	# if no normal is provided, try to guess
 	if normal == null:
-		var line_a = (vertices[1] - vertices[0]).normalized()
-		var line_b = (vertices[2] - vertices[0]).normalized()
-		normal = line_a.cross(line_b)
+		return
+		
+	var i = faces.size()
 	
-	faces[face_name] = [vertices, colors, tangents, uvs, normal]
+	faces[i] = [vertices, colors, tangents, uvs, normal]
 	
 	
 # ////////////////////////////////////////////////////////////
 # GENERATE / RENDER
 
 # Adds a new face to the list with a nane, position, rotation/normal of the face and the intended size.
-func generate_square_face(face_name, face_position, normal, face_size):
+func generate_square_face(face_position, normal, face_size):
 	
 	# Build a square face with a normal of 0, 0, 1
 	var v_range = float(face_size) / 2.0
@@ -82,8 +83,9 @@ func generate_square_face(face_name, face_position, normal, face_size):
 			
 	#print("Final vertices: ", transformed_vertices)
 	var current_face = [transformed_vertices, [], [], [], normal]
-	faces[face_name] = sort_face(current_face)
-
+	var i = faces.size()
+	faces[i] = sort_face(current_face)
+	
 
 # Renders the available geometry using a provided ImmediateGeometry node.
 func render_geometry(geom):
@@ -116,8 +118,8 @@ func render_geometry(geom):
 			geom.add_vertex(vertices[i])
 		
 		geom.end()
-		
-		
+
+
 # Renders available face geometry using SurfaceTool and returns a mesh.
 func render_surface_geometry():
 	
@@ -149,8 +151,8 @@ func render_surface_geometry():
 	# This generates a lot of errors, not sure why.
 	#surface.generate_tangents()
 	return surface.commit()
-			
-			
+	
+
 # Renders the available geometry as a wireframe, using a provided ImmediateGeometry node.
 func render_wireframe(geom, color):
 	
@@ -173,7 +175,9 @@ func render_wireframe(geom, color):
 		geom.add_vertex(point2)
 		
 		geom.end()
-	
+		
+
+
 
 # ////////////////////////////////////////////////////////////
 # GETTERS
@@ -182,36 +186,36 @@ func render_wireframe(geom, color):
 func get_face_vertices():
 	
 	var results = []
-	for key in faces:
-		var face = faces[key]
+	for face in faces:
 		results.append(face[0])
 	
 	return results
 
 
 # Returns the center face of the defined face.
-func get_centre_point(for_face):
+func get_face_center_point(index):
 	
-	if faces[for_face]:
-		var vertices = faces[for_face][0]
-		var total = Vector3()
+	if faces.size <= index:
+		return null
 		
-		for vertex in vertices:
-			total += vertex
-			
-		total = total / vertices.size()
-		
-		return total
+	var face = faces[index]
+	var vertices = face[0]
+	var total = Vector3()
 	
-	return null
+	for vertex in vertices:
+		total += vertex
+		
+	total = total / vertices.size()
+	
+	return total
+	
 	
 # Returns the faces stored as an array of triangle arrays.
 func get_triangles():
 	
 	var results = PoolVector3Array()
 	
-	for i in faces:
-		var face = faces[i]
+	for face in faces:
 		var vertices = face[0]
 		
 		results.append(vertices[0])
@@ -228,8 +232,7 @@ func get_face_edges():
 	
 	var results = PoolVector3Array()
 	
-	for i in faces:
-		var face = faces[i]
+	for face in faces:
 		var vertices = face[0]
 		
 		for v in vertices.size():
@@ -248,8 +251,7 @@ func get_all_centre_points():
 	
 	var results = PoolVector3Array()
 	
-	for i in faces:
-		var face = faces[i]
+	for face in faces:
 		var vertices = face[0]
 		var total = Vector3()
 		
@@ -270,8 +272,7 @@ func get_bounds():
 	var lowest_bound = Vector3()
 	var highest_bound = Vector3()
 	
-	for i in faces:
-		var face = faces[i]
+	for face in faces:
 		var vertices = face[0]
 		
 		for vertex in vertices:
@@ -293,16 +294,17 @@ func get_bounds():
 	return AABB(lowest_bound, size)
 	
 
+
 # ////////////////////////////////////////////////////////////
 # TRANSFORMS
 
 # Apply a Transformation Matrix to all vertices, normals and tangents currently held.
 func apply_transform(tform):
 	
-	var new_faces = {}
+	var new_faces = []
+	var i = 0
 	
-	for key in faces.keys:
-		var face = faces[key]
+	for face in faces:
 		var vertices = face[0]
 		var tangents = face[2]
 		var normal = face[4]
@@ -322,10 +324,176 @@ func apply_transform(tform):
 		if new_tangents.size() == 0 && tangents.size() != 0:
 			new_tangents = tangents
 			
-		new_faces[key] = [new_normal, face[1], new_tangents, face[3], new_normal]
+		new_faces[i] = [new_normal, face[1], new_tangents, face[3], new_normal]
+		i += 1
 			
 	# replace the old set with the new one
 	faces = new_faces
+
+
+# ////////////////////////////////////////////////////////////
+# BUILDERS
+
+# Adds a cuboid that fits inside a maximum and minimum point.
+func build_cuboid(max_point, min_point):
+	
+	# Build 8 vertex points
+	var top_x = Vector3(max_point.x, min_point.y, max_point.z)
+	var top_xy = Vector3(max_point.x, max_point.y, max_point.z)
+	var top_minus_x = Vector3(min_point.x, max_point.y, max_point.z)
+	var top_minus_xy = Vector3(min_point.x, min_point.y, max_point.z)
+	
+	var bottom_x = Vector3(max_point.x, min_point.y, min_point.z)
+	var bottom_xy = Vector3(max_point.x, max_point.y, min_point.z)
+	var bottom_minus_x = Vector3(min_point.x, max_point.y, min_point.z)
+	var bottom_minus_xy = Vector3(min_point.x, min_point.y, min_point.z)
+	
+	
+	var colors = [Color(1, 1, 1), Color(1, 1, 1), Color(1, 1, 1), Color(1, 1, 1)]
+	var i = faces.size()
+	
+	# X
+	faces[i] = [[top_x, top_xy, bottom_xy, bottom_x], colors, [], [], Vector3(1, 0, 0)]
+	faces[i + 1] = [[top_minus_x, top_minus_xy, bottom_minus_xy, bottom_minus_x], colors, [], [], Vector3(-1, 0, 0)]
+	
+	# Y
+	faces[i + 2] = [[top_xy, top_minus_x, bottom_minus_x, bottom_xy], colors, [], [], Vector3(0, 1, 0)]
+	faces[i + 3] = [[top_x, bottom_x, bottom_minus_xy, top_minus_xy], colors, [], [], Vector3(0, -1, 0)]
+	
+	# Z
+	faces[i + 4] = [[top_x, top_minus_xy, top_minus_x, top_xy], colors, [], [], Vector3(0, 0, 1)]
+	faces[i + 5] = [[bottom_x, bottom_xy, bottom_minus_x, bottom_minus_xy], colors, [], [], Vector3(0, 0, -1)]
+	
+	return faces
+
+
+# Builds a cylinder given the height, width and number of points.  
+func build_cylinder(points, height, radius, rings, position):
+	
+	# generate the initial circle
+	var angle_step = (2.0 * PI) / points
+	var current_angle = 0.0
+	
+	var circle_points = []
+	
+	while current_angle < 2 * PI:
+		
+		# get coordinates
+		var x = radius * cos(current_angle)
+		var y = radius * sin(current_angle)
+		circle_points.append(Vector2(x, y))
+		
+		current_angle += angle_step
+		
+	build_polygon_extrusion(circle_points, height, rings, position, Vector3(0, 1, 0))
+	
+
+
+# Adds a "polygon extrusion" which takes a series of 2D points and extrudes them along the provided axis.
+func build_polygon_extrusion(points, depth, rings, position, extrusion_axis):
+	
+	# make the points given three-dimensional.
+	var start_vertices = []
+	var start_point_normal = Vector3(0, 0, 1)
+	for point in points:
+		start_vertices.append(Vector3(point.x, point.y, 0))
+	
+	var base_vertices = []
+	
+	# Build a basis and rotate it to the normal we desire.
+	var dot = start_point_normal.dot(extrusion_axis)
+	var cross = start_point_normal.cross(extrusion_axis).normalized()
+	
+	#print("DOT/CROSS: ", dot, cross)
+	
+	# If the face angle is where we want it, do nothing.
+	if dot == 1 || dot == -1:
+		#print("No need to rotate!") 
+		for vertex in start_vertices:
+			base_vertices.append(vertex + position)
+
+	# Otherwise rotate it!
+	else:
+		#("Rotating!")
+		var matrix = Basis()
+		matrix = matrix.rotated(cross, PI*((dot + 1) / 2))
+		
+		for vertex in start_vertices:
+			var t_vertex = matrix.xform(vertex)
+			base_vertices.append(t_vertex + position)
+			
+	#print("BASE: ", base_vertices)
+	# get the normals for all current edges
+	var normals = []
+
+	for i in base_vertices.size():
+
+		var a = base_vertices[i]
+		var b = Vector3()
+
+		if i == base_vertices.size() - 1:
+			b = base_vertices[0]
+		else:
+			b = base_vertices[i + 1]
+
+		var line_a = (b - a).normalized()
+		var line_b = Vector3(0, 1, 0)
+		var face_normal = line_a.cross(line_b)
+
+		normals.append(face_normal)
+
+
+	# based on the number of rings, build the faces.
+	var extrusion_step = depth / rings
+	var base_extrusion_depth = Vector3()
+	var distance_vec = extrusion_axis * extrusion_step
+	var face_index = faces.size()
+
+	for i in rings:
+
+		# go roooound the extrusion
+		for i in base_vertices.size():
+
+			var c_1 = base_vertices[i]
+			var c_2 = Vector3()
+			var normal = normals[i]
+
+			if i == base_vertices.size() - 1:
+				c_2 = base_vertices[0]
+			else:
+				c_2 = base_vertices[i + 1]
+
+			c_1 += base_extrusion_depth
+			c_2 += base_extrusion_depth
+			var c_3 = c_1 + distance_vec
+			var c_4 = c_2 + distance_vec
+
+			var vertices = [c_1, c_3, c_4, c_2]
+			var tangents = []
+
+
+			faces[face_index] = [vertices, [], tangents, [], normal]
+			face_index += 1
+
+		base_extrusion_depth += distance_vec
+		
+	# now render the top and bottom caps
+	var v_cap_bottom = []
+	var v_cap_top = []
+	var total_extrusion_vec = extrusion_axis * depth
+	
+	for i in base_vertices.size():
+		
+		var vertex = base_vertices[i]
+		v_cap_bottom.append( vertex )
+		v_cap_top.append( vertex + total_extrusion_vec )
+		
+	v_cap_top.invert()
+		
+	faces[face_index] = [v_cap_bottom, [], [], [], extrusion_axis.inverse()]
+	faces[face_index + 1] = [v_cap_top, [], [], [], extrusion_axis]
+	
+
 
 # ////////////////////////////////////////////////////////////
 # HELPERS
@@ -361,6 +529,7 @@ func sort_face(face):
 		new_face = face
 	
 	return new_face
+	
 
 # (this could be better optimised with an algorithm that doesn't rely on planes)
 # NOTE - ONLY USE IT IF THE SHAPE IS CONVEX, THIS WONT WORK OTHERWISE.
@@ -368,18 +537,17 @@ func is_point_inside_convex_hull(point):
 	
 	# build a plane for every face
 	var planes = []
-	for i in faces.size():
-		var face = faces[i]
+	for face in faces:
 		var vertices = face[0]
 		planes.append( Plane(vertices[0], vertices[1], vertices[2]) )
 	
 	# check if the point lies in front of the plane
 	for plane in planes:
 		if plane.is_point_over(point) == true:
-			#print("point outside hull!")
+			print("point outside hull!")
 			return false
 	
-	#print("point inside hull!")
+	print("point inside hull!")
 	return true
 	
 
@@ -396,8 +564,7 @@ func raycast_convex_hull(to, from):
 	
 	# build a plane for every face
 	var planes = []
-	for i in faces.size():
-		var face = faces[i]
+	for face in faces:
 		var vertices = face[0]
 		planes.append( Plane(vertices[0], vertices[1], vertices[2]) )
 	
@@ -440,4 +607,5 @@ func raycast_convex_hull(to, from):
 
 # Clear all faces
 func clear():
-	faces = {}
+	faces = []
+

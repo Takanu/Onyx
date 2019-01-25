@@ -1,0 +1,46 @@
+[gd_scene load_steps=4 format=2]
+
+[ext_resource path="res://addons/onyx/nodes/onyx_fence.gd" type="Script" id=1]
+[ext_resource path="res://addons/onyx/ui/nodes/onyx_fence.png" type="Texture" id=2]
+
+[sub_resource type="CapsuleShape" id=1]
+
+radius = 1.67288
+height = 3.25812
+
+[node name="Spatial" type="Spatial"]
+
+[node name="StaticBody" type="StaticBody" parent="." index="0"]
+input_ray_pickable = true
+input_capture_on_drag = false
+collision_layer = 1
+collision_mask = 1
+friction = 1.0
+bounce = 0.0
+constant_linear_velocity = Vector3( 0, 0, 0 )
+constant_angular_velocity = Vector3( 0, 0, 0 )
+
+[node name="CollisionShape" type="CollisionShape" parent="StaticBody" index="0"]
+shape = SubResource( 1 )
+disabled = false
+
+[node name="OnyxFence" type="StaticBody" parent="." index="1"]
+input_ray_pickable = true
+input_capture_on_drag = false
+collision_layer = 1
+collision_mask = 1
+friction = 1.0
+bounce = 0.0
+constant_linear_velocity = Vector3( 0, 0, 0 )
+constant_angular_velocity = Vector3( 0, 0, 0 )
+script = ExtResource( 1 )
+__meta__ = {
+"_editor_icon": ExtResource( 2 )
+}
+fence_base_height = 0
+fence_base_width = 0
+fence_offset = 0
+fence_xy_points = null
+fence_z_points = null
+fence_width_points = null
+

@@ -1,0 +1,222 @@
+[gd_scene load_steps=2 format=2]
+
+[ext_resource path="res://addons/onyx/materials/uv_test.tres" type="Material" id=1]
+
+[node name="Spatial" type="Spatial"]
+
+[node name="balcony" type="Spatial" parent="." index="0"]
+editor/display_folded = true
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0.785944, 16.19, 3.40916 )
+
+[node name="balcony" type="CSGBox" parent="balcony" index="0"]
+editor/display_folded = true
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -12, 0 )
+layers = 1
+operation = 0
+use_collision = false
+snap = 0.001
+invert_faces = false
+width = 1.66304
+height = 1.0
+depth = 0.787413
+material = null
+
+[node name="CSGBox2" type="CSGBox" parent="balcony/balcony" index="0"]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -0.0384989, 0.213493, -0.308565 )
+layers = 1
+operation = 2
+use_collision = false
+snap = 0.001
+invert_faces = false
+width = 1.39427
+height = 0.942726
+depth = 0.869527
+material = null
+
+[node name="balcony2" type="CSGBox" parent="balcony" index="1"]
+editor/display_folded = true
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -8, 0 )
+layers = 1
+operation = 0
+use_collision = false
+snap = 0.001
+invert_faces = false
+width = 1.66304
+height = 1.0
+depth = 0.787413
+material = null
+
+[node name="CSGBox2" type="CSGBox" parent="balcony/balcony2" index="0"]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -0.0384989, 0.213493, -0.308565 )
+layers = 1
+operation = 2
+use_collision = false
+snap = 0.001
+invert_faces = false
+width = 1.39427
+height = 0.942726
+depth = 0.869527
+material = null
+
+[node name="balcony3" type="CSGBox" parent="balcony" index="2"]
+editor/display_folded = true
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -4, 0 )
+layers = 1
+operation = 0
+use_collision = false
+snap = 0.001
+invert_faces = false
+width = 1.66304
+height = 1.0
+depth = 0.787413
+material = null
+
+[node name="CSGBox2" type="CSGBox" parent="balcony/balcony3" index="0"]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -0.0384989, 0.213493, -0.308565 )
+layers = 1
+operation = 2
+use_collision = false
+snap = 0.001
+invert_faces = false
+width = 1.39427
+height = 0.942726
+depth = 0.869527
+material = null
+
+[node name="balcony4" type="CSGBox" parent="balcony" index="3"]
+editor/display_folded = true
+layers = 1
+operation = 0
+use_collision = false
+snap = 0.001
+invert_faces = false
+width = 1.66304
+height = 1.0
+depth = 0.787413
+material = null
+
+[node name="CSGBox2" type="CSGBox" parent="balcony/balcony4" index="0"]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -0.0384989, 0.213493, -0.308565 )
+layers = 1
+operation = 2
+use_collision = false
+snap = 0.001
+invert_faces = false
+width = 1.39427
+height = 0.942726
+depth = 0.869527
+material = null
+
+[node name="base" type="CSGBox" parent="." index="1"]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0.669125, 10.743, 0 )
+layers = 1
+operation = 0
+use_collision = false
+snap = 0.001
+invert_faces = false
+width = 3.2268
+height = 12.538
+depth = 2.96553
+material = ExtResource( 1 )
+
+[node name="balcony_doors" type="CSGCombiner" parent="base" index="0"]
+editor/display_folded = true
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -0.669125, -12.2499, 10.8268 )
+layers = 1
+operation = 2
+use_collision = false
+snap = 0.001
+
+[node name="CSGBox3" type="CSGBox" parent="base/balcony_doors" index="0"]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0.747446, 6.69601, -7.525 )
+layers = 1
+operation = 2
+use_collision = false
+snap = 0.001
+invert_faces = false
+width = 1.39427
+height = 1.68111
+depth = 0.575434
+material = null
+
+[node name="CSGBox4" type="CSGBox" parent="base/balcony_doors" index="1"]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0.747446, 10.696, -7.525 )
+layers = 1
+operation = 0
+use_collision = false
+snap = 0.001
+invert_faces = false
+width = 1.39427
+height = 1.68111
+depth = 0.575434
+material = null
+
+[node name="CSGBox5" type="CSGBox" parent="base/balcony_doors" index="2"]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0.747446, 14.696, -7.525 )
+layers = 1
+operation = 0
+use_collision = false
+snap = 0.001
+invert_faces = false
+width = 1.39427
+height = 1.68111
+depth = 0.575434
+material = null
+
+[node name="CSGBox6" type="CSGBox" parent="base/balcony_doors" index="3"]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0.747446, 18.696, -7.525 )
+layers = 1
+operation = 0
+use_collision = false
+snap = 0.001
+invert_faces = false
+width = 1.39427
+height = 1.68111
+depth = 0.575434
+material = null
+
+[node name="entrance" type="CSGBox" parent="base" index="1"]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0.078321, -10.3171, 3.3018 )
+layers = 1
+operation = 2
+use_collision = false
+snap = 0.001
+invert_faces = false
+width = 2.08839
+height = 1.68111
+depth = 0.575434
+material = null
+
+[node name="top_deck" type="CSGBox" parent="base" index="2"]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -0.0517106, 14.7136, 0.0310659 )
+layers = 1
+operation = 2
+use_collision = false
+snap = 0.001
+invert_faces = false
+width = 2.82413
+height = 3.20486
+depth = 2.51023
+material = null
+
+[node name="OmniLight" type="OmniLight" parent="." index="2"]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 18, 11 )
+layers = 1
+light_color = Color( 1, 1, 1, 1 )
+light_energy = 1.0
+light_indirect_energy = 1.0
+light_negative = false
+light_specular = 0.5
+light_bake_mode = 1
+light_cull_mask = -1
+shadow_enabled = false
+shadow_color = Color( 0, 0, 0, 1 )
+shadow_bias = 0.15
+shadow_contact = 0.0
+shadow_reverse_cull_face = false
+editor_only = false
+omni_range = 18.0079
+omni_attenuation = 1.0
+omni_shadow_mode = 1
+omni_shadow_detail = 1
+

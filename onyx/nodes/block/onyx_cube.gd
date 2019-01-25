@@ -4,8 +4,15 @@ extends CSGMesh
 # ////////////////////////////////////////////////////////////
 # TOOL ENUMS
 
+# allows origin point re-orientation, for precise alignments and convenience.
 enum OriginPosition {CENTER, BASE, BASE_CORNER}
-export(OriginPosition) var origin_setting = BASE setget set_origin_mode
+export(OriginPosition) var origin_setting = OriginPosition.BASE setget update_origin_mode
+
+# used to keep track of how to move the origin point into a new position.
+var previous_origin_setting = OriginPosition.BASE
+
+# used to force an origin update when using the sliders to adjust positions.
+export(bool) var update_origin_setting = true setget update_positions
 
 # ////////////////////////////////////////////////////////////
 # PROPERTIES
@@ -13,7 +20,12 @@ export(OriginPosition) var origin_setting = BASE setget set_origin_mode
 # The plugin this node belongs to
 var plugin
 
+# The face set script, used for managing geometric data.
 var face_set = load("res://addons/onyx/utilities/face_dictionary.gd").new()
+
+# Materials assigned to gizmos.
+var gizmo_mat = load("res://addons/onyx/materials/gizmo_t1.tres")
+
 
 # The handle points that will be used to resize the cube (NOT built in the format required by the gizmo)
 var handles = []
@@ -43,9 +55,6 @@ export(float) var y_minus_position = -0.5 setget update_y_minus
 export(float) var z_plus_position = 0.5 setget update_z_plus
 export(float) var z_minus_position = -0.5 setget update_z_minus
 
-# The material that will be mapped to the shape.
-export(Material) var material
-
 
 # ////////////////////////////////////////////////////////////
 # FUNCTIONS
@@ -53,6 +62,9 @@ export(Material) var material
 
 # Global initialisation
 func _enter_tree():
+	
+	#print("ONYXCUBE _enter_tree")
+	
 		
 	# Load and generate geometry
 	generate_geometry(true) 
@@ -65,7 +77,10 @@ func _enter_tree():
 		
 		# load gizmos
 		plugin = get_node("/root/EditorNode/Onyx")
-		gizmo = plugin.create_spatial_gizmo(self)
+		
+		var new_gizmo = plugin.create_spatial_gizmo(self)
+		self.set_gizmo(new_gizmo)
+		print(gizmo)
 		
 		set_notify_local_transform(true)
 		set_notify_transform(true)
@@ -73,10 +88,12 @@ func _enter_tree():
 		
 	
 func _ready():
+	#print("ONYXCUBE _enter_tree")
 	pass
 
 	
 func _notification(what):
+	
 	if what == Spatial.NOTIFICATION_TRANSFORM_CHANGED:
 		
 		# check that transform changes are local only
@@ -85,42 +102,146 @@ func _notification(what):
 			call_deferred("_editor_transform_changed")
 		
 func _editor_transform_changed():
-	generate_geometry(true)
+	
+	# The shape only needs to be re-generated when the origin is moved or when the shape changes.
+	#print("ONYXCUBE _editor_transform_changed")
+	#generate_geometry(true)
+	pass
 
 				
 # ////////////////////////////////////////////////////////////
-# GENERATE GEOMETRY
-	
+# PROPERTY UPDATERS
 	
 # Used when a handle variable changes in the properties panel.
 func update_x_plus(new_value):
+	#print("ONYXCUBE update_x_plus")
+	if new_value < 0:
+		new_value = 0
+		
 	x_plus_position = new_value
 	generate_geometry(true)
 	
+	
 func update_x_minus(new_value):
+	#print("ONYXCUBE update_x_minus")
+	if new_value > 0 || origin_setting == OriginPosition.BASE_CORNER:
+		new_value = 0
+		
 	x_minus_position = new_value
 	generate_geometry(true)
 	
 func update_y_plus(new_value):
+	#print("ONYXCUBE update_y_plus")
+	if new_value < 0:
+		new_value = 0
+		
 	y_plus_position = new_value
 	generate_geometry(true)
 	
 func update_y_minus(new_value):
+	#print("ONYXCUBE update_y_minus")
+	if new_value > 0 || origin_setting == OriginPosition.BASE_CORNER || origin_setting == OriginPosition.BASE:
+		new_value = 0
+		
 	y_minus_position = new_value
 	generate_geometry(true)
 	
 func update_z_plus(new_value):
+	#print("ONYXCUBE update_z_plus")
+	if new_value < 0:
+		new_value = 0
+		
 	z_plus_position = new_value
 	generate_geometry(true)
 	
 func update_z_minus(new_value):
+	#print("ONYXCUBE update_z_minus")
+	if new_value > 0 || origin_setting == OriginPosition.BASE_CORNER:
+		new_value = 0
+		
 	z_minus_position = new_value
 	generate_geometry(true)
 	
+	
+# Used to recalibrate both the origin point location and the position handles.
+func update_positions(new_value):
+	#print("ONYXCUBE update_positions")
+	update_origin_setting = true
+	update_origin()
+	balance_handles()
+	generate_geometry(true)
+	
+func update_origin_mode(new_value):
+	#print("ONYXCUBE set_origin_mode")
+	
+	if previous_origin_setting == new_value:
+		return
+	
+	origin_setting = new_value
+	update_origin()
+	balance_handles()
+	generate_geometry(true)
+	previous_origin_setting = origin_setting
+	
 
+# Updates the origin during generate_geometry() as well as the currently defined handles, 
+# to ensure it's anchored where it needs to be.
+func update_origin():
+	
+	# Used to prevent the function from triggering when not inside the tree.
+	# This happens during duplication and replication and causes incorrect node placement.
+	if self.is_inside_tree() == false:
+		return
+	
+	#print("ONYXCUBE update_origin")
+	
+	if handles.size() == 0:
+		return
+	
+	# based on the current position and properties, work out how much to move the origin.
+	var diff = Vector3(0, 0, 0)
+	
+	match previous_origin_setting:
+		
+		OriginPosition.CENTER:
+			match origin_setting:
+				
+				OriginPosition.BASE:
+					diff = Vector3(0, y_minus_position, 0)
+				OriginPosition.BASE_CORNER:
+					diff = Vector3(x_minus_position, y_minus_position, z_minus_position)
+			
+		OriginPosition.BASE:
+			match origin_setting:
+				
+				OriginPosition.CENTER:
+					diff = Vector3(0, y_plus_position / 2, 0)
+				OriginPosition.BASE_CORNER:
+					diff = Vector3(x_minus_position, 0, z_minus_position)
+					
+		OriginPosition.BASE_CORNER:
+			match origin_setting:
+				
+				OriginPosition.BASE:
+					diff = Vector3(x_plus_position / 2, 0, z_plus_position / 2)
+				OriginPosition.CENTER:
+					diff = Vector3(x_plus_position / 2, y_plus_position / 2, z_plus_position / 2)
+	
+	# Get the difference
+	var new_loc = self.translation + diff
+	var old_loc = self.translation
+	#print("MOVING LOCATION: ", old_loc, " -> ", new_loc)
+	
+	# set it
+	self.global_translate(new_loc - old_loc)
+
+# ////////////////////////////////////////////////////////////
+# GEOMETRY GENERATION
 
 # Using the set handle points, geometry is generated and drawn.  The handles owned by the gizmo are also updated.
 func generate_geometry(fix_to_origin_setting):
+	
+	#print("ONYXCUBE generate_geometry")
 	
 	#print("Regenerating geometry")
 	
@@ -142,7 +263,8 @@ func generate_geometry(fix_to_origin_setting):
 				minPoint = Vector3(0, 0, 0)
 	
 	# Generate the geometry
-	face_set.build_cuboid(maxPoint, minPoint)
+	var mesh_factory = load("res://addons/onyx/utilities/face_dictionary_factory.gd").new()
+	face_set = mesh_factory.build_cuboid(face_set, maxPoint, minPoint)
 	
 	var array_mesh = face_set.render_surface_geometry()
 	var helper = MeshDataTool.new()
@@ -175,8 +297,11 @@ func generate_geometry(fix_to_origin_setting):
 	
 	# Submit the changes to the gizmo
 	if gizmo:
-		gizmo.handle_points = gizmo_handles
-		gizmo.redraw()
+		#print("submitting gizmo changes!")
+		#gizmo.add_handles(gizmo_handles, gizmo_mat)
+		
+		# disabled during alpha
+		update_gizmo()
 		
 	
 	
@@ -207,7 +332,7 @@ func restore_state(state):
 
 
 # Notifies the node that a handle has changed.
-func handle_update(index, coord):
+func handle_change(index, coord):
 	
 	change_handle(index, coord)
 	generate_geometry(false)
@@ -257,72 +382,61 @@ func move_handle(index, coordinate):
 	
 func balance_handles():
 	#print("balancing coordinates")
-		
-	var diff = abs(x_plus_position - x_minus_position)
-	x_plus_position = diff / 2
-	x_minus_position = (diff / 2) * -1
+	#print("ONYXCUBE balance_handles")
 	
-	diff = abs(y_plus_position - y_minus_position)
-	y_plus_position = diff / 2
-	y_minus_position = (diff / 2) * -1
-	
-	diff = abs(z_plus_position - z_minus_position)
-	z_plus_position = diff / 2
-	z_minus_position = (diff / 2) * -1
-	
-
-func set_origin_mode(new_value):
-	
-	origin_setting = new_value
-	update_origin()
-	balance_handles()
-	generate_geometry(true)
-	
-
-func set_use_collision(new_value):
-	
-	use_collision = new_value
-	set_use_collision(use_collision) 
-
-
-# Updates the origin during generate_geometry() as well as the currently defined handles, 
-# to ensure it's anchored where it needs to be.
-func update_origin():
-	
-	if handles.size() == 0:
-		return
-	
-	# Get all handle positions in global terms.
-	var global_handles = []
-	for handle in handles:
-		global_handles.append(self.to_global(handle))
-	
-	var x_coord = 0.0
-	var y_coord = 0.0
-	var z_coord = 0.0
-	
-	# set it based on the current origin position.
 	match origin_setting:
 		OriginPosition.CENTER:
-			x_coord = (handles[0].x + handles[1].x ) / 2
-			y_coord = (handles[2].y + handles[3].y ) / 2
-			z_coord = (handles[4].z + handles[5].z ) / 2
+			var diff = abs(x_plus_position - x_minus_position)
+			x_plus_position = diff / 2
+			x_minus_position = (diff / 2) * -1
+			
+			diff = abs(y_plus_position - y_minus_position)
+			y_plus_position = diff / 2
+			y_minus_position = (diff / 2) * -1
+			
+			diff = abs(z_plus_position - z_minus_position)
+			z_plus_position = diff / 2
+			z_minus_position = (diff / 2) * -1
+		
 		OriginPosition.BASE:
-			x_coord = (handles[0].x + handles[1].x ) / 2
-			y_coord = handles[3].y 
-			z_coord = (handles[4].z + handles[5].z ) / 2
+			var diff = abs(x_plus_position - x_minus_position)
+			x_plus_position = diff / 2
+			x_minus_position = (diff / 2) * -1
+			
+			diff = abs(y_plus_position - y_minus_position)
+			y_plus_position = diff
+			y_minus_position = 0
+			
+			diff = abs(z_plus_position - z_minus_position)
+			z_plus_position = diff / 2
+			z_minus_position = (diff / 2) * -1
+			
 		OriginPosition.BASE_CORNER:
-			x_coord = handles[1].x 
-			y_coord = handles[3].y
-			z_coord = handles[5].z 
+			var diff = abs(x_plus_position - x_minus_position)
+			x_plus_position = diff
+			x_minus_position = 0
+			
+			diff = abs(y_plus_position - y_minus_position)
+			y_plus_position = diff
+			y_minus_position = 0
+			
+			diff = abs(z_plus_position - z_minus_position)
+			z_plus_position = diff
+			z_minus_position = 0
+		
+	# Old code just in case the above stuff breaks.
+#	var diff = abs(x_plus_position - x_minus_position)
+#	x_plus_position = diff / 2
+#	x_minus_position = (diff / 2) * -1
+#
+#	diff = abs(y_plus_position - y_minus_position)
+#	y_plus_position = diff / 2
+#	y_minus_position = (diff / 2) * -1
+#
+#	diff = abs(z_plus_position - z_minus_position)
+#	z_plus_position = diff / 2
+#	z_minus_position = (diff / 2) * -1
 	
-	# Get the difference
-	var new_loc = self.to_global(Vector3(x_coord, y_coord, z_coord))
-	var old_loc = self.translation
-	#print("MOVING LOCATION: ", old_loc, new_loc)
-	
-	# set it
-	self.global_translate(new_loc - old_loc)
 	
 	
 # Updates the collision triangles responsible for detecting cursor selection in the editor.

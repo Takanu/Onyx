@@ -6,7 +6,7 @@ extends Button
 # Allows a button to become part of a toggle set.  When one button is toggled on, any other button
 # in the set will automatically toggle off.
 
-# All buttons must be children of the same parent
+# All buttons that are part of the same toggle set must be children of the same parent.
 
 
 # ////////////////////////////////////////////////////////////

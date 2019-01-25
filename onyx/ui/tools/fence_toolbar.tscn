@@ -85,7 +85,7 @@ align = 1
 script = ExtResource( 2 )
 _sections_unfolded = [ "Hint" ]
 
-[node name="edit" type="Button" parent="." index="3"]
+[node name="position" type="Button" parent="." index="3"]
 anchor_left = 0.0
 anchor_top = 0.0
 anchor_right = 0.0
@@ -93,7 +93,32 @@ anchor_bottom = 0.0
 margin_left = 72.0
 margin_right = 100.0
 margin_bottom = 22.0
-rect_pivot_offset = Vector2( 0, 0 )
+rect_pivot_offset = Vector2( 365.168, -80.6051 )
+rect_clip_content = false
+hint_tooltip = "Remove an existing handle point."
+focus_mode = 2
+mouse_filter = 0
+mouse_default_cursor_shape = 0
+size_flags_horizontal = 2
+size_flags_vertical = 2
+toggle_mode = true
+enabled_focus_mode = 2
+shortcut = null
+group = null
+icon = ExtResource( 4 )
+flat = true
+align = 1
+script = ExtResource( 2 )
+
+[node name="scale" type="Button" parent="." index="4"]
+anchor_left = 0.0
+anchor_top = 0.0
+anchor_right = 0.0
+anchor_bottom = 0.0
+margin_left = 104.0
+margin_right = 132.0
+margin_bottom = 22.0
+rect_pivot_offset = Vector2( 365.168, -80.6051 )
 rect_clip_content = false
 hint_tooltip = "Remove an existing handle point."
 focus_mode = 2

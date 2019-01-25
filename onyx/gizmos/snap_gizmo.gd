@@ -5,7 +5,7 @@ extends EditorSpatialGizmo
 # INFO
 # A basic custom gizmo with built in support for snapping  handle movement to an axis.
 
-# Handle Format: [ handle_position, [snapping_triangle]? ]
+# Handle Format: {set_name: [handle_position, [snapping_triangle]? ] }
 # Line Format: [ PoolVector3Array lines, color ]
 
 # The snapping triangle array should be an array of three vertices, where it's surface normal will be used to create a singular
@@ -17,7 +17,7 @@ extends EditorSpatialGizmo
 
 # Any node that uses this must have the following functions:
 
-# - handle_update(index, coord)
+# - handle_change(index, coord)
 # - handle_commit(index, coord)
 # - get_undo_state()
 # - restore_state(state)
@@ -37,7 +37,7 @@ var handle_billboard = load("res://addons/onyx/gizmos/default_gizmo.tres")
 
 # The points we need to manage for handles, provided by the owning Spatial
 # formatted in tuples of (3d_point [snapping_axes])
-var handle_points = []
+var handle_points = {}
 
 # The index of the handle currently being modified.
 var handle_current_index = -1
@@ -57,8 +57,17 @@ func _init(plugin, node):
 	self.node = node
 	self.plugin = plugin
 	set_spatial_node(node)
+	set_hidden(false)
+	print("gizmo initialization finished.")
 	
+# Godot 3.1 Alpha Workaround
+func force_update():
+	redraw()
+	
+	
+# Redraws all lines, meshes and gizmos.
 func redraw():
+	print("redrawww")
 	if node.gizmo_handles == null:
 		print("No handle points :(")
 		return
@@ -74,7 +83,7 @@ func redraw():
 		for handle in handle_points:
 			points.append(handle[0])
 			
-		add_handles(points, false, true)
+		add_handles(points, handle_billboard, true)
 			
 		for line_set in lines:
 			#print("adding lines~~~")
@@ -163,7 +172,7 @@ func set_handle(index, camera, point):
 	handle_points[index] = [coord, triangle]
 	
 	# Notify the node about this new change
-	node.handle_update(index, coord)
+	node.handle_change(index, coord)
 	
 	redraw()
 	
@@ -179,7 +188,7 @@ func restore_undo_state(state):
 	
 	
 # Commits the handle to the property (if not cancelled).
-func commit_handle(index, restore, cancel):
+func commit_handle(index, restore, cancel=false):
 	if not cancel:
 		
 		var new_data = handle_points[index][0]

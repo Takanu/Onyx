@@ -3,45 +3,17 @@
 [ext_resource path="res://addons/onyx/tech_tests/2-shapes/custom_sphere.gd" type="Script" id=1]
 [ext_resource path="res://addons/onyx/tech_tests/2-shapes/custom_cube.gd" type="Script" id=2]
 
+[node name="Spatial" type="Spatial"]
 
-
-
-
-[node name="Spatial" type="Spatial" index="0"]
-
-[node name="Sphere" type="Spatial" parent="." index="0"]
-
+[node name="Sphere" type="Spatial" parent="."]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -0.55447, 0.481812, 6.66211 )
 script = ExtResource( 1 )
-_sections_unfolded = [ "Transform" ]
 
-[node name="Cube" type="Spatial" parent="." index="1"]
-
+[node name="Cube" type="Spatial" parent="."]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 2.84293, 0.427825, 3.40514 )
 script = ExtResource( 2 )
-_sections_unfolded = [ "Transform" ]
 
-[node name="OmniLight" type="OmniLight" parent="." index="2"]
-
+[node name="OmniLight" type="OmniLight" parent="."]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 1.13858, 2.51775, 0.400299 )
-layers = 1
-light_color = Color( 1, 1, 1, 1 )
-light_energy = 1.0
-light_indirect_energy = 1.0
-light_negative = false
-light_specular = 0.5
-light_bake_mode = 1
-light_cull_mask = -1
-shadow_enabled = false
-shadow_color = Color( 0, 0, 0, 1 )
-shadow_bias = 0.15
-shadow_contact = 0.0
-shadow_reverse_cull_face = false
-editor_only = false
 omni_range = 5.71848
-omni_attenuation = 1.0
-omni_shadow_mode = 1
-omni_shadow_detail = 1
-_sections_unfolded = [ "Light", "Shadow" ]
-
 

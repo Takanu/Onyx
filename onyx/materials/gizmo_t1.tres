@@ -1,0 +1,8 @@
+[gd_resource type="SpatialMaterial" load_steps=2 format=2]
+
+[ext_resource path="res://addons/onyx/materials/textures/onyx_handle_1.png" type="Texture" id=1]
+
+[resource]
+
+albedo_texture = ExtResource( 1 )
+
