@@ -41,7 +41,7 @@ var control = preload("res://addons/onyx/ui/tools/fence_toolbar.tscn")
 var fence_geom = ImmediateGeometry.new()
 
 # The faces that will make up the fence using our FaceArray kit.
-var fence_faces = preload("res://addons/onyx/utilities/face_array.gd").new()
+var fence_faces = preload("res://addons/onyx/utilities/geometry/face_array.gd").new()
 
 # Geometry that will be used exclusively for creating collision points for toolbar operators.
 var click_collision = []

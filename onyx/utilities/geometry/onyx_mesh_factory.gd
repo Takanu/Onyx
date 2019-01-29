@@ -1,5 +1,6 @@
 tool
-extends Node
+extends Reference
+class_name OnyxMeshFactory
 
 # ////////////////////////////////////////////////////////////
 # INFO
@@ -9,16 +10,15 @@ extends Node
 # {"name": [[vertices], [colors], [tangents], [uv], normal]}
 	
 	
-const TriArray = preload("res://addons/onyx/utilities/triangle_array.gd")
 const TWO_PI = PI * 2
 
 # ////////////////////////////////////////////////////////////
 # BUILDERS
 
 # Replaces any geometry held with a cuboid that fits inside a maximum and minimum point.
-func build_cuboid(face_dict, max_point, min_point):
+func build_cuboid(max_point, min_point):
 	
-	face_dict.faces.clear()
+	var tris = OnyxMesh.new()
 	
 	# Build 8 vertex points
 	var top_x = Vector3(max_point.x, min_point.y, max_point.z)
@@ -31,23 +31,58 @@ func build_cuboid(face_dict, max_point, min_point):
 	var bottom_minus_x = Vector3(min_point.x, max_point.y, min_point.z)
 	var bottom_minus_xy = Vector3(min_point.x, min_point.y, min_point.z)
 	
-	
-	var colors = [Color(1, 1, 1), Color(1, 1, 1), Color(1, 1, 1), Color(1, 1, 1)]
-	
 	# X
-	face_dict.faces["x_plus"] = [[top_x, top_xy, bottom_xy, bottom_x], colors, [], [], Vector3(1, 0, 0)]
-	face_dict.faces["x_minus"] = [[top_minus_x, top_minus_xy, bottom_minus_xy, bottom_minus_x], colors, [], [], Vector3(-1, 0, 0)]
+	tris.add_ngon([top_x, top_xy, bottom_xy, bottom_x], [], [], [], [])
+	tris.add_ngon([top_minus_x, top_minus_xy, bottom_minus_xy, bottom_minus_x], [], [], [], [])
 	
 	# Y
-	face_dict.faces["y_plus"] = [[top_xy, top_minus_x, bottom_minus_x, bottom_xy], colors, [], [], Vector3(0, 1, 0)]
-	face_dict.faces["y_minus"] = [[top_x, bottom_x, bottom_minus_xy, top_minus_xy], colors, [], [], Vector3(0, -1, 0)]
+	tris.add_ngon([top_xy, top_minus_x, bottom_minus_x, bottom_xy], [], [], [], [])
+	tris.add_ngon([top_x, bottom_x, bottom_minus_xy, top_minus_xy], [], [], [], [])
 	
 	# Z
-	face_dict.faces["z_plus"] = [[top_x, top_minus_xy, top_minus_x, top_xy], colors, [], [], Vector3(0, 0, 1)]
-	face_dict.faces["z_minus"] = [[bottom_x, bottom_xy, bottom_minus_x, bottom_minus_xy], colors, [], [], Vector3(0, 0, -1)]
+	tris.add_ngon([top_x, top_minus_xy, top_minus_x, top_xy], [], [], [], [])
+	tris.add_ngon([bottom_x, bottom_xy, bottom_minus_x, bottom_minus_xy], [], [], [], [])
 	
-	return face_dict
+	return tris
 	
+	
+	
+func build_circle(points, x_width, z_width, position):
+	
+	var tris = OnyxMesh.new()
+	
+	# generate the initial circle
+	var angle_step = (2.0 * PI) / points
+	var current_angle = 0.0
+	
+	var circle_points = []
+	
+	while current_angle < 2 * PI:
+		
+		# get coordinates
+		var x = x_width * cos(current_angle)
+		var y = z_width * sin(current_angle)
+		x += position.x
+		y += position.y
+		
+		circle_points.append(Vector3(x, 0, y))
+		current_angle += angle_step
+		
+	
+	var i = circle_points.size()
+	while i < circle_points.size():
+		
+		var p1 = circle_points[i]
+		var p2 = circle_points[i + 1]
+		
+		if i == circle_points.size - 1:
+			p2 = circle_points[0]
+			
+		tris.add_tri([position, p1, p2])
+		pass
+		
+		
+	return tris
 	
 	
 func build_sphere(t_dict, height, x_width, z_width, segments, height_segments, position, slice_from, slice_to, hemisphere, generate_cap, generate_ends):
@@ -103,12 +138,12 @@ func build_sphere(t_dict, height, x_width, z_width, segments, height_segments, p
 			vertex4 += position
 			
 			if ring == -1:
-				t_dict.add_tri([vertex1, vertex3, vertex4], [], [], [], null)
+				t_dict.add_tri([vertex1, vertex3, vertex4], [], [], [], [])
 			
 			if ring == height_segments:
-				t_dict.add_tri([vertex3, vertex1, vertex2], [], [], [], null)
+				t_dict.add_tri([vertex3, vertex1, vertex2], [], [], [], [])
 			
-			t_dict.add_quad([vertex1, vertex2, vertex3, vertex4], [], [], [], null)
+			t_dict.add_ngon([vertex1, vertex2, vertex3, vertex4], [], [], [], [])
 			point += 1
 			
 		
@@ -120,9 +155,7 @@ func build_sphere(t_dict, height, x_width, z_width, segments, height_segments, p
 	
 # Builds a cylinder given the height, width and number of points.  
 # Returns an array in the format of face_array.
-func build_cylinder(face_dict, points, height, x_width, y_width, rings, position):
-	
-	face_dict.faces.clear()
+func build_cylinder(points : int, height : float, x_width : float, y_width : float, rings : int, position : Vector3):
 	
 	# generate the initial circle
 	var angle_step = (2.0 * PI) / points
@@ -139,9 +172,7 @@ func build_cylinder(face_dict, points, height, x_width, y_width, rings, position
 		
 		current_angle += angle_step
 		
-	build_polygon_extrusion(face_dict, circle_points, height, rings, position, Vector3(0, 1, 0))
-	return face_dict
-	
+	return build_polygon_extrusion(circle_points, height, rings, position, Vector3(0, 1, 0))
 	
 	
 # A three-dimensional triangle extrusion C:
@@ -153,7 +184,7 @@ func build_wedge(base_x, base_z, point_width, point_position, position):
 	#	|		  |
 	#   X---------X  b3 b4
 	
-	var tris = TriArray.new()
+	var tris = OnyxMesh.new()
 	
 	var base_1 = Vector3(-base_x/2, 0, base_z/2) + position
 	var base_2 = Vector3(base_x/2, 0, base_z/2) + position
@@ -164,11 +195,11 @@ func build_wedge(base_x, base_z, point_width, point_position, position):
 	var point_1 = Vector3(-point_width/2 + point_position.x, point_position.y, point_position.z) + position
 	var point_2 = Vector3(point_width/2 + point_position.x, point_position.y, point_position.z) + position
 	
-	tris.add_tri([base_3, point_1, base_1], [], [], [], null)
-	tris.add_tri([base_2, point_2, base_4], [], [], [], null)
-	tris.add_quad([point_1, point_2, base_2, base_1], [], [], [], null)
-	tris.add_quad([base_3, base_4, point_2, point_1], [], [], [], null)
-	tris.add_quad([base_4, base_3, base_1, base_2], [], [], [], null)
+	tris.add_tri([base_3, point_1, base_1], [], [], [], [])
+	tris.add_tri([base_2, point_2, base_4], [], [], [], [])
+	tris.add_ngon([point_1, point_2, base_2, base_1], [], [], [], [])
+	tris.add_ngon([base_3, base_4, point_2, point_1], [], [], [], [])
+	tris.add_ngon([base_4, base_3, base_1, base_2], [], [], [], [])
 	
 	return tris
 	
@@ -178,10 +209,92 @@ func build_rounded_rect():
 	pass
 	
 	
-# Builds a "polygon extrusion" which takes a series of 2D points and extrudes them along the provided axis.
-func build_polygon_extrusion(face_dict, points, depth, rings, position, extrusion_axis):
+# Builds a ramp between two points based on many many many things.
+func build_ramp(start_tf, end_tf, width, depth, maintain_width, iterations, ramp_fill_type, position):
 	
-	face_dict.faces.clear()
+	#   X---------X  e1 e2
+	#	|         |  e3 e4
+	#	|         |
+	#	|         |
+	#   X---------X  s1 s2
+	#   X---------X  s3 s4
+	
+	var tris = OnyxMesh.new()
+	
+	# get main 4 vectors
+	var v1 = Vector3(-width/2, depth/2, 0)
+	var v2 = Vector3(width/2, depth/2, 0)
+	var v3 = Vector3(-width/2, -depth/2, 0)
+	var v4 = Vector3(width/2, -depth/2, 0)
+	
+	# transform them for the start and finish
+	var s1 = start_tf.xform(v1) + position
+	var s2 = start_tf.xform(v2) + position
+	var s3 = start_tf.xform(v3) + position
+	var s4 = start_tf.xform(v4) + position
+	
+	var e1 = end_tf.xform(v1) + position
+	var e2 = end_tf.xform(v2) + position
+	var e3 = end_tf.xform(v3) + position
+	var e4 = end_tf.xform(v4) + position
+	
+	# ramp fill type conditionals
+	if ramp_fill_type == 1:
+		e3.y = s3.y
+		e4.y = s4.y
+	elif ramp_fill_type == 2:
+		s1.y = e1.y
+		s2.y = e2.y
+	
+	# draw caps
+	tris.add_ngon([s3, s4, s2, s1], [], [], [], [])
+	tris.add_ngon([e4, e3, e1, e2], [], [], [], [])
+	
+	# calculate iterations
+	iterations = iterations + 1
+	var increment = 1.0/float(iterations)
+	
+	var d1 = s1.distance_to(e1) * increment
+	var d2 = s2.distance_to(e2) * increment
+	var d3 = s3.distance_to(e3) * increment
+	var d4 = s4.distance_to(e4) * increment
+	
+	var u1 = e1 - s1
+	var u2 = e2 - s2
+	var u3 = e3 - s3
+	var u4 = e4 - s4
+	u1 = u1.normalized(); u2 = u2.normalized(); u3 = u3.normalized(); u4 = u4.normalized()
+	
+	var i = 0
+	while i < iterations:
+		
+		var s1_move = s1 + (u1 * (d1 * i))
+		var s2_move = s2 + (u2 * (d2 * i))
+		var s3_move = s3 + (u3 * (d3 * i))
+		var s4_move = s4 + (u4 * (d4 * i))
+		
+		var e1_move = s1 + (u1 * (d1 * (i + 1)))
+		var e2_move = s2 + (u2 * (d2 * (i + 1)))
+		var e3_move = s3 + (u3 * (d3 * (i + 1)))
+		var e4_move = s4 + (u4 * (d4 * (i + 1)))
+		
+		tris.add_ngon([s1_move, s2_move, e2_move, e1_move], [], [], [], [])
+		tris.add_ngon([e3_move, e4_move, s4_move, s3_move], [], [], [], [])
+		
+		tris.add_ngon([s4_move, e4_move, e2_move, s2_move], [], [], [], [])
+		tris.add_ngon([e1_move, e3_move, s3_move, s1_move], [], [], [], [])
+		
+		i += 1
+	
+	
+	
+	return tris
+	
+	
+# Builds a "polygon extrusion" which takes a series of 2D points and extrudes them along the provided axis.
+func build_polygon_extrusion(points : Array, depth : float, rings : int, position : Vector3, extrusion_axis : Vector3):
+	
+	var mesh = OnyxMesh.new()
 	
 	# make the points given three-dimensional.
 	var start_vertices = []
@@ -215,7 +328,7 @@ func build_polygon_extrusion(face_dict, points, depth, rings, position, extrusio
 			
 	#print("BASE: ", base_vertices)
 	# get the normals for all current edges
-	var normals = []
+	var normal_list = []
 
 	for i in base_vertices.size():
 
@@ -231,7 +344,7 @@ func build_polygon_extrusion(face_dict, points, depth, rings, position, extrusio
 		var line_b = Vector3(0, 1, 0)
 		var face_normal = line_a.cross(line_b)
 
-		normals.append(face_normal)
+		normal_list.append(face_normal)
 
 
 	# based on the number of rings, build the faces.
@@ -247,7 +360,7 @@ func build_polygon_extrusion(face_dict, points, depth, rings, position, extrusio
 
 			var c_1 = base_vertices[i]
 			var c_2 = Vector3()
-			var normal = normals[i]
+			var normal = normal_list[i]
 
 			if i == base_vertices.size() - 1:
 				c_2 = base_vertices[0]
@@ -261,9 +374,9 @@ func build_polygon_extrusion(face_dict, points, depth, rings, position, extrusio
 
 			var vertices = [c_1, c_3, c_4, c_2]
 			var tangents = []
+			var normals = [normal, normal, normal, normal]
 
-
-			face_dict.faces[face_count] = [vertices, [], tangents, [], normal]
+			mesh.add_ngon(vertices, [], tangents, [], normals)
 			face_count += 1
 
 		base_extrusion_depth += distance_vec
@@ -280,11 +393,14 @@ func build_polygon_extrusion(face_dict, points, depth, rings, position, extrusio
 		v_cap_top.append( vertex + total_extrusion_vec )
 		
 	v_cap_top.invert()
-		
-	face_dict.faces[face_count] = [v_cap_bottom, [], [], [], extrusion_axis.inverse()]
-	face_dict.faces[face_count + 1] = [v_cap_top, [], [], [], extrusion_axis]
 	
-
+	var bottom_normals = [extrusion_axis.inverse(), extrusion_axis.inverse(), extrusion_axis.inverse(), extrusion_axis.inverse()]
+	var top_normals = [extrusion_axis, extrusion_axis, extrusion_axis, extrusion_axis]
+		
+	mesh.add_ngon(v_cap_bottom, [], [], [], bottom_normals)
+	mesh.add_ngon(v_cap_top, [], [], [], top_normals)
+	
+	return mesh
 
 # Builds a "polygon extrusion" which takes a series of 2D points and extrudes them along the provided axis.
 func build_spline_extrusion(points, depth, rings, position, extrusion_axis):

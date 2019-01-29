@@ -21,7 +21,7 @@ export(bool) var update_origin_setting = true setget update_positions
 var plugin
 
 # The face set script, used for managing geometric data.
-var tri_array = load("res://addons/onyx/utilities/triangle_array.gd").new()
+var tri_array = OnyxMesh.new()
 
 # Materials assigned to gizmos.
 var gizmo_mat = load("res://addons/onyx/materials/gizmo_t1.tres")
@@ -238,7 +238,7 @@ func generate_geometry(fix_to_origin_setting):
 			position = Vector3(max_x / 2, 0, base_z_size / 2)
 			
 	
-	var mesh_factory = load("res://addons/onyx/utilities/face_dictionary_factory.gd").new()
+	var mesh_factory = OnyxMeshFactory.new()
 	tri_array = mesh_factory.build_wedge(base_x_size, base_z_size, point_size, point_position, position)
 	
 	var array_mesh = tri_array.render_surface_geometry()

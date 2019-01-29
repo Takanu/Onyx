@@ -21,7 +21,7 @@ export(bool) var update_origin_setting = true setget update_positions
 var plugin
 
 # The face set script, used for managing geometric data.
-var face_set = load("res://addons/onyx/utilities/face_dictionary.gd").new()
+var tri_array = OnyxMesh.new()
 
 # Materials assigned to gizmos.
 var gizmo_mat = load("res://addons/onyx/materials/gizmo_t1.tres")
@@ -55,6 +55,10 @@ export(float) var y_minus_position = -0.5 setget update_y_minus
 export(float) var z_plus_position = 0.5 setget update_z_plus
 export(float) var z_minus_position = -0.5 setget update_z_minus
 
+export(float) var bevel_size = 0.2 setget update_bevel_size
+enum BevelTarget {Y_AXIS, X_AXIS, Z_AXIS}
+export(BevelTarget) var bevel_target = BevelTarget.Y_AXIS setget update_bevel_target
+
 
 # ////////////////////////////////////////////////////////////
 # FUNCTIONS
@@ -70,7 +74,7 @@ func _enter_tree():
 	generate_geometry(true) 
 		
 	# set gizmo stuff
-	old_handles = face_set.get_all_centre_points()
+	#old_handles = face_set.get_all_centre_points()
 		
 	# If this is being run in the editor, sort out the gizmo.
 	if Engine.editor_hint == true:
@@ -163,6 +167,18 @@ func update_z_minus(new_value):
 	generate_geometry(true)
 	
 	
+func update_bevel_size(new_value):
+	if new_value > 0:
+		new_value = 0
+		
+	bevel_size = new_value
+	generate_geometry(true)
+	
+func update_bevel_target(new_value):
+	bevel_target = new_value
+	generate_geometry(true)
+	
+	
 # Used to recalibrate both the origin point location and the position handles.
 func update_positions(new_value):
 	#print("ONYXCUBE update_positions")
@@ -242,7 +258,6 @@ func update_origin():
 func generate_geometry(fix_to_origin_setting):
 	
 	#print("ONYXCUBE generate_geometry")
-	
 	#print("Regenerating geometry")
 	
 	var maxPoint = Vector3(x_plus_position, y_plus_position, z_plus_position)
@@ -263,10 +278,10 @@ func generate_geometry(fix_to_origin_setting):
 				minPoint = Vector3(0, 0, 0)
 	
 	# Generate the geometry
-	var mesh_factory = load("res://addons/onyx/utilities/face_dictionary_factory.gd").new()
-	face_set = mesh_factory.build_cuboid(face_set, maxPoint, minPoint)
+	var mesh_factory = OnyxMeshFactory.new()
+	tri_array = mesh_factory.build_cuboid(maxPoint, minPoint)
 	
-	var array_mesh = face_set.render_surface_geometry()
+	var array_mesh = tri_array.render_surface_geometry()
 	var helper = MeshDataTool.new()
 	var mesh = Mesh.new()
 	
@@ -276,32 +291,32 @@ func generate_geometry(fix_to_origin_setting):
 	
 	# Re-submit the handle positions based on the built faces, so other handles that aren't the
 	# focus of a handle operation are being updated
-	var centre_points = face_set.get_all_centre_points()
-	handles = centre_points
-	#print(handles[0])
-	
-	x_plus_position = centre_points[0].x
-	x_minus_position = centre_points[1].x
-	y_plus_position = centre_points[2].y
-	y_minus_position = centre_points[3].y
-	z_plus_position = centre_points[4].z
-	z_minus_position = centre_points[5].z
-	
-	
-	# Build handle points in the required gizmo format.
-	var face_list = face_set.get_face_vertices()
-	
-	gizmo_handles = []
-	for i in handles.size():
-		gizmo_handles.append([handles[i], face_list[i] ])
-	
-	# Submit the changes to the gizmo
-	if gizmo:
-		#print("submitting gizmo changes!")
-		#gizmo.add_handles(gizmo_handles, gizmo_mat)
-		
-		# disabled during alpha
-		update_gizmo()
+#	var centre_points = face_set.get_all_centre_points()
+#	handles = centre_points
+#	#print(handles[0])
+#
+#	x_plus_position = centre_points[0].x
+#	x_minus_position = centre_points[1].x
+#	y_plus_position = centre_points[2].y
+#	y_minus_position = centre_points[3].y
+#	z_plus_position = centre_points[4].z
+#	z_minus_position = centre_points[5].z
+#
+#
+#	# Build handle points in the required gizmo format.
+#	var face_list = face_set.get_face_vertices()
+#
+#	gizmo_handles = []
+#	for i in handles.size():
+#		gizmo_handles.append([handles[i], face_list[i] ])
+#
+#	# Submit the changes to the gizmo
+#	if gizmo:
+#		#print("submitting gizmo changes!")
+#		#gizmo.add_handles(gizmo_handles, gizmo_mat)
+#
+#		# disabled during alpha
+#		update_gizmo()
 		
 	
 	
@@ -347,7 +362,7 @@ func handle_commit(index, coord):
 	generate_geometry(true)
 	
 	# store old handle points for later.
-	old_handles = face_set.get_all_centre_points()
+#	old_handles = face_set.get_all_centre_points()
 	
 			
 # Returns the handle with the corresponding coordinates.	
@@ -441,14 +456,14 @@ func balance_handles():
 	
 # Updates the collision triangles responsible for detecting cursor selection in the editor.
 func get_gizmo_collision():
-	var triangles = face_set.get_triangles()
-	
-	var return_t = PoolVector3Array()
-	for triangle in triangles:
-		return_t.append(triangle * 10)
-		
-	return return_t
-	
+##	var triangles = face_set.get_triangles()
+#
+#	var return_t = PoolVector3Array()
+##	for triangle in triangles:
+#		return_t.append(triangle * 10)
+#
+#	return return_t
+	pass
 	
 # ////////////////////////////////////////////////////////////
 # SELECTION

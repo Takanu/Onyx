@@ -9,11 +9,13 @@ const OnyxCube = preload("./nodes/block/onyx_cube.gd")
 const OnyxCylinder = preload("./nodes/block/onyx_cylinder.gd")
 const OnyxSphere = preload("./nodes/block/onyx_sphere.gd")
 const OnyxWedge = preload("./nodes/block/onyx_wedge.gd")
+const OnyxRamp = preload("./nodes/block/onyx_ramp.gd")
+const OnyxRoundedRect = preload("./nodes/block/onyx_rounded_cube.gd")
 
 const OnyxSprinkle  = preload("./nodes/onyx_sprinkle.gd")
 const OnyxFence  = preload("./nodes/onyx_fence.gd")
 
-const NodeHandlerList = [OnyxCube, OnyxCylinder, OnyxSphere, OnyxWedge, OnyxSprinkle, OnyxFence]
+const NodeHandlerList = [OnyxCube, OnyxCylinder, OnyxSphere, OnyxWedge, OnyxRoundedRect, OnyxSprinkle, OnyxFence]
 
 
 # Gizmo types
@@ -51,6 +53,8 @@ func _enter_tree():
 	add_custom_type("OnyxCylinder", "CSGMesh", preload("./nodes/block/onyx_cylinder.gd"), preload("res://addons/onyx/ui/nodes/onyx_block.png"))
 	add_custom_type("OnyxSphere", "CSGMesh", preload("./nodes/block/onyx_sphere.gd"), preload("res://addons/onyx/ui/nodes/onyx_block.png"))
 	add_custom_type("OnyxWedge", "CSGMesh", preload("./nodes/block/onyx_wedge.gd"), preload("res://addons/onyx/ui/nodes/onyx_block.png"))
+	add_custom_type("OnyxRamp", "CSGMesh", preload("./nodes/block/onyx_ramp.gd"), preload("res://addons/onyx/ui/nodes/onyx_block.png"))
+	add_custom_type("OnyxRoundedCube", "CSGMesh", preload("./nodes/block/onyx_rounded_cube.gd"), preload("res://addons/onyx/ui/nodes/onyx_block.png"))
 	
 	# other core types
 	add_custom_type("OnyxSprinkle", "Spatial", preload("./nodes/onyx_sprinkle.gd"), preload("res://addons/onyx/ui/nodes/onyx_sprinkle.png"))

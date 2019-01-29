@@ -61,7 +61,7 @@ var local_tracked_pos = Vector3(0, 0, 0)
 var gizmo_handles = []
 
 # The faces used to generate the shape.
-var face_set = load("res://addons/onyx/utilities/face_dictionary.gd").new()
+var face_set = load("res://addons/onyx/utilities/geometry/face_dictionary.gd").new()
 
 # The debug shape, used to represent the volume in the editor.
 var volume_geom = ImmediateGeometry.new()
