@@ -16,32 +16,75 @@ const TWO_PI = PI * 2
 # BUILDERS
 
 # Replaces any geometry held with a cuboid that fits inside a maximum and minimum point.
-func build_cuboid(max_point, min_point):
+func build_cuboid(max_point, min_point, unwrap_mode):
 	
 	var tris = OnyxMesh.new()
 	
 	# Build 8 vertex points
-	var top_x = Vector3(max_point.x, min_point.y, max_point.z)
-	var top_xy = Vector3(max_point.x, max_point.y, max_point.z)
-	var top_minus_x = Vector3(min_point.x, max_point.y, max_point.z)
-	var top_minus_xy = Vector3(min_point.x, min_point.y, max_point.z)
+	var top_x = Vector3(max_point.x, max_point.y, min_point.z)
+	var top_xz = Vector3(max_point.x, max_point.y, max_point.z)
+	var top_z = Vector3(min_point.x, max_point.y, max_point.z)
+	var top = Vector3(min_point.x, max_point.y, min_point.z)
 	
 	var bottom_x = Vector3(max_point.x, min_point.y, min_point.z)
-	var bottom_xy = Vector3(max_point.x, max_point.y, min_point.z)
-	var bottom_minus_x = Vector3(min_point.x, max_point.y, min_point.z)
-	var bottom_minus_xy = Vector3(min_point.x, min_point.y, min_point.z)
+	var bottom_xz = Vector3(max_point.x, min_point.y, max_point.z)
+	var bottom_z = Vector3(min_point.x, min_point.y, max_point.z)
+	var bottom = Vector3(min_point.x, min_point.y, min_point.z)
 	
+	# Build the 6 vertex Lists
+	var vec_x_minus = [bottom, top, top_z, bottom_z]
+	var vec_x_plus = [bottom_xz, top_xz, top_x, bottom_x]
+	var vec_y_minus = [bottom_x, bottom, bottom_z, bottom_xz]
+	var vec_y_plus = [top, top_x, top_xz, top_z]
+	var vec_z_minus = [bottom_x, top_x, top, bottom]
+	var vec_z_plus = [bottom_z, top_z, top_xz, bottom_xz]
+	
+	# UV PREP
+	var uv_x_plus = [];  var uv_x_minus = []; 
+	var uv_y_plus = [];  var uv_y_minus = []; 
+	var uv_z_plus = [];  var uv_z_minus = []; 
+	
+	# UNWRAP MODE - 1:1 Overlap
+	if unwrap_mode == 0:
+		var uv_test = [Vector2(0.0, 1.0), Vector2(0.0, 0.0), Vector2(1.0, 0.0), Vector2(1.0, 1.0)]
+		uv_x_plus = uv_test;  uv_x_minus = uv_test;
+		uv_y_plus = uv_test;  uv_y_minus = uv_test;
+		uv_z_plus = uv_test;  uv_z_minus = uv_test;
+		
+	# UNWRAP MODE - PROPORTIONAL OVERLAP
+	elif unwrap_mode == 1:
+		
+		# Project the current vertices to a direct axis.
+		var x_project_minus = vec_x_minus
+		var x_project_plus = vec_x_plus
+		var y_project_minus = vec_y_minus
+		var y_project_plus = vec_y_plus
+		var z_project_minus = vec_z_minus
+		var z_project_plus = vec_z_plus
+		
+		# Crunch the vectors down into Vector2's
+		x_project_minus = OnyxUtils.vector3_to_vector2_array(x_project_minus, 'X', 'Z')
+		x_project_plus = OnyxUtils.vector3_to_vector2_array(x_project_plus, 'X', 'Z')
+		y_project_minus = OnyxUtils.vector3_to_vector2_array(y_project_minus, 'Y', 'Z')
+		y_project_plus = OnyxUtils.vector3_to_vector2_array(y_project_plus, 'Y', 'Z')
+		z_project_minus = OnyxUtils.vector3_to_vector2_array(z_project_minus, 'Z', 'X')
+		z_project_plus = OnyxUtils.vector3_to_vector2_array(z_project_plus, 'Z', 'X')
+		
+		uv_x_minus = x_project_minus;  uv_x_plus = x_project_plus;
+		uv_y_minus = y_project_minus;  uv_y_plus = y_project_plus;
+		uv_z_minus = z_project_minus;  uv_z_plus = z_project_plus;
+		
 	# X
-	tris.add_ngon([top_x, top_xy, bottom_xy, bottom_x], [], [], [], [])
-	tris.add_ngon([top_minus_x, top_minus_xy, bottom_minus_xy, bottom_minus_x], [], [], [], [])
+	tris.add_ngon(vec_x_minus, [], [], uv_x_minus, [])
+	tris.add_ngon(vec_x_plus, [], [], uv_x_plus, [])
 	
 	# Y
-	tris.add_ngon([top_xy, top_minus_x, bottom_minus_x, bottom_xy], [], [], [], [])
-	tris.add_ngon([top_x, bottom_x, bottom_minus_xy, top_minus_xy], [], [], [], [])
+	tris.add_ngon(vec_y_minus, [], [], uv_y_minus, [])
+	tris.add_ngon(vec_y_plus, [], [], uv_y_plus, [])
 	
 	# Z
-	tris.add_ngon([top_x, top_minus_xy, top_minus_x, top_xy], [], [], [], [])
-	tris.add_ngon([bottom_x, bottom_xy, bottom_minus_x, bottom_minus_xy], [], [], [], [])
+	tris.add_ngon(vec_z_minus, [], [], uv_z_minus, [])
+	tris.add_ngon(vec_z_plus, [], [], uv_z_plus, [])
 	
 	return tris
 	
@@ -85,7 +128,9 @@ func build_circle(points, x_width, z_width, position):
 	return tris
 	
 	
-func build_sphere(t_dict, height, x_width, z_width, segments, height_segments, position, slice_from, slice_to, hemisphere, generate_cap, generate_ends):
+func build_sphere(height, x_width, z_width, segments, height_segments, position, slice_from, slice_to, hemisphere, generate_cap, generate_ends):
+	
+	var onyx_mesh = OnyxMesh.new()
 	
 	# The increments that vertex plotting will be broken up into
 	var deltaTheta = PI/height_segments
@@ -137,25 +182,29 @@ func build_sphere(t_dict, height, x_width, z_width, segments, height_segments, p
 			vertex3 += position
 			vertex4 += position
 			
+			var uvs = [Vector2(0.0, 1.0), Vector2(0.0, 0.0), Vector2(1.0, 0.0), Vector2(1.0, 1.0)]
+			
 			if ring == -1:
-				t_dict.add_tri([vertex1, vertex3, vertex4], [], [], [], [])
+				uvs = [Vector2(0.0, 1.0), Vector2(0.5, 1.0), Vector2(1.0, 1.0)]
+				onyx_mesh.add_tri([vertex1, vertex3, vertex4], [], [], uvs, [])
 			
 			if ring == height_segments:
-				t_dict.add_tri([vertex3, vertex1, vertex2], [], [], [], [])
+				uvs = [Vector2(0.0, 1.0), Vector2(0.5, 1.0), Vector2(1.0, 1.0)]
+				onyx_mesh.add_tri([vertex3, vertex1, vertex2], [], [], uvs, [])
 			
-			t_dict.add_ngon([vertex1, vertex2, vertex3, vertex4], [], [], [], [])
+			onyx_mesh.add_ngon([vertex1, vertex2, vertex3, vertex4], [], [], uvs, [])
 			point += 1
 			
 		
 		ring += 1
 			
-	return t_dict
+	return onyx_mesh
 	
 	
 	
 # Builds a cylinder given the height, width and number of points.  
 # Returns an array in the format of face_array.
-func build_cylinder(points : int, height : float, x_width : float, y_width : float, rings : int, position : Vector3):
+func build_cylinder(points : int, height : float, x_width : float, y_width : float, rings : int, position : Vector3, unwrap_method : int):
 	
 	# generate the initial circle
 	var angle_step = (2.0 * PI) / points
@@ -172,7 +221,7 @@ func build_cylinder(points : int, height : float, x_width : float, y_width : flo
 		
 		current_angle += angle_step
 		
-	return build_polygon_extrusion(circle_points, height, rings, position, Vector3(0, 1, 0))
+	return build_polygon_extrusion(circle_points, height, rings, position, Vector3(0, 1, 0), unwrap_method)
 	
 	
 # A three-dimensional triangle extrusion C:
@@ -180,7 +229,7 @@ func build_wedge(base_x, base_z, point_width, point_position, position):
 	
 	#   X---------X  b1 b2
 	#	|         |
-	#		X---------X   p1 p2
+	#		X---------X   p2 p1
 	#	|		  |
 	#   X---------X  b3 b4
 	
@@ -195,11 +244,14 @@ func build_wedge(base_x, base_z, point_width, point_position, position):
 	var point_1 = Vector3(-point_width/2 + point_position.x, point_position.y, point_position.z) + position
 	var point_2 = Vector3(point_width/2 + point_position.x, point_position.y, point_position.z) + position
 	
-	tris.add_tri([base_3, point_1, base_1], [], [], [], [])
-	tris.add_tri([base_2, point_2, base_4], [], [], [], [])
-	tris.add_ngon([point_1, point_2, base_2, base_1], [], [], [], [])
-	tris.add_ngon([base_3, base_4, point_2, point_1], [], [], [], [])
-	tris.add_ngon([base_4, base_3, base_1, base_2], [], [], [], [])
+	var triangle_uv = [Vector2(0.0, 1.0), Vector2(0.5, 0.0), Vector2(1.0, 1.0)]
+	var quad_uv = [Vector2(0.0, 0.0), Vector2(1.0, 0.0), Vector2(1.0, 1.0), Vector2(0.0, 1.0)]
+	
+	tris.add_tri([base_3, point_1, base_1], [], [], triangle_uv, [])
+	tris.add_tri([base_2, point_2, base_4], [], [], triangle_uv, [])
+	tris.add_ngon([point_1, point_2, base_2, base_1], [], [], quad_uv, [])
+	tris.add_ngon([point_2, point_1, base_3, base_4], [], [], quad_uv, [])
+	tris.add_ngon([base_1, base_2, base_4, base_3], [], [], quad_uv, [])
 	
 	return tris
 	
@@ -245,10 +297,18 @@ func build_ramp(start_tf, end_tf, width, depth, maintain_width, iterations, ramp
 	elif ramp_fill_type == 2:
 		s1.y = e1.y
 		s2.y = e2.y
+		
+	# UV prep
+	var diff_1 = e1 - s1
+	var diff_2 = e2 - s2
+	var diff_3 = e3 - s3
+	var diff_4 = e4 - s4
 	
 	# draw caps
-	tris.add_ngon([s3, s4, s2, s1], [], [], [], [])
-	tris.add_ngon([e4, e3, e1, e2], [], [], [], [])
+	var cap_uv = [Vector2(1.0, 1.0), Vector2(0.0, 1.0), Vector2(0.0, 0.0), Vector2(1.0, 0.0)]
+	tris.add_ngon([s3, s4, s2, s1], [], [], cap_uv, [])
+	tris.add_ngon([e4, e3, e1, e2], [], [], cap_uv, [])
+	
 	
 	# calculate iterations
 	iterations = iterations + 1
@@ -278,11 +338,16 @@ func build_ramp(start_tf, end_tf, width, depth, maintain_width, iterations, ramp
 		var e3_move = s3 + (u3 * (d3 * (i + 1)))
 		var e4_move = s4 + (u4 * (d4 * (i + 1)))
 		
-		tris.add_ngon([s1_move, s2_move, e2_move, e1_move], [], [], [], [])
-		tris.add_ngon([e3_move, e4_move, s4_move, s3_move], [], [], [], [])
+		var start_uv_z = 0
+		var end_uv_z = 1
 		
-		tris.add_ngon([s4_move, e4_move, e2_move, s2_move], [], [], [], [])
-		tris.add_ngon([e1_move, e3_move, s3_move, s1_move], [], [], [], [])
+		var iteration_uv = [Vector2(1.0, end_uv_z), Vector2(0.0, end_uv_z), Vector2(0.0, start_uv_z), Vector2(1.0, start_uv_z)]
+		
+		tris.add_ngon([s1_move, s2_move, e2_move, e1_move], [], [], iteration_uv, [])
+		tris.add_ngon([e3_move, e4_move, s4_move, s3_move], [], [], iteration_uv, [])
+		
+		tris.add_ngon([s4_move, e4_move, e2_move, s2_move], [], [], iteration_uv, [])
+		tris.add_ngon([e3_move, s3_move, s1_move, e1_move], [], [], iteration_uv, [])
 		
 		i += 1
 	
@@ -292,7 +357,7 @@ func build_ramp(start_tf, end_tf, width, depth, maintain_width, iterations, ramp
 	
 	
 # Builds a "polygon extrusion" which takes a series of 2D points and extrudes them along the provided axis.
-func build_polygon_extrusion(points : Array, depth : float, rings : int, position : Vector3, extrusion_axis : Vector3):
+func build_polygon_extrusion(points : Array, depth : float, rings : int, position : Vector3, extrusion_axis : Vector3, unwrap_method : int):
 	
 	var mesh = OnyxMesh.new()
 	
@@ -357,6 +422,12 @@ func build_polygon_extrusion(points : Array, depth : float, rings : int, positio
 
 		# go roooound the extrusion
 		for i in base_vertices.size():
+			
+			# X--------X  c_3   c_4
+			# |        |
+			# |        |
+			# |        |
+			# X--------X  c_1   c_2
 
 			var c_1 = base_vertices[i]
 			var c_2 = Vector3()
@@ -375,8 +446,35 @@ func build_polygon_extrusion(points : Array, depth : float, rings : int, positio
 			var vertices = [c_1, c_3, c_4, c_2]
 			var tangents = []
 			var normals = [normal, normal, normal, normal]
+			
+			# UNWRAP METHOD 0 - CLAMPED OVERLAP
+			var uvs = []
+			if unwrap_method == 0:
+				uvs = [Vector2(0.0, 1.0), Vector2(0.0, 0.0), Vector2(1.0, 0.0), Vector2(1.0, 1.0)]
 
-			mesh.add_ngon(vertices, [], tangents, [], normals)
+			# UNWRAP METHOD 1 - PROPORTIONAL OVERLAP
+			elif unwrap_method == 1:
+				var face_transform = OnyxUtils.get_uv_triangle_transform([c_1, c_3, c_2])
+				
+				print('TRANSFORM = ', face_transform)
+				print('VERTICES = ', vertices)
+				uvs = OnyxUtils.transform_vector3_array(vertices, face_transform)
+				
+				# ATTEMPT 1
+				var uv_ranges = OnyxUtils.get_vector2_ranges(uvs)
+				print('TRANSFORM UVS = ', uvs)
+
+				uvs = OnyxUtils.vector3_to_vector2_array(uvs, 'Y', 'Z')
+				uv_ranges = OnyxUtils.get_vector2_ranges(uvs)
+				print('NEW_UVS = ', uvs)
+
+				# ATTEMPT 2
+				
+				
+				print('xxxxxxxxxxxxxxxxxxxx')
+				
+			# ADD FACE
+			mesh.add_ngon(vertices, [], tangents, uvs, normals)
 			face_count += 1
 
 		base_extrusion_depth += distance_vec
@@ -394,11 +492,30 @@ func build_polygon_extrusion(points : Array, depth : float, rings : int, positio
 		
 	v_cap_top.invert()
 	
-	var bottom_normals = [extrusion_axis.inverse(), extrusion_axis.inverse(), extrusion_axis.inverse(), extrusion_axis.inverse()]
-	var top_normals = [extrusion_axis, extrusion_axis, extrusion_axis, extrusion_axis]
+	#var bottom_normals = [extrusion_axis.inverse(), extrusion_axis.inverse(), extrusion_axis.inverse(), extrusion_axis.inverse()]
+	#var top_normals = [extrusion_axis, extrusion_axis, extrusion_axis, extrusion_axis]
+	
+	# UVS
+	var utils = OnyxUtils.new()
+	var top_bounds = utils.get_vector3_ranges(v_cap_top)
+	var bottom_bounds = utils.get_vector3_ranges(v_cap_bottom)
+	
+	var top_range = top_bounds['max'] - top_bounds['min']
+	var bottom_range = bottom_bounds['max'] - bottom_bounds['min']
+	
+	var top_uvs = []
+	var bottom_uvs = []
+	for vector in v_cap_top:
+		var uv = Vector2(vector.x / top_range.x, vector.z / top_range.z)
+		uv = uv + Vector2(0.5, 0.5)
+		top_uvs.append(uv)
+	for vector in v_cap_bottom:
+		var uv = Vector2(vector.x / bottom_range.x, vector.z / bottom_range.z)
+		uv = uv + Vector2(0.5, 0.5)
+		bottom_uvs.append(uv)
 		
-	mesh.add_ngon(v_cap_bottom, [], [], [], bottom_normals)
-	mesh.add_ngon(v_cap_top, [], [], [], top_normals)
+	mesh.add_ngon(v_cap_top, [], [], top_uvs, [])
+	mesh.add_ngon(v_cap_bottom, [], [], bottom_uvs, [])
 	
 	return mesh
 

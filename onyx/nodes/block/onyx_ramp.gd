@@ -21,7 +21,7 @@ export(bool) var update_origin_setting = true setget update_positions
 var plugin
 
 # The face set script, used for managing geometric data.
-var tri_array = OnyxMesh.new()
+var onyx_mesh = OnyxMesh.new()
 
 # Materials assigned to gizmos.
 var gizmo_mat = load("res://addons/onyx/materials/gizmo_t1.tres")
@@ -58,6 +58,17 @@ export(int) var iterations = 0 setget update_iterations
 enum RampFillType {NONE, MINUS_Y, PLUS_Y}
 export(RampFillType) var ramp_fill_type = RampFillType.NONE setget update_ramp_fill_type
 
+# UVS
+enum UnwrapMethod {DIRECT_OVERLAP, PROPORTIONAL_OVERLAP, DIRECT_ZONE, PROPORTIONAL_ZONE}
+export(UnwrapMethod) var unwrap_method = UnwrapMethod.DIRECT_OVERLAP setget update_unwrap_method
+
+export(Vector2) var uv_scale = Vector2(1.0, 1.0) setget update_uv_scale
+export(bool) var flip_uvs_horizontally = false setget update_flip_uvs_horizontally
+export(bool) var flip_uvs_vertically = false setget update_flip_uvs_vertically
+
+# MATERIALS
+export(Material) var material = null setget update_material
+
 
 # ////////////////////////////////////////////////////////////
 # FUNCTIONS
@@ -70,7 +81,7 @@ func _enter_tree():
 	generate_geometry(true) 
 		
 	# set gizmo stuff
-#	old_handles = tri_array.get_all_centre_points()
+#	old_handles = onyx_mesh.get_all_centre_points()
 		
 	# If this is being run in the editor, sort out the gizmo.
 	if Engine.editor_hint == true:
@@ -170,7 +181,36 @@ func update_origin_mode(new_value):
 	generate_geometry(true)
 	previous_origin_setting = origin_setting
 	
+	
+func update_unwrap_method(new_value):
+	unwrap_method = new_value
+	generate_geometry(true)
 
+func update_uv_scale(new_value):
+	uv_scale = new_value
+	generate_geometry(true)
+
+func update_flip_uvs_horizontally(new_value):
+	flip_uvs_horizontally = new_value
+	generate_geometry(true)
+	
+func update_flip_uvs_vertically(new_value):
+	flip_uvs_vertically = new_value
+	generate_geometry(true)
+	
+func update_material(new_value):
+	material = new_value
+	
+	var array_mesh = onyx_mesh.render_surface_geometry(material)
+	var helper = MeshDataTool.new()
+	var mesh = Mesh.new()
+	
+	helper.create_from_surface(array_mesh, 0)
+	helper.commit_to_surface(mesh)
+	set_mesh(mesh)
+	
+
+	
 # Updates the origin during generate_geometry() as well as the currently defined handles, 
 # to ensure it's anchored where it needs to be.
 func update_origin():
@@ -250,15 +290,8 @@ func generate_geometry(fix_to_origin_setting):
 			
 	
 	var mesh_factory = OnyxMeshFactory.new()
-	tri_array = mesh_factory.build_ramp(start_tf, end_tf, ramp_width, ramp_depth, maintain_width, iterations, ramp_fill_type, position)
-	
-	var array_mesh = tri_array.render_surface_geometry()
-	var helper = MeshDataTool.new()
-	var mesh = Mesh.new()
-	
-	helper.create_from_surface(array_mesh, 0)
-	helper.commit_to_surface(mesh)
-	set_mesh(mesh)
+	onyx_mesh = mesh_factory.build_ramp(start_tf, end_tf, ramp_width, ramp_depth, maintain_width, iterations, ramp_fill_type, position)
+	render_onyx_mesh()
 	
 	# UPDATE HANDLES
 	# dumbass reminder - handles are in local space
@@ -289,7 +322,34 @@ func generate_geometry(fix_to_origin_setting):
 #		# disabled during alpha
 #		update_gizmo()
 		
+
+func render_onyx_mesh():
 	
+	# Optional UV Modifications
+	var tf_vec = uv_scale
+	if tf_vec.x == 0:
+		tf_vec.x = 0.0001
+	if tf_vec.y == 0:
+		tf_vec.y = 0.0001
+	
+#	if self.invert_faces == true:
+#		tf_vec.x = tf_vec.x * -1.0
+	if flip_uvs_vertically == true:
+		tf_vec.y = tf_vec.y * -1.0
+	if flip_uvs_horizontally == true:
+		tf_vec.x = tf_vec.x * -1.0
+	
+	onyx_mesh.multiply_uvs(tf_vec)
+	
+	# Create new mesh
+	var array_mesh = onyx_mesh.render_surface_geometry(material)
+	var helper = MeshDataTool.new()
+	var mesh = Mesh.new()
+	
+	# Set the new mesh
+	helper.create_from_surface(array_mesh, 0)
+	helper.commit_to_surface(mesh)
+	set_mesh(mesh)
 	
 	
 # ////////////////////////////////////////////////////////////
@@ -396,7 +456,7 @@ func balance_handles():
 # Updates the collision triangles responsible for detecting cursor selection in the editor.
 func get_gizmo_collision():
 	pass
-#	var triangles = tri_array.get_triangles()
+#	var triangles = onyx_mesh.get_triangles()
 #
 #	var return_t = PoolVector3Array()
 #	for triangle in triangles:

@@ -1,6 +1,7 @@
 tool
 extends CSGMesh
 
+
 # ////////////////////////////////////////////////////////////
 # TOOL ENUMS
 
@@ -21,7 +22,7 @@ export(bool) var update_origin_setting = true setget update_positions
 var plugin
 
 # The face set script, used for managing geometric data.
-var tri_array = OnyxMesh.new()
+var onyx_mesh = OnyxMesh.new()
 
 # Materials assigned to gizmos.
 var gizmo_mat = load("res://addons/onyx/materials/gizmo_t1.tres")
@@ -58,6 +59,14 @@ export(float) var z_minus_position = -0.5 setget update_z_minus
 export(float) var bevel_size = 0.2 setget update_bevel_size
 enum BevelTarget {Y_AXIS, X_AXIS, Z_AXIS}
 export(BevelTarget) var bevel_target = BevelTarget.Y_AXIS setget update_bevel_target
+
+# UVS
+enum UnwrapMethod {DIRECT_OVERLAP, PROPORTIONAL_OVERLAP, DIRECT_ZONE, PROPORTIONAL_ZONE}
+export(UnwrapMethod) var unwrap_method = UnwrapMethod.DIRECT_OVERLAP setget update_unwrap_method
+export(bool) var flip_uvs_horizontally = false setget update_flip_uvs_horizontally
+
+# MATERIALS
+export(Material) var material = null setget update_material
 
 
 # ////////////////////////////////////////////////////////////
@@ -199,6 +208,25 @@ func update_origin_mode(new_value):
 	generate_geometry(true)
 	previous_origin_setting = origin_setting
 	
+func update_unwrap_method(new_value):
+	unwrap_method = new_value
+	generate_geometry(true)
+	
+func update_flip_uvs_horizontally(new_value):
+	flip_uvs_horizontally = new_value
+	generate_geometry(true)
+
+func update_material(new_value):
+	material = new_value
+	
+	var array_mesh = onyx_mesh.render_surface_geometry(material)
+	var helper = MeshDataTool.new()
+	var mesh = Mesh.new()
+	
+	helper.create_from_surface(array_mesh, 0)
+	helper.commit_to_surface(mesh)
+	set_mesh(mesh)
+	
 
 # Updates the origin during generate_geometry() as well as the currently defined handles, 
 # to ensure it's anchored where it needs to be.
@@ -279,10 +307,12 @@ func generate_geometry(fix_to_origin_setting):
 	
 	# Generate the geometry
 	var mesh_factory = OnyxMeshFactory.new()
-	tri_array = mesh_factory.build_cuboid(maxPoint, minPoint)
-	tri_array.bevel_hard_edges(0.5, 1)
+	onyx_mesh = mesh_factory.build_cuboid(maxPoint, minPoint)
 	
-	var array_mesh = tri_array.render_surface_geometry()
+	if flip_uvs_horizontally == true:
+		onyx_mesh.multiply_uvs(Vector2(-1.0, 1.0))
+	
+	var array_mesh = onyx_mesh.render_surface_geometry(material)
 	var helper = MeshDataTool.new()
 	var mesh = Mesh.new()
 	
@@ -439,20 +469,6 @@ func balance_handles():
 			diff = abs(z_plus_position - z_minus_position)
 			z_plus_position = diff
 			z_minus_position = 0
-		
-	# Old code just in case the above stuff breaks.
-#	var diff = abs(x_plus_position - x_minus_position)
-#	x_plus_position = diff / 2
-#	x_minus_position = (diff / 2) * -1
-#
-#	diff = abs(y_plus_position - y_minus_position)
-#	y_plus_position = diff / 2
-#	y_minus_position = (diff / 2) * -1
-#
-#	diff = abs(z_plus_position - z_minus_position)
-#	z_plus_position = diff / 2
-#	z_minus_position = (diff / 2) * -1
-	
 	
 	
 # Updates the collision triangles responsible for detecting cursor selection in the editor.

@@ -5,7 +5,7 @@ extends EditorSpatialGizmo
 # INFO
 # A basic custom gizmo with built in support for snapping  handle movement to an axis.
 
-# Handle Format: {set_name: [handle_position, [snapping_triangle]? ] }
+# Handle Format: { handle_position, [snapping_triangle]? }
 # Line Format: [ PoolVector3Array lines, color ]
 
 # The snapping triangle array should be an array of three vertices, where it's surface normal will be used to create a singular
@@ -21,7 +21,7 @@ extends EditorSpatialGizmo
 # - handle_commit(index, coord)
 # - get_undo_state()
 # - restore_state(state)
-
+ 
 
 # ////////////////////////////////////////////////////////////
 # PROPERTIES
@@ -37,7 +37,7 @@ var handle_billboard = load("res://addons/onyx/gizmos/default_gizmo.tres")
 
 # The points we need to manage for handles, provided by the owning Spatial
 # formatted in tuples of (3d_point [snapping_axes])
-var handle_points = {}
+var handle_set = []
 
 # The index of the handle currently being modified.
 var handle_current_index = -1
@@ -45,53 +45,44 @@ var handle_current_index = -1
 # The previous data for the currently dragged handle, before it was edited.
 var handle_current_data
 
-
 # Any lines that should be rendered to represent debug data.
 var lines = []
 
 
 # ////////////////////////////////////////////////////////////
-# FUNCTIONS
+# INITIALIZATION
 
-func _init(plugin, node):
-	self.node = node
-	self.plugin = plugin
-	set_spatial_node(node)
-	set_hidden(false)
+func _init():
+	pass
 	print("gizmo initialization finished.")
 	
-# Godot 3.1 Alpha Workaround
-func force_update():
-	redraw()
-	
-	
+
+# ////////////////////////////////////////////////////////////
+# REDRAWING
+
 # Redraws all lines, meshes and gizmos.
 func redraw():
-	print("redrawww")
-	if node.gizmo_handles == null:
-		print("No handle points :(")
-		return
+	print("redrawing gizmo!")
+	clear()
 	
-	handle_points = node.gizmo_handles
-	#var triangles = node.get_gizmo_collision()
+	handle_set = get_spatial_node().convert_handles_to_gizmo()
 	
-	if handle_points.size() > 0:
+	if handle_set.size() > 0:
 		
-		clear()
+		var points = PoolVector3Array()
+		for handle in handle_set:
+			points.push_back(handle[0])
 		
-		var points = []
-		for handle in handle_points:
-			points.append(handle[0])
+		var handle_mat = get_plugin().get_material("handle", self)
+		add_handles(points, handle_mat, true)
 			
-		add_handles(points, handle_billboard, true)
-			
-		for line_set in lines:
-			#print("adding lines~~~")
-			print(line_set[0].size())
-			add_lines(line_set[0], mat_solid_color(line_set[1].r, line_set[1].g, line_set[1].b), false)
+	for line_set in lines:
+		#print("adding lines~~~")
+		print(line_set[0].size())
+		add_lines(line_set[0], mat_solid_color(line_set[1].r, line_set[1].g, line_set[1].b), false)
 		
 		
-		plugin.update_overlays() 
+		#plugin.update_overlays() 
 	
 	
 # ////////////////////////////////////////////////////////////
@@ -104,10 +95,10 @@ func set_handle(index, camera, point):
 	#print("++++++++++++++++")
 	#print("SETTING HANDLE")
 	
-	handle_points = node.gizmo_handles
+	handle_set = get_spatial_node().convert_handles_to_gizmo()
 	handle_current_index = index
 	
-	var handle = handle_points[index]
+	var handle = handle_set[index]
 	var coord = handle[0]
 	var triangle = handle[1]
 	
@@ -169,7 +160,7 @@ func set_handle(index, camera, point):
 	
 	
 	# Set the new point
-	handle_points[index] = [coord, triangle]
+	handle_set[index] = [coord, triangle]
 	
 	# Notify the node about this new change
 	node.handle_change(index, coord)
@@ -179,7 +170,7 @@ func set_handle(index, camera, point):
 	
 # Allows an external function to get the coordinates of a handle.
 func get_handle_value(index):
-	return handle_points[index][0]
+	return handle_set[index][0]
 	
 	
 # Used for undo/redo stuff.
@@ -191,22 +182,22 @@ func restore_undo_state(state):
 func commit_handle(index, restore, cancel=false):
 	if not cancel:
 		
-		var new_data = handle_points[index][0]
+		var new_data = handle_set[index][0]
 		
 		var undo_data = node.get_undo_state()
 		node.handle_commit(index, new_data)
 		var redo_data = node.get_undo_state()
 		
 		var undo_redo = plugin.get_undo_redo()
-		undo_redo.create_action("Transform OnyxCube Point "+str(index))
+		undo_redo.create_action("Onyx Handle Commit "+str(index))
 		undo_redo.add_do_method(self, "restore_undo_state", redo_data)
 		undo_redo.add_undo_method(self, "restore_undo_state", undo_data)
 		undo_redo.commit_action()
 		
 	else:
-		var handle = handle_points[handle_current_index]
+		var handle = handle_set[handle_current_index]
 		handle[0] = handle_current_data
-		handle_points[handle_points] = handle
+		handle_set[handle_current_index] = handle
 		
 		node.handle_commit(index, handle_current_data)
 	

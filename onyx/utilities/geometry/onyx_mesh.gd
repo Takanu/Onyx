@@ -1,6 +1,5 @@
 tool
 extends Reference
-
 class_name OnyxMesh
 
 # ////////////////////////////////////////////////////////////
@@ -17,6 +16,7 @@ class_name OnyxMesh
 # PROPERTIES
 
 var tris = []
+var onyx_utils = OnyxUtils.new()
 
 # ////////////////////////////////////////////////////////////
 # ADDITIONS
@@ -158,7 +158,7 @@ func render_immediate_geometry(geom : ImmediateGeometry):
 		
 # Renders available face geometry using SurfaceTool and returns a mesh.
 # Rendering as this type is good for static objects, it's just... easier.
-func render_surface_geometry() -> SurfaceTool:
+func render_surface_geometry(material : Material = null) -> SurfaceTool:
 	
 	var surface = SurfaceTool.new()
 	surface.begin(Mesh.PRIMITIVE_TRIANGLES)
@@ -181,8 +181,13 @@ func render_surface_geometry() -> SurfaceTool:
 			tangents)
 			
 	surface.index()
+	
+	if material != null:
+		surface.set_material(material)
+		
 	# This generates a lot of errors, not sure why.
 	#surface.generate_tangents()
+	
 	return surface.commit()
 	
 	
@@ -240,6 +245,18 @@ func flip_draw_order():
 		tri[2] = [split_vertices[0][2], split_vertices[2][2], split_vertices[1][2]]
 		tri[3] = [split_vertices[0][3], split_vertices[2][3], split_vertices[1][3]]
 		tri[4] = [split_vertices[0][4], split_vertices[2][4], split_vertices[1][4]]
+		
+# Multiplies all UVs with the given vector
+func multiply_uvs(transform : Vector2):
+	
+	for tri in tris:
+		var uvs = tri[3]
+		var new_uvs = []
+		
+		for uv in uvs:
+			new_uvs.append(uv * transform)
+			
+		tri[3] = new_uvs
 
 
 # Bevels hard edges of the mesh.
@@ -465,6 +482,36 @@ func get_edge_list() -> Array:
 			edge_list.append(edge)
 				
 	return edge_list
+	
+# Returns the AABB bounds of the mesh.
+func get_aabb() -> AABB:
+	var v_size = tris.size()
+		
+	if v_size == 0:
+		return AABB(Vector3(0, 0, 0), Vector3(0, 0, 0))
+		
+	var lb = Vector3(0, 0, 0)
+	var ub = Vector3(0, 0, 0)
+		
+	for tri in tris:
+		var vertices = tri[0]
+		
+		for vertex in vertices:
+			if vertex.x < lb.x:
+				lb.x = vertex.x
+			if vertex.y < lb.y:
+				lb.y = vertex.y
+			if vertex.z < lb.z:
+				lb.z = vertex.z
+				
+			if vertex.x > ub.x:
+				ub.x = vertex.x
+			if vertex.y > ub.y:
+				ub.y = vertex.y
+			if vertex.z > ub.z:
+				ub.z = vertex.z
+	
+	return AABB(lb, ub-lb)
 	
 	
 # Separates vertex information from a triangle array.

@@ -16,10 +16,11 @@ const OnyxSprinkle  = preload("./nodes/onyx_sprinkle.gd")
 const OnyxFence  = preload("./nodes/onyx_fence.gd")
 
 const NodeHandlerList = [OnyxCube, OnyxCylinder, OnyxSphere, OnyxWedge, OnyxRoundedRect, OnyxSprinkle, OnyxFence]
-
+const NodeStrings = ['OnyxCube', 'OnyxCylinder', 'OnyxSphere', 'OnyxWedge', 'OnyxRoundedRect', 'OnyxSprinkle', 'OnyxFence']
 
 # Gizmo types
-var gizmo_plugin = null
+const OnyxGizmoPlugin = preload("res://addons/Onyx/gizmos/onyx_gizmo_plugin.gd")
+var gizmo_plugin : OnyxGizmoPlugin
 
 
 # Wireframe material types
@@ -44,7 +45,7 @@ func _enter_tree():
 	name = "Onyx"
 	
     # Initialization of the plugin goes here
-	gizmo_plugin = load("res://addons/onyx/gizmos/onyx_gizmo_plugin.gd").new(self)
+	gizmo_plugin = OnyxGizmoPlugin.new(self)
 	add_spatial_gizmo_plugin(gizmo_plugin)
 	print(gizmo_plugin)
 	
@@ -63,25 +64,8 @@ func _enter_tree():
 	# Add custom signals for providing GUI click input.
 	add_user_signal("onyx_viewport_clicked", [{"camera": TYPE_OBJECT} , {"event": TYPE_OBJECT}] )
 	
-	pass
-	
-	
-func create_spatial_gizmo(for_spatial):
-	
-	#print("ONYX create_spatial_gizmo")
-	
-	if for_spatial is OnyxCube:
-		var gizmo = gizmo_plugin.create_gizmo(for_spatial)
-		print("The cube now has a gizmo.")
-		
-		print("Gizmo: ", gizmo)
-		return gizmo
-	
-	if for_spatial is OnyxSprinkle:
-		var gizmo = gizmo_plugin.create_gizmo(for_spatial)
-		return gizmo
-		
-		
+
+
 # ////////////////////////////////////////////////////////////
 # EDITOR SELECTION
 
@@ -151,8 +135,9 @@ func bind_event(ev):
 
 func _exit_tree():
     # Clean-up of the plugin goes here
-	remove_custom_type("OnyxCube")
-	remove_custom_type("OnyxSprinkle")
+	for string in NodeStrings:
+		remove_custom_type(string)
+	remove_spatial_gizmo_plugin(gizmo_plugin)
 	pass
 	
 	
