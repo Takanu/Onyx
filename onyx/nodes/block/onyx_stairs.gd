@@ -48,22 +48,19 @@ var color = Vector3(1, 1, 1)
 
 # Exported variables representing all usable handles for re-shaping the mesh, in order.
 # Must be exported to be saved in a scene?  smh.
-export(float) var x_plus_position = 0.5 setget update_x_plus
-export(float) var x_minus_position = -0.5 setget update_x_minus
+export(Vector3) var start_position = Vector3(0.0, 0.0, 0.0) setget update_start_position
+export(Vector3) var end_position = Vector3(0.0, 1.0, 2.0) setget update_end_position
 
-export(float) var y_plus_position = 1.0 setget update_y_plus
-export(float) var y_minus_position = 0.0 setget update_y_minus
+export(float) var stair_width = 2 setget update_stair_width
+export(float) var stair_depth = 2 setget update_stair_depth
 
-export(float) var z_plus_position = 0.5 setget update_z_plus
-export(float) var z_minus_position = -0.5 setget update_z_minus
+export(int) var stair_count = 4 setget update_stair_count
 
-# Used to subdivide the mesh to prevent CSG boolean glitches.
-export(Vector3) var subdivisions = Vector3(0, 0, 0)
 
 # BEVELS
-export(float) var bevel_size = 0.2 setget update_bevel_size
-enum BevelTarget {Y_AXIS, X_AXIS, Z_AXIS}
-export(BevelTarget) var bevel_target = BevelTarget.Y_AXIS setget update_bevel_target
+#export(float) var bevel_size = 0.2 setget update_bevel_size
+#enum BevelTarget {Y_AXIS, X_AXIS, Z_AXIS}
+#export(BevelTarget) var bevel_target = BevelTarget.Y_AXIS setget update_bevel_target
 
 # UVS
 enum UnwrapMethod {CLAMPED_OVERLAP, PROPORTIONAL_OVERLAP, PROPORTIONAL_ISLANDS, CROSS_UNFOLD}
@@ -130,71 +127,34 @@ func _editor_transform_changed():
 # ////////////////////////////////////////////////////////////
 # PROPERTY UPDATERS
 	
-# Used when a handle variable changes in the properties panel.
-func update_x_plus(new_value):
-	#print("ONYXCUBE update_x_plus")
+func update_start_position(new_value):
+	start_position = new_value
+	generate_geometry(true)
+	
+	
+func update_end_position(new_value):
+	end_position = new_value
+	generate_geometry(true)
+	
+func update_stair_width(new_value):
 	if new_value < 0:
 		new_value = 0
 		
-	x_plus_position = new_value
+	stair_width = new_value
 	generate_geometry(true)
 	
-	
-func update_x_minus(new_value):
-	#print("ONYXCUBE update_x_minus")
-	if new_value > 0 || origin_setting == OriginPosition.BASE_CORNER:
-		new_value = 0
-		
-	x_minus_position = new_value
-	generate_geometry(true)
-	
-func update_y_plus(new_value):
-	#print("ONYXCUBE update_y_plus")
+func update_stair_depth(new_value):
 	if new_value < 0:
 		new_value = 0
 		
-	y_plus_position = new_value
+	stair_depth = new_value
 	generate_geometry(true)
 	
-func update_y_minus(new_value):
-	#print("ONYXCUBE update_y_minus")
-	if new_value > 0 || origin_setting == OriginPosition.BASE_CORNER || origin_setting == OriginPosition.BASE:
-		new_value = 0
+func update_stair_count(new_value):
+	if new_value < 1:
+		new_value = 1
 		
-	y_minus_position = new_value
-	generate_geometry(true)
-	
-func update_z_plus(new_value):
-	#print("ONYXCUBE update_z_plus")
-	if new_value < 0:
-		new_value = 0
-		
-	z_plus_position = new_value
-	generate_geometry(true)
-	
-func update_z_minus(new_value):
-	#print("ONYXCUBE update_z_minus")
-	if new_value > 0 || origin_setting == OriginPosition.BASE_CORNER:
-		new_value = 0
-		
-	z_minus_position = new_value
-	generate_geometry(true)
-	
-	
-func update_subdivisions(new_value):
-	subdivisions = new_value
-	generate_geometry(true)
-	
-	
-func update_bevel_size(new_value):
-	if new_value > 0:
-		new_value = 0
-		
-	bevel_size = new_value
-	generate_geometry(true)
-	
-func update_bevel_target(new_value):
-	bevel_target = new_value
+	stair_count = new_value
 	generate_geometry(true)
 	
 	
@@ -257,45 +217,47 @@ func update_origin():
 	
 	#print("ONYXCUBE update_origin")
 	
-	if handles.size() == 0:
-		return
-	
-	# based on the current position and properties, work out how much to move the origin.
-	var diff = Vector3(0, 0, 0)
-	
-	match previous_origin_setting:
-		
-		OriginPosition.CENTER:
-			match origin_setting:
-				
-				OriginPosition.BASE:
-					diff = Vector3(0, y_minus_position, 0)
-				OriginPosition.BASE_CORNER:
-					diff = Vector3(x_minus_position, y_minus_position, z_minus_position)
-			
-		OriginPosition.BASE:
-			match origin_setting:
-				
-				OriginPosition.CENTER:
-					diff = Vector3(0, y_plus_position / 2, 0)
-				OriginPosition.BASE_CORNER:
-					diff = Vector3(x_minus_position, 0, z_minus_position)
-					
-		OriginPosition.BASE_CORNER:
-			match origin_setting:
-				
-				OriginPosition.BASE:
-					diff = Vector3(x_plus_position / 2, 0, z_plus_position / 2)
-				OriginPosition.CENTER:
-					diff = Vector3(x_plus_position / 2, y_plus_position / 2, z_plus_position / 2)
-	
-	# Get the difference
-	var new_loc = self.translation + diff
-	var old_loc = self.translation
-	#print("MOVING LOCATION: ", old_loc, " -> ", new_loc)
-	
-	# set it
-	self.global_translate(new_loc - old_loc)
+	pass
+#
+#	if handles.size() == 0:
+#		return
+#
+#	# based on the current position and properties, work out how much to move the origin.
+#	var diff = Vector3(0, 0, 0)
+#
+#	match previous_origin_setting:
+#
+#		OriginPosition.CENTER:
+#			match origin_setting:
+#
+#				OriginPosition.BASE:
+#					diff = Vector3(0, y_minus_position, 0)
+#				OriginPosition.BASE_CORNER:
+#					diff = Vector3(x_minus_position, y_minus_position, z_minus_position)
+#
+#		OriginPosition.BASE:
+#			match origin_setting:
+#
+#				OriginPosition.CENTER:
+#					diff = Vector3(0, y_plus_position / 2, 0)
+#				OriginPosition.BASE_CORNER:
+#					diff = Vector3(x_minus_position, 0, z_minus_position)
+#
+#		OriginPosition.BASE_CORNER:
+#			match origin_setting:
+#
+#				OriginPosition.BASE:
+#					diff = Vector3(x_plus_position / 2, 0, z_plus_position / 2)
+#				OriginPosition.CENTER:
+#					diff = Vector3(x_plus_position / 2, y_plus_position / 2, z_plus_position / 2)
+#
+#	# Get the difference
+#	var new_loc = self.translation + diff
+#	var old_loc = self.translation
+#	#print("MOVING LOCATION: ", old_loc, " -> ", new_loc)
+#
+#	# set it
+#	self.global_translate(new_loc - old_loc)
 
 # ////////////////////////////////////////////////////////////
 # GEOMETRY GENERATION
@@ -303,31 +265,112 @@ func update_origin():
 # Using the set handle points, geometry is generated and drawn.  The handles owned by the gizmo are also updated.
 func generate_geometry(fix_to_origin_setting):
 	
-	#print("ONYXCUBE generate_geometry")
-	#print("Regenerating geometry")
+#	var maxPoint = Vector3(x_plus_position, y_plus_position, z_plus_position)
+#	var minPoint = Vector3(x_minus_position, y_minus_position, z_minus_position)
+#
+#	if fix_to_origin_setting == true:
+#		match origin_setting:
+#			OriginPosition.BASE:
+#				maxPoint = Vector3(x_plus_position, (y_plus_position + (y_minus_position * -1)), z_plus_position)
+#				minPoint = Vector3(x_minus_position, 0, z_minus_position)
+#
+#			OriginPosition.BASE_CORNER:
+#				maxPoint = Vector3(
+#					(x_plus_position + (x_minus_position * -1)), 
+#					(y_plus_position + (y_minus_position * -1)), 
+#					(z_plus_position + (z_minus_position * -1))
+#					)
+#				minPoint = Vector3(0, 0, 0)
+
+	# This shape is too custom to delegate, so it's being done here
+	#   X---------X  e1 e2
+	#	|         |  e3 e4
+	#	|         |
+	#	|         |
+	#   X---------X  s1 s2
+	#   X---------X  s3 s4
 	
-	var maxPoint = Vector3(x_plus_position, y_plus_position, z_plus_position)
-	var minPoint = Vector3(x_minus_position, y_minus_position, z_minus_position)
+	# Build a transform
+	var z_axis = (end_position - start_position)
+	z_axis = Vector3(z_axis.x, 0, z_axis.z).normalized()
+	var y_axis = Vector3(0, 1, 0)
+	var x_axis = z_axis.cross(y_axis)
 	
-	if fix_to_origin_setting == true:
-		match origin_setting:
-			OriginPosition.BASE:
-				maxPoint = Vector3(x_plus_position, (y_plus_position + (y_minus_position * -1)), z_plus_position)
-				minPoint = Vector3(x_minus_position, 0, z_minus_position)
-				
-			OriginPosition.BASE_CORNER:
-				maxPoint = Vector3(
-					(x_plus_position + (x_minus_position * -1)), 
-					(y_plus_position + (y_minus_position * -1)), 
-					(z_plus_position + (z_minus_position * -1))
-					)
-				minPoint = Vector3(0, 0, 0)
+	var mesh_pos = Vector3()
+	var path_tf = Transform(x_axis, y_axis, z_axis, mesh_pos)
 	
-	# Generate the geometry
-	var mesh_factory = OnyxMeshFactory.new()
 	onyx_mesh.clear()
 	
-	mesh_factory.build_cuboid(onyx_mesh, maxPoint, minPoint, unwrap_method, subdivisions)
+	# Setup variables
+	var path_diff = end_position - start_position
+	var length_diff = path_diff.length()
+	var diff_inc = path_diff / stair_count
+	
+	# get main 4 vectors
+	var v1 = Vector3(-stair_width/2, stair_depth/2, 0)
+	var v2 = Vector3(stair_width/2, stair_depth/2, 0)
+	var v3 = Vector3(-stair_width/2, -stair_depth/2, 0)
+	var v4 = Vector3(stair_width/2, -stair_depth/2, 0)
+	
+	var path_i = start_position + (diff_inc / 2)
+	var i = 0
+	
+	# iterate through path
+	while i < stair_count:
+		var step_start = path_i
+		#var step_end = path_i + diff_inc
+		
+		# transform them for the start and finish
+		var p1 = path_tf.xform(v1)
+		var p2 = path_tf.xform(v2)
+		var p3 = path_tf.xform(v3)
+		var p4 = path_tf.xform(v4)
+		
+		var flat_distance = Vector3(diff_inc.x, 0, diff_inc.z) / 2
+		
+		var s1 = p1 + step_start - flat_distance
+		var s2 = p2 + step_start - flat_distance
+		var s3 = p3 + step_start - flat_distance
+		var s4 = p4 + step_start - flat_distance
+		
+		var e1 = p1 + step_start + flat_distance
+		var e2 = p2 + step_start + flat_distance
+		var e3 = p3 + step_start + flat_distance
+		var e4 = p4 + step_start + flat_distance
+		
+		# build the step vertices
+		var x_minus = [e3, e1, s1, s3]
+		var x_plus = [s4, s2, e2, e4]
+		var y_minus = [s4, e4, e3, s3]
+		var y_plus = [s1, e1, e2, s2]
+		var z_minus = [s3, s1, s2, s4]
+		var z_plus = [e4, e2, e1, e3]
+		
+		# setup uv arrays
+		var x_minus_uv = [];  var x_plus_uv = []
+		var y_minus_uv = [];  var y_plus_uv = []
+		var z_minus_uv = [];  var z_plus_uv = []
+		
+		# UNWRAP 0 : 1:1 Overlap
+		if unwrap_method == 0:
+			var wrap = [Vector2(0.0, 1.0), Vector2(0.0, 0.0), Vector2(1.0, 0.0), Vector2(1.0, 1.0)]
+			x_minus_uv = wrap;  x_plus_uv = wrap;
+			y_minus_uv = wrap;  y_plus_uv = wrap;
+			z_minus_uv = wrap;  z_plus_uv = wrap;
+		
+		# add it to the mesh
+		onyx_mesh.add_ngon(x_minus, [], [], x_minus_uv, [])
+		onyx_mesh.add_ngon(x_plus, [], [], x_plus_uv, [])
+		onyx_mesh.add_ngon(y_minus, [], [], y_minus_uv, [])
+		onyx_mesh.add_ngon(y_plus, [], [], y_plus_uv, [])
+		onyx_mesh.add_ngon(z_minus, [], [], z_minus_uv, [])
+		onyx_mesh.add_ngon(z_plus, [], [], z_plus_uv, [])
+		
+		i += 1
+		path_i += diff_inc
+	
+	
+	# Generate the geometry
 	render_onyx_mesh()
 	
 	# Re-submit the handle positions based on the built faces, so other handles that aren't the
@@ -399,16 +442,16 @@ func render_onyx_mesh():
 func generate_handles():
 	handles.clear()
 	
-	var x_mid = x_plus_position - x_minus_position
-	var y_mid = y_plus_position - y_minus_position
-	var z_mid = z_plus_position - z_minus_position
-	
-	handles["x_minus"] = Vector3(x_minus_position, y_mid, z_mid)
-	handles["x_plus"] = Vector3(x_plus_position, y_mid, z_mid)
-	handles["y_minus"] = Vector3(x_mid, y_minus_position, z_mid)
-	handles["y_plus"] = Vector3(x_mid, y_plus_position, z_mid)
-	handles["z_minus"] = Vector3(x_mid, y_mid, z_minus_position)
-	handles["z_plus"] = Vector3(x_mid, y_mid, z_plus_position)
+#	var x_mid = x_plus_position - x_minus_position
+#	var y_mid = y_plus_position - y_minus_position
+#	var z_mid = z_plus_position - z_minus_position
+#
+#	handles["x_minus"] = Vector3(x_minus_position, y_mid, z_mid)
+#	handles["x_plus"] = Vector3(x_plus_position, y_mid, z_mid)
+#	handles["y_minus"] = Vector3(x_mid, y_minus_position, z_mid)
+#	handles["y_plus"] = Vector3(x_mid, y_plus_position, z_mid)
+#	handles["z_minus"] = Vector3(x_mid, y_mid, z_minus_position)
+#	handles["z_plus"] = Vector3(x_mid, y_mid, z_plus_position)
 	
 
 
@@ -417,19 +460,19 @@ func convert_handles_to_gizmo() -> Array:
 	
 	var result = []
 	
-	# generate collision triangles
-	var triangle_x = [Vector3(0.0, 1.0, 0.0), Vector3(0.0, 1.0, 1.0), Vector3(0.0, 0.0, 1.0)]
-	var triangle_y = [Vector3(1.0, 0.0, 0.0), Vector3(1.0, 0.0, 1.0), Vector3(0.0, 0.0, 1.0)]
-	var triangle_z = [Vector3(0.0, 1.0, 0.0), Vector3(1.0, 1.0, 0.0), Vector3(1.0, 0.0, 0.0)]
-	
-	# convert handle values to an array
-	var handle_array = handles.values()
-	result.append( [handle_array[0], triangle_x] )
-	result.append( [handle_array[1], triangle_x] )
-	result.append( [handle_array[2], triangle_y] )
-	result.append( [handle_array[3], triangle_y] )
-	result.append( [handle_array[4], triangle_z] )
-	result.append( [handle_array[5], triangle_z] )
+#	# generate collision triangles
+#	var triangle_x = [Vector3(0.0, 1.0, 0.0), Vector3(0.0, 1.0, 1.0), Vector3(0.0, 0.0, 1.0)]
+#	var triangle_y = [Vector3(1.0, 0.0, 0.0), Vector3(1.0, 0.0, 1.0), Vector3(0.0, 0.0, 1.0)]
+#	var triangle_z = [Vector3(0.0, 1.0, 0.0), Vector3(1.0, 1.0, 0.0), Vector3(1.0, 0.0, 0.0)]
+#
+#	# convert handle values to an array
+#	var handle_array = handles.values()
+#	result.append( [handle_array[0], triangle_x] )
+#	result.append( [handle_array[1], triangle_x] )
+#	result.append( [handle_array[2], triangle_y] )
+#	result.append( [handle_array[3], triangle_y] )
+#	result.append( [handle_array[4], triangle_z] )
+#	result.append( [handle_array[5], triangle_z] )
 	
 	return result
 
@@ -438,12 +481,12 @@ func convert_handles_to_gizmo() -> Array:
 func convert_handles_to_onyx(handles) -> Dictionary:
 	
 	var result = {}
-	result["x_minus"] = handles[0]
-	result["x_plus"] = handles[1]
-	result["y_minus"] = handles[2]
-	result["y_plus"] = handles[3]
-	result["z_minus"] = handles[4]
-	result["z_plus"] = handles[5]
+#	result["x_minus"] = handles[0]
+#	result["x_plus"] = handles[1]
+#	result["y_minus"] = handles[2]
+#	result["y_plus"] = handles[3]
+#	result["z_minus"] = handles[4]
+#	result["z_plus"] = handles[5]
 	
 	return result
 	
@@ -451,14 +494,14 @@ func convert_handles_to_onyx(handles) -> Dictionary:
 
 # Changes the handle based on the given index and coordinates.
 func update_handle_from_gizmo(index, coordinate):
-	
-	match index:
-		0: x_plus_position = coordinate.x
-		1: x_minus_position = coordinate.x
-		2: y_plus_position = coordinate.y
-		3: y_minus_position = coordinate.y
-		4: z_plus_position = coordinate.z
-		5: z_minus_position = coordinate.z
+	pass
+#	match index:
+#		0: x_plus_position = coordinate.x
+#		1: x_minus_position = coordinate.x
+#		2: y_plus_position = coordinate.y
+#		3: y_minus_position = coordinate.y
+#		4: z_plus_position = coordinate.z
+#		5: z_minus_position = coordinate.z
 		
 
 # Pushes the handles currently held by the shape to the gizmo.
@@ -490,46 +533,47 @@ func handle_commit(index, coord):
 func balance_handles():
 	#print("balancing coordinates")
 	#print("ONYXCUBE balance_handles")
+	pass
 	
-	match origin_setting:
-		OriginPosition.CENTER:
-			var diff = abs(x_plus_position - x_minus_position)
-			x_plus_position = diff / 2
-			x_minus_position = (diff / 2) * -1
-			
-			diff = abs(y_plus_position - y_minus_position)
-			y_plus_position = diff / 2
-			y_minus_position = (diff / 2) * -1
-			
-			diff = abs(z_plus_position - z_minus_position)
-			z_plus_position = diff / 2
-			z_minus_position = (diff / 2) * -1
-		
-		OriginPosition.BASE:
-			var diff = abs(x_plus_position - x_minus_position)
-			x_plus_position = diff / 2
-			x_minus_position = (diff / 2) * -1
-			
-			diff = abs(y_plus_position - y_minus_position)
-			y_plus_position = diff
-			y_minus_position = 0
-			
-			diff = abs(z_plus_position - z_minus_position)
-			z_plus_position = diff / 2
-			z_minus_position = (diff / 2) * -1
-			
-		OriginPosition.BASE_CORNER:
-			var diff = abs(x_plus_position - x_minus_position)
-			x_plus_position = diff
-			x_minus_position = 0
-			
-			diff = abs(y_plus_position - y_minus_position)
-			y_plus_position = diff
-			y_minus_position = 0
-			
-			diff = abs(z_plus_position - z_minus_position)
-			z_plus_position = diff
-			z_minus_position = 0
+#	match origin_setting:
+#		OriginPosition.CENTER:
+#			var diff = abs(x_plus_position - x_minus_position)
+#			x_plus_position = diff / 2
+#			x_minus_position = (diff / 2) * -1
+#
+#			diff = abs(y_plus_position - y_minus_position)
+#			y_plus_position = diff / 2
+#			y_minus_position = (diff / 2) * -1
+#
+#			diff = abs(z_plus_position - z_minus_position)
+#			z_plus_position = diff / 2
+#			z_minus_position = (diff / 2) * -1
+#
+#		OriginPosition.BASE:
+#			var diff = abs(x_plus_position - x_minus_position)
+#			x_plus_position = diff / 2
+#			x_minus_position = (diff / 2) * -1
+#
+#			diff = abs(y_plus_position - y_minus_position)
+#			y_plus_position = diff
+#			y_minus_position = 0
+#
+#			diff = abs(z_plus_position - z_minus_position)
+#			z_plus_position = diff / 2
+#			z_minus_position = (diff / 2) * -1
+#
+#		OriginPosition.BASE_CORNER:
+#			var diff = abs(x_plus_position - x_minus_position)
+#			x_plus_position = diff
+#			x_minus_position = 0
+#
+#			diff = abs(y_plus_position - y_minus_position)
+#			y_plus_position = diff
+#			y_minus_position = 0
+#
+#			diff = abs(z_plus_position - z_minus_position)
+#			z_plus_position = diff
+#			z_minus_position = 0
 		
 	# Old code just in case the above stuff breaks.
 #	var diff = abs(x_plus_position - x_minus_position)
@@ -569,19 +613,20 @@ func get_undo_state():
 
 # Restores the state of the shape to a previous given state.
 func restore_state(state):
-	var new_handles = state[0]
-	var stored_translation = state[1]
-	
-	x_plus_position = new_handles[0].x
-	x_minus_position = new_handles[1].x
-	y_plus_position = new_handles[2].y
-	y_minus_position = new_handles[3].y
-	z_plus_position = new_handles[4].z
-	z_minus_position = new_handles[5].z
-	
-	self.translation = stored_translation
-	self.old_handles = new_handles
-	generate_geometry(true)
+	pass
+#	var new_handles = state[0]
+#	var stored_translation = state[1]
+#
+#	x_plus_position = new_handles[0].x
+#	x_minus_position = new_handles[1].x
+#	y_plus_position = new_handles[2].y
+#	y_minus_position = new_handles[3].y
+#	z_plus_position = new_handles[4].z
+#	z_minus_position = new_handles[5].z
+#
+#	self.translation = stored_translation
+#	self.old_handles = new_handles
+#	generate_geometry(true)
 
 
 
@@ -599,14 +644,3 @@ func editor_deselect():
 
 # ////////////////////////////////////////////////////////////
 # HELPERS
-
-func idek():
-	
-	# Check if we need to offset geometry based on the origin
-	var offset = Vector3()
-	match origin_setting:
-		OriginPosition.BASE:
-			offset = Vector3(x_plus_position, y_minus_position, z_plus_position)
-		OriginPosition.BASE_CORNER:
-			offset = Vector3(x_minus_position, y_minus_position, z_minus_position)
-

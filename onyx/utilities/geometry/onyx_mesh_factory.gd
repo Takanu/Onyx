@@ -15,10 +15,8 @@ const TWO_PI = PI * 2
 # ////////////////////////////////////////////////////////////
 # BUILDERS
 
-# Replaces any geometry held with a cuboid that fits inside a maximum and minimum point.
-func build_cuboid(max_point, min_point, unwrap_mode):
-	
-	var tris = OnyxMesh.new()
+# Adds onto a pre-existing OnyxMesh with a cuboid that fits inside a maximum and minimum point.
+func build_cuboid(mesh : OnyxMesh, max_point, min_point, unwrap_mode, subdivisions):
 	
 	# Build 8 vertex points
 	var top_x = Vector3(max_point.x, max_point.y, min_point.z)
@@ -39,55 +37,21 @@ func build_cuboid(max_point, min_point, unwrap_mode):
 	var vec_z_minus = [bottom_x, top_x, top, bottom]
 	var vec_z_plus = [bottom_z, top_z, top_xz, bottom_xz]
 	
-	# UV PREP
-	var uv_x_plus = [];  var uv_x_minus = []; 
-	var uv_y_plus = [];  var uv_y_minus = []; 
-	var uv_z_plus = [];  var uv_z_minus = []; 
+	var surfaces = []
+	surfaces.append( internal_build_surface(bottom, top_z, top, bottom_z, Vector2(subdivisions.z, subdivisions.y), 0) )
+	surfaces.append( internal_build_surface(bottom_xz, top_x, top_xz, bottom_x, Vector2(subdivisions.z, subdivisions.y), 0) )
 	
-	# UNWRAP MODE - 1:1 Overlap
-	if unwrap_mode == 0:
-		var uv_test = [Vector2(0.0, 1.0), Vector2(0.0, 0.0), Vector2(1.0, 0.0), Vector2(1.0, 1.0)]
-		uv_x_plus = uv_test;  uv_x_minus = uv_test;
-		uv_y_plus = uv_test;  uv_y_minus = uv_test;
-		uv_z_plus = uv_test;  uv_z_minus = uv_test;
-		
-	# UNWRAP MODE - PROPORTIONAL OVERLAP
-	elif unwrap_mode == 1:
-		
-		# Project the current vertices to a direct axis.
-		var x_project_minus = vec_x_minus
-		var x_project_plus = vec_x_plus
-		var y_project_minus = vec_y_minus
-		var y_project_plus = vec_y_plus
-		var z_project_minus = vec_z_minus
-		var z_project_plus = vec_z_plus
-		
-		# Crunch the vectors down into Vector2's
-		x_project_minus = OnyxUtils.vector3_to_vector2_array(x_project_minus, 'X', 'Z')
-		x_project_plus = OnyxUtils.vector3_to_vector2_array(x_project_plus, 'X', 'Z')
-		y_project_minus = OnyxUtils.vector3_to_vector2_array(y_project_minus, 'Y', 'Z')
-		y_project_plus = OnyxUtils.vector3_to_vector2_array(y_project_plus, 'Y', 'Z')
-		z_project_minus = OnyxUtils.vector3_to_vector2_array(z_project_minus, 'Z', 'X')
-		z_project_plus = OnyxUtils.vector3_to_vector2_array(z_project_plus, 'Z', 'X')
-		
-		uv_x_minus = x_project_minus;  uv_x_plus = x_project_plus;
-		uv_y_minus = y_project_minus;  uv_y_plus = y_project_plus;
-		uv_z_minus = z_project_minus;  uv_z_plus = z_project_plus;
-		
-	# X
-	tris.add_ngon(vec_x_minus, [], [], uv_x_minus, [])
-	tris.add_ngon(vec_x_plus, [], [], uv_x_plus, [])
+	surfaces.append( internal_build_surface(bottom_x, bottom_z, bottom, bottom_xz, Vector2(subdivisions.z, subdivisions.x), 0) )
+	surfaces.append( internal_build_surface(top, top_xz, top_x, top_z, Vector2(subdivisions.z, subdivisions.x), 0) )
 	
-	# Y
-	tris.add_ngon(vec_y_minus, [], [], uv_y_minus, [])
-	tris.add_ngon(vec_y_plus, [], [], uv_y_plus, [])
+	surfaces.append( internal_build_surface(bottom_x, top, top_x, bottom, Vector2(subdivisions.x, subdivisions.y), 0) )
+	surfaces.append( internal_build_surface(bottom_z, top_xz, top_z, bottom_xz, Vector2(subdivisions.x, subdivisions.y), 0) )
 	
-	# Z
-	tris.add_ngon(vec_z_minus, [], [], uv_z_minus, [])
-	tris.add_ngon(vec_z_plus, [], [], uv_z_plus, [])
-	
-	return tris
-	
+	for surface in surfaces:
+		for quad in surface:
+			mesh.add_ngon(quad[0], quad[1], quad[2], quad[3], quad[4])
+			
+	return mesh
 	
 	
 func build_circle(points, x_width, z_width, position):
@@ -351,8 +315,6 @@ func build_ramp(start_tf, end_tf, width, depth, maintain_width, iterations, ramp
 		
 		i += 1
 	
-	
-	
 	return tris
 	
 	
@@ -524,8 +486,62 @@ func build_spline_extrusion(points, depth, rings, position, extrusion_axis):
 	
 	pass
 	
+	
+	
+	
 # ////////////////////////////////////////////////////////////
 # HELPERS
+
+# Builds a set of quads between 4 points, ready to be added to a OnyxMesh.
+func internal_build_surface(start_pos : Vector3, end_pos : Vector3, up_max : Vector3, cross_max : Vector3, subdivisions : Vector2, unwrap_mode : int) -> Array:
+	
+	var results = []
+	
+	# Subdivision Increments
+	var up_div = int( max( floor(subdivisions.y), 1) )
+	var cross_div = int( max( floor(subdivisions.x), 1) )
+	
+	var up_size = up_max - start_pos
+	var cross_size = cross_max - start_pos
+	
+	var up_inc = up_size/up_div
+	var cross_inc = cross_size/cross_div
+	
+	
+	# Iterate Grid
+	var i_up = 0
+	var i_cross = 0
+	
+	while i_up < subdivisions.y:
+		i_cross = 0
+		
+		while i_cross < subdivisions.x:
+			var up_pos = i_up * up_inc
+			var cross_pos = i_cross * cross_inc
+			
+			var vf_1 = start_pos + up_pos + cross_pos
+			var vf_2 = vf_1 + up_inc
+			var vf_3 = vf_1 + up_inc + cross_inc
+			var vf_4 = vf_1 + cross_inc
+			var vectors = [vf_1, vf_2, vf_3, vf_4]
+			var uvs = []
+			
+			# UNWRAP MODE - 1:1 Overlap
+			if unwrap_mode == 0:
+				uvs = [Vector2(0.0, 1.0), Vector2(0.0, 0.0), Vector2(1.0, 0.0), Vector2(1.0, 1.0)]
+				
+			# UNWRAP MODE - PROPORTIONAL OVERLAP
+			elif unwrap_mode == 1:
+				uvs = OnyxUtils.vector3_to_vector2_array(vectors, 'X', 'Z')
+			
+			results.append([ vectors, [], [], uvs, [] ])
+			
+			i_cross += 1
+		
+		i_up += 1
+		
+	return results
+	
 	
 static func create_vertex_circle(pos, segments, radius = 1, start = 0, angle = TWO_PI):
 	var circle = []

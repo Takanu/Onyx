@@ -46,6 +46,7 @@ var color = Vector3(1, 1, 1)
 # Exported variables representing all usable handles for re-shaping the cube, in order.
 # Must be exported to be saved in a scene?  smh.
 export(int) var sides = 10 setget update_sides
+export(int) var rings = 1 setget update_rings
 export(float) var height_max = 3 setget update_height_max
 export(float) var height_min = -3 setget update_height_min
 
@@ -119,7 +120,14 @@ func update_sides(new_value):
 	sides = new_value
 	generate_geometry(true)
 	
-# Used when a handle variable changes in the properties panel.
+	
+func update_rings(new_value):
+	if new_value < 1:
+		new_value = 1
+	rings = new_value
+	generate_geometry(true)
+	
+	
 func update_height_max(new_value):
 	if new_value < 0:
 		new_value = 0
@@ -291,7 +299,7 @@ func generate_geometry(fix_to_origin_setting):
 #	print("mesh position: ", position)
 #
 	var mesh_factory = OnyxMeshFactory.new()
-	onyx_mesh = mesh_factory.build_cylinder(sides, height, x_width, z_width, 1, position, unwrap_method)
+	onyx_mesh = mesh_factory.build_cylinder(sides, height, x_width, z_width, rings, position, unwrap_method)
 	render_onyx_mesh()
 	
 	# UPDATE HANDLES
