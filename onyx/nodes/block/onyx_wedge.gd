@@ -69,23 +69,21 @@ export(Material) var material = null setget update_material
 
 # Global initialisation
 func _enter_tree():
+	
+	#print("ONYXCUBE _enter_tree")
 		
 	# Load and generate geometry
 	generate_geometry(true) 
 		
 	# set gizmo stuff
-#	old_handles = onyx_mesh.get_all_centre_points()
+	
 		
 	# If this is being run in the editor, sort out the gizmo.
 	if Engine.editor_hint == true:
 		
-		# load gizmos
+		# load plugin
 		plugin = get_node("/root/EditorNode/Onyx")
-		
-		var new_gizmo = plugin.create_spatial_gizmo(self)
-		self.set_gizmo(new_gizmo)
-		print(gizmo)
-		
+
 		set_notify_local_transform(true)
 		set_notify_transform(true)
 		set_ignore_transform_notification(false)

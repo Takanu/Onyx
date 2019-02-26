@@ -58,12 +58,12 @@ export(float) var z_plus_position = 0.5 setget update_z_plus
 export(float) var z_minus_position = -0.5 setget update_z_minus
 
 # Used to subdivide the mesh to prevent CSG boolean glitches.
-export(Vector3) var subdivisions = Vector3(0, 0, 0)
+export(Vector3) var subdivisions = Vector3(1, 1, 1)
 
 # BEVELS
-export(float) var bevel_size = 0.2 setget update_bevel_size
-enum BevelTarget {Y_AXIS, X_AXIS, Z_AXIS}
-export(BevelTarget) var bevel_target = BevelTarget.Y_AXIS setget update_bevel_target
+#export(float) var bevel_size = 0.2 setget update_bevel_size
+#enum BevelTarget {Y_AXIS, X_AXIS, Z_AXIS}
+#export(BevelTarget) var bevel_target = BevelTarget.Y_AXIS setget update_bevel_target
 
 # UVS
 enum UnwrapMethod {CLAMPED_OVERLAP, PROPORTIONAL_OVERLAP, PROPORTIONAL_ISLANDS, CROSS_UNFOLD}
@@ -182,21 +182,28 @@ func update_z_minus(new_value):
 	
 	
 func update_subdivisions(new_value):
+	if new_value.x < 1:
+		new_value.x = 1
+	if new_value.y < 1:
+		new_value.y = 1
+	if new_value.z < 1:
+		new_value.z = 1
+		
 	subdivisions = new_value
 	generate_geometry(true)
 	
 	
-func update_bevel_size(new_value):
-	if new_value > 0:
-		new_value = 0
-		
-	bevel_size = new_value
-	generate_geometry(true)
-	
-func update_bevel_target(new_value):
-	bevel_target = new_value
-	generate_geometry(true)
-	
+#func update_bevel_size(new_value):
+#	if new_value > 0:
+#		new_value = 0
+#
+#	bevel_size = new_value
+#	generate_geometry(true)
+#
+#func update_bevel_target(new_value):
+#	bevel_target = new_value
+#	generate_geometry(true)
+#
 	
 # Used to recalibrate both the origin point location and the position handles.
 func update_positions(new_value):

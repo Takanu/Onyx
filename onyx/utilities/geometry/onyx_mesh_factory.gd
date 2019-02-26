@@ -92,7 +92,7 @@ func build_circle(points, x_width, z_width, position):
 	return tris
 	
 	
-func build_sphere(height, x_width, z_width, segments, height_segments, position, slice_from, slice_to, hemisphere, generate_cap, generate_ends):
+func build_sphere(height, x_width, z_width, segments, height_segments, position, slice_from, slice_to, hemisphere, generate_cap, generate_ends, smooth_normals):
 	
 	var onyx_mesh = OnyxMesh.new()
 	
@@ -146,17 +146,74 @@ func build_sphere(height, x_width, z_width, segments, height_segments, position,
 			vertex3 += position
 			vertex4 += position
 			
+			# UV MAPPING
 			var uvs = [Vector2(0.0, 1.0), Vector2(0.0, 0.0), Vector2(1.0, 0.0), Vector2(1.0, 1.0)]
 			
+			# NORMAL MAPPING
+			var normals = []
+			
+			# If we have smooth normals, we need extra points of detail
+			if smooth_normals == true:
+				# Get the right circle positions \o/
+				var theta0 = OnyxUtils.bend_int( (theta1 - deltaTheta), 0, PI)
+				var theta3 = OnyxUtils.bend_int( (theta2 + deltaTheta), 0, PI)
+				var phi0 = OnyxUtils.bend_int( (phi1 - deltaPhi), 0, PI * 2)
+				var phi3 = OnyxUtils.bend_int( (phi2 + deltaPhi), 0, PI * 2)
+				
+				if ring == 0 || ring == height_segments:
+					phi0 = OnyxUtils.loop_int( (phi2 + PI), 0, PI * 2)
+					phi3 = OnyxUtils.loop_int( (phi1 + PI), 0, PI * 2)
+				
+				# BUILD EXTRA POINTS
+				var up_1 = Vector3(sin(theta0) * cos(phi1) * (x_width/2),  cos(theta2) * (height/2),  sin(theta0) * sin(phi1) * (z_width/2))
+				var up_2 = Vector3(sin(theta0) * cos(phi2) * (x_width/2),  cos(theta2) * (height/2),  sin(theta0) * sin(phi2) * (z_width/2))
+				var left_1 = Vector3(sin(theta1) * cos(phi3) * (x_width/2),  cos(theta2) * (height/2),  sin(theta1) * sin(phi3) * (z_width/2))
+				var left_2 = Vector3(sin(theta2) * cos(phi3) * (x_width/2),  cos(theta2) * (height/2),  sin(theta2) * sin(phi3) * (z_width/2))
+				var right_1 = Vector3(sin(theta1) * cos(phi0) * (x_width/2),  cos(theta2) * (height/2),  sin(theta1) * sin(phi0) * (z_width/2))
+				var right_2 = Vector3(sin(theta2) * cos(phi0) * (x_width/2),  cos(theta2) * (height/2),  sin(theta2) * sin(phi0) * (z_width/2))
+				var down_1 = Vector3(sin(theta3) * cos(phi1) * (x_width/2),  cos(theta2) * (height/2),  sin(theta3) * sin(phi1) * (z_width/2))
+				var down_2 = Vector3(sin(theta3) * cos(phi2) * (x_width/2),  cos(theta2) * (height/2),  sin(theta3) * sin(phi2) * (z_width/2))
+				
+				# GET NORMALS
+				var n_0_0 = OnyxUtils.get_triangle_normal([vertex1, up_1, right_1])
+				var n_1_0 = OnyxUtils.get_triangle_normal([vertex2, up_2, vertex1])
+				var n_2_0 = OnyxUtils.get_triangle_normal([left_1, up_2, vertex2])
+				
+				var n_0_1 = OnyxUtils.get_triangle_normal([vertex4, vertex1, right_2])
+				var n_1_1 = OnyxUtils.get_triangle_normal([vertex3, vertex2, vertex4])
+				var n_2_1 = OnyxUtils.get_triangle_normal([left_2, vertex2, vertex3])
+				
+				var n_0_2 = OnyxUtils.get_triangle_normal([down_1, vertex4, right_2])
+				var n_1_2 = OnyxUtils.get_triangle_normal([down_2, vertex3, vertex4])
+				var n_2_2 = OnyxUtils.get_triangle_normal([left_2, vertex3, down_2])
+				
+				# COMBINE FOR EACH VERTEX
+				var normal_1 = (n_0_0 + n_1_0 + n_0_1 + n_1_1).normalized()
+				var normal_2 = (n_1_0 + n_2_0 + n_1_1 + n_2_1).normalized()
+				var normal_3 = (n_0_1 + n_1_1 + n_0_2 + n_1_2).normalized()
+				var normal_4 = (n_1_1 + n_2_1 + n_1_2 + n_2_2).normalized()
+				
+				normals = [normal_1, normal_2, normal_3, normal_4]
+				
+				pass
+			else:
+				var normal = OnyxUtils.get_triangle_normal([vertex3, vertex2, vertex4])
+				normals = [normal, normal, normal, normal]
+			
+			# CAP RENDERING
 			if ring == -1:
 				uvs = [Vector2(0.0, 1.0), Vector2(0.5, 1.0), Vector2(1.0, 1.0)]
-				onyx_mesh.add_tri([vertex1, vertex3, vertex4], [], [], uvs, [])
+				normals.remove(1)
+				onyx_mesh.add_tri([vertex1, vertex3, vertex4], [], [], uvs, normals)
 			
 			if ring == height_segments:
 				uvs = [Vector2(0.0, 1.0), Vector2(0.5, 1.0), Vector2(1.0, 1.0)]
-				onyx_mesh.add_tri([vertex3, vertex1, vertex2], [], [], uvs, [])
+				normals.remove(3)
+				onyx_mesh.add_tri([vertex3, vertex1, vertex2], [], [], uvs, normals)
 			
-			onyx_mesh.add_ngon([vertex1, vertex2, vertex3, vertex4], [], [], uvs, [])
+			else:
+				onyx_mesh.add_ngon([vertex1, vertex2, vertex3, vertex4], [], [], uvs, normals)
+				
 			point += 1
 			
 		
@@ -168,7 +225,7 @@ func build_sphere(height, x_width, z_width, segments, height_segments, position,
 	
 # Builds a cylinder given the height, width and number of points.  
 # Returns an array in the format of face_array.
-func build_cylinder(points : int, height : float, x_width : float, y_width : float, rings : int, position : Vector3, unwrap_method : int):
+func build_cylinder(mesh : OnyxMesh, points : int, height : float, x_width : float, y_width : float, rings : int, position : Vector3, unwrap_method : int, smooth_shading : bool):
 	
 	# generate the initial circle
 	var angle_step = (2.0 * PI) / points
@@ -185,7 +242,7 @@ func build_cylinder(points : int, height : float, x_width : float, y_width : flo
 		
 		current_angle += angle_step
 		
-	return build_polygon_extrusion(circle_points, height, rings, position, Vector3(0, 1, 0), unwrap_method)
+	return build_polygon_extrusion(mesh, circle_points, height, rings, position, Vector3(0, 1, 0), unwrap_method, smooth_shading)
 	
 	
 # A three-dimensional triangle extrusion C:
@@ -219,9 +276,138 @@ func build_wedge(base_x, base_z, point_width, point_position, position):
 	
 	return tris
 	
+
+
+# Builds a rounded rectangle where the corners around one axis are rounded.
+func build_rounded_rect(mesh: OnyxMesh, min_point, max_point, axis: String, corner_size : float, corner_iterations : int, smooth_normals : bool):
+	
+	# Clamp important values
+	if corner_size < 0:
+		corner_size = 0
+	if corner_iterations < 1:
+		corner_iterations = 1
+		
+	# Check axis provided
+	if axis != 'X' && axis != 'Y' && axis != 'Z':
+		print("ONYX_MESH_FACTORY : build_rounded_rect : Wrong axis defined for corner projection, returning early.")
+		return
+		
+	# Build 8 vertex points
+	var top_x = Vector3(max_point.x, max_point.y, min_point.z)
+	var top_xz = Vector3(max_point.x, max_point.y, max_point.z)
+	var top_z = Vector3(min_point.x, max_point.y, max_point.z)
+	var top = Vector3(min_point.x, max_point.y, min_point.z)
+	
+	var bottom_x = Vector3(max_point.x, min_point.y, min_point.z)
+	var bottom_xz = Vector3(max_point.x, min_point.y, max_point.z)
+	var bottom_z = Vector3(min_point.x, min_point.y, max_point.z)
+	var bottom = Vector3(min_point.x, min_point.y, min_point.z)
+	
+	# ROUNDED CORNERS
+	# build the initial list of corners, positive rotation.
+	var circle_points = []
+	var angle_step = (PI / 2) / corner_iterations
+	
+	var current_angle = 0.0
+	var end_angle = (PI / 2)
+	var i = 0
+	
+	while i < 4:
+		var point_set = []
+		current_angle = (PI / 2) * i
+		end_angle = (PI / 2) * (i + 1)
+	
+		while current_angle <= end_angle:
+			var x = corner_size * cos(current_angle)
+			var y = corner_size * sin(current_angle)
+			point_set.append(Vector2(x, y))
+			current_angle += angle_step
+		
+		circle_points.append(point_set)
+		i += 1
+	
+	# EXTRUSION
+	# build the initial list of vertices to be extruded.
+	var extrusion_vertices = []
+	
+	# will make a nicer bit of code later...
+	if axis == 'X':
+		var corners_top = OnyxUtils.vector2_to_vector3_array(circle_points[0], 'X', 'Y')
+		var corners_y = OnyxUtils.vector2_to_vector3_array(circle_points[1], 'X', 'Y')
+		var corners_bottom = OnyxUtils.vector2_to_vector3_array(circle_points[2], 'X', 'Y')
+		var corners_x = OnyxUtils.vector2_to_vector3_array(circle_points[3], 'X', 'Y')
+		
+		# top, top_z, bottom, bottom_z
+		# Get the four inset vertices to position the circle points to
+		var offset_top = top_z + Vector3(0, -corner_size, -corner_size)
+		var offset_y = top + Vector3(0, -corner_size, corner_size)
+		var offset_bottom = bottom + Vector3(0, corner_size, corner_size)
+		var offset_x = bottom_z + Vector3(0, corner_size, -corner_size)
+		
+		# Create transforms 
+		var tf_top = Transform(Basis(), offset_top)
+		var tf_y = Transform(Basis(), offset_y)
+		var tf_bottom = Transform(Basis(), offset_bottom)
+		var tf_x = Transform(Basis(), offset_x)
+		
+		# Get the circle points and translate each corner set by the above offsets
+		corners_top = OnyxUtils.transform_vector3_array(corners_top, tf_top)
+		corners_y = OnyxUtils.transform_vector3_array(corners_y, tf_y)
+		corners_bottom = OnyxUtils.transform_vector3_array(corners_bottom, tf_bottom)
+		corners_x = OnyxUtils.transform_vector3_array(corners_x, tf_x)
+		
+		# Stack all the vertices into a single array
+		var start_cap = OnyxUtils.combine_arrays([corners_top, corners_y, corners_bottom, corners_x])\
+		
+		# Project and duplicate
+		var tf_end_cap = Transform(Basis(), Vector3(max_point.x - min_point.x, 0, 0)) 
+		var end_cap = OnyxUtils.transform_vector3_array(start_cap, tf_end_cap)
+		
+		mesh.add_ngon(OnyxUtils.reverse_array(start_cap), [], [], [], [])
+		mesh.add_ngon(end_cap, [], [], [], [])
+		
+		# Build side edges
+		var v_1 = 0
+		while v_1 < start_cap.size():
+			
+			var v_2 = OnyxUtils.loop_int( (v_1 + 1), 0, (start_cap.size() - 1) )
+			
+			var b_1 = start_cap[v_1]
+			var b_2 = start_cap[v_2]
+			var t_1 = end_cap[v_1]
+			var t_2 = end_cap[v_2]
+			
+			var normals = []
+			
+			# SMOOTH SHADING
+			if smooth_normals == true:
+				var v_0 = OnyxUtils.loop_int( (v_1 - 1), 0, (start_cap.size() - 1) )
+				var v_3 = OnyxUtils.loop_int( (v_2 + 1), 0, (start_cap.size() - 1) )
+				
+				var b_0 = start_cap[v_0]
+				var b_3 = start_cap[v_3]
+				var t_0 = end_cap[v_0]
+				var t_3 = end_cap[v_3]
+				
+				var n_0 = OnyxUtils.get_triangle_normal( [b_0, t_0, b_1] )
+				var n_1 = OnyxUtils.get_triangle_normal( [b_1, t_1, b_2] )
+				var n_2 = OnyxUtils.get_triangle_normal( [b_2, t_2, b_3] )
+				
+				var normal_1 = (n_0 + n_1).normalized()
+				var normal_2 = (n_1 + n_2).normalized()
+				normals = [normal_1, normal_2, normal_2, normal_1]
+				
+			else:
+				var normal = OnyxUtils.get_triangle_normal( [b_1, t_1, b_2] )
+				normals = [normal, normal, normal, normal]
+			
+			var vertex_set = [b_1, b_2, t_2, t_1]
+			mesh.add_ngon(vertex_set, [], [], [], normals)
+			
+			v_1 += 1
+		
 	
 	
-func build_rounded_rect():
 	pass
 	
 	
@@ -319,9 +505,7 @@ func build_ramp(start_tf, end_tf, width, depth, maintain_width, iterations, ramp
 	
 	
 # Builds a "polygon extrusion" which takes a series of 2D points and extrudes them along the provided axis.
-func build_polygon_extrusion(points : Array, depth : float, rings : int, position : Vector3, extrusion_axis : Vector3, unwrap_method : int):
-	
-	var mesh = OnyxMesh.new()
+func build_polygon_extrusion(mesh : OnyxMesh, points : Array, depth : float, rings : int, position : Vector3, extrusion_axis : Vector3, unwrap_method : int, smooth_shading : bool):
 	
 	# make the points given three-dimensional.
 	var start_vertices = []
@@ -353,26 +537,6 @@ func build_polygon_extrusion(points : Array, depth : float, rings : int, positio
 			var t_vertex = matrix.xform(vertex)
 			base_vertices.append(t_vertex + position)
 			
-	#print("BASE: ", base_vertices)
-	# get the normals for all current edges
-	var normal_list = []
-
-	for i in base_vertices.size():
-
-		var a = base_vertices[i]
-		var b = Vector3()
-
-		if i == base_vertices.size() - 1:
-			b = base_vertices[0]
-		else:
-			b = base_vertices[i + 1]
-
-		var line_a = (b - a).normalized()
-		var line_b = Vector3(0, 1, 0)
-		var face_normal = line_a.cross(line_b)
-
-		normal_list.append(face_normal)
-
 
 	# based on the number of rings, build the faces.
 	var extrusion_step = depth / rings
@@ -383,31 +547,41 @@ func build_polygon_extrusion(points : Array, depth : float, rings : int, positio
 	for i in rings:
 
 		# go roooound the extrusion
-		for i in base_vertices.size():
+		for v_1 in base_vertices.size():
 			
-			# X--------X  c_3   c_4
+			# X--------X  t_1   t_2
 			# |        |
 			# |        |
 			# |        |
-			# X--------X  c_1   c_2
+			# X--------X  b_1   b_2
+			
+			# Get positions ahead and behind the set we plan on looking at for smooth normals
+			var v_0 = OnyxUtils.loop_int(v_1 - 1, 0, base_vertices.size() - 1)
+			var v_2 = OnyxUtils.loop_int(v_1 + 1, 0, base_vertices.size() - 1)
+			var v_3 = OnyxUtils.loop_int(v_1 + 2, 0, base_vertices.size() - 1)
 
-			var c_1 = base_vertices[i]
-			var c_2 = Vector3()
-			var normal = normal_list[i]
+			var b_0 = base_vertices[v_0]
+			var b_1 = base_vertices[v_1]
+			var b_2 = base_vertices[v_2]
+			var b_3 = base_vertices[v_0]
 
-			if i == base_vertices.size() - 1:
-				c_2 = base_vertices[0]
-			else:
-				c_2 = base_vertices[i + 1]
+			b_1 += base_extrusion_depth
+			b_2 += base_extrusion_depth
+			var t_1 = b_1 + distance_vec
+			var t_2 = b_2 + distance_vec
 
-			c_1 += base_extrusion_depth
-			c_2 += base_extrusion_depth
-			var c_3 = c_1 + distance_vec
-			var c_4 = c_2 + distance_vec
-
-			var vertices = [c_1, c_3, c_4, c_2]
+			var vertices = [b_1, t_1, t_2, b_2]
 			var tangents = []
-			var normals = [normal, normal, normal, normal]
+			var normals = []
+			
+			# NORMAL TYPES
+			if smooth_shading == true:
+				var n_1 = OnyxUtils.get_triangle_normal([b_0, b_1, t_1])
+				var n_2 = OnyxUtils.get_triangle_normal([b_2, b_2, b_3])
+				normals = [n_1, n_1, n_2, n_2]
+			else:
+				var normal = OnyxUtils.get_triangle_normal([b_1, t_1, b_2])
+				normals = [normal, normal, normal, normal]
 			
 			# UNWRAP METHOD 0 - CLAMPED OVERLAP
 			var uvs = []
@@ -416,7 +590,7 @@ func build_polygon_extrusion(points : Array, depth : float, rings : int, positio
 
 			# UNWRAP METHOD 1 - PROPORTIONAL OVERLAP
 			elif unwrap_method == 1:
-				var face_transform = OnyxUtils.get_uv_triangle_transform([c_1, c_3, c_2])
+				var face_transform = OnyxUtils.get_uv_triangle_transform([b_1, t_1, b_2])
 				
 				print('TRANSFORM = ', face_transform)
 				print('VERTICES = ', vertices)
@@ -431,8 +605,6 @@ func build_polygon_extrusion(points : Array, depth : float, rings : int, positio
 				print('NEW_UVS = ', uvs)
 
 				# ATTEMPT 2
-				
-				
 				print('xxxxxxxxxxxxxxxxxxxx')
 				
 			# ADD FACE

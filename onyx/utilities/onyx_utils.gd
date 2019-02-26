@@ -251,6 +251,7 @@ static func get_vector2_ranges(vectors : Array) -> Dictionary:
 	return {'max' : max_range, 'min' : min_range}
 	
 # Returns the transformation matrix of any given triangle to a transform that can map coordinates on a 2D plane suitable for unwraps.
+# NOTE - THIS CURRENTLY DOESN'T WORK
 static func get_uv_triangle_transform(vector_array : Array):
 	if vector_array.size() > 3 || vector_array.size() < 3:
 		print('OnyxUtils : get_triangle_transform : Array needs three Vertex values to work, returning...')
@@ -267,6 +268,14 @@ static func get_uv_triangle_transform(vector_array : Array):
 	#print('[x] -', x_axis, ' [y] - ', y_axis, ' [z] - ', z_axis)
 	var transform = Transform(unit, V, unit_n, vector_array[0])
 	return transform.inverse()
+	
+# Returns the normal for a set of three vertex points.
+static func get_triangle_normal(tris : Array) -> Vector3:
+	
+	var line_a = (tris[1] - tris[0]).normalized()
+	var line_b = (tris[2] - tris[0]).normalized()
+	return line_a.cross(line_b)
+	
 	
 # Projects an array of Vector3 values onto a single Vector3 value and returns the results
 static func project_vector3_array(input_array : Array, projection_vec : Vector3) -> Array:
@@ -306,14 +315,99 @@ static func vector3_to_vector2_array(input_array : Array, axis_target : String, 
 			else:
 				crunch_results.append(Vector2(vec.z, vec.y))
 		elif axis_target == 'Y':
-			if first_axis == 'x':
+			if first_axis == 'X':
 				crunch_results.append(Vector2(vec.x, vec.z))
 			else:
 				crunch_results.append(Vector2(vec.z, vec.x))
 		elif axis_target == 'Z':
-			if first_axis == 'x':
+			if first_axis == 'X':
 				crunch_results.append(Vector2(vec.x, vec.y))
 			else:
 				crunch_results.append(Vector2(vec.y, vec.x))
 			
 	return crunch_results
+
+
+# Converts an array of Vector2 values to Vector3 values, with an input specifying the axis to remain empty.
+static func vector2_to_vector3_array(input_array : Array, empty_axis : String, first_axis : String):
+	
+	if empty_axis != 'X' && empty_axis != 'Y' && empty_axis != 'Z':
+		print('vector2_to_vector3_array error : wrong axis target specified. Returning..')
+		return null
+	if first_axis != 'X' && first_axis != 'Y':
+		print('vector2_to_vector3_array error : wrong first axis specified. Returning..')
+		return null
+	if first_axis == empty_axis:
+		print('vector2_to_vector3_array error : Axis target identical to the first axis specified. Returning..')
+		return null
+		
+	var crunch_results = []
+	for vec in input_array:
+		if empty_axis == 'X':
+			if first_axis == 'X':
+				crunch_results.append(Vector3(0, vec.x, vec.y))
+			else:
+				crunch_results.append(Vector3(0, vec.y, vec.x))
+		elif empty_axis == 'Y':
+			if first_axis == 'X':
+				crunch_results.append(Vector3(vec.x, 0, vec.y))
+			else:
+				crunch_results.append(Vector3(vec.y, 0, vec.x))
+		elif empty_axis == 'Z':
+			if first_axis == 'X':
+				crunch_results.append(Vector3(vec.x, vec.y, 0))
+			else:
+				crunch_results.append(Vector3(vec.y, vec.x, 0))
+			
+	return crunch_results
+	
+	
+# Combines an array of arrays into a list of the objects inside them.
+static func combine_arrays(array_input : Array) -> Array:
+	
+	var results = []
+	for input in array_input:
+		
+		if input is Array:
+			for item in input:
+				results.append(item)
+				
+	return results
+	
+
+# Flips the order of items in an array.
+static func reverse_array(array_input : Array) -> Array:
+	
+	var results = []
+	var i = array_input.size() - 1
+	while i >= 0:
+		results.append(array_input[i])
+		i -= 1
+		
+	return results
+	
+# "Loops" the variable to the max value if lower than the minimum, and vice-versa.  The difference determines how much it loops back or forward.
+static func loop_int(input : int, min_value : int, max_value : int) -> int:
+	
+	var result = input
+	if result < min_value:
+		var diff = result - min_value + 1
+		result = max_value + diff
+	elif result > max_value:
+		var diff = max_value - result + 1
+		result = min_value - diff
+		
+	return result
+	
+# "Bends" the variable above or below either bound by the amount it breached said bounds.
+static func bend_int(input : int, min_value : int, max_value: int) -> int:
+	
+	var result = input
+	if result < min_value:
+		var diff = min_value - input
+		result = min_value + diff
+	elif result > max_value:
+		var diff = input - max_value
+		result = max_value - diff
+	
+	return result

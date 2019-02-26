@@ -53,6 +53,8 @@ export(Vector3) var end_position = Vector3(0.0, 1.0, 2.0) setget update_end_posi
 
 export(float) var stair_width = 2 setget update_stair_width
 export(float) var stair_depth = 2 setget update_stair_depth
+export(Vector2) var stair_width_percentage setget update_stair_width_percentage
+export(Vector2) var stair_length_percentage setget update_stair_length_percentage
 
 export(int) var stair_count = 4 setget update_stair_count
 
@@ -148,6 +150,24 @@ func update_stair_depth(new_value):
 		new_value = 0
 		
 	stair_depth = new_value
+	generate_geometry(true)
+	
+func update_stair_width_percentage(new_value):
+	if new_value.x < 0:
+		new_value.x = 0
+	if new_value.y < 0:
+		new_value.y = 0
+		
+	stair_width_percentage = new_value
+	generate_geometry(true)
+	
+func update_stair_length_percentage(new_value):
+	if new_value.x < 0:
+		new_value.x = 0
+	if new_value.y < 0:
+		new_value.y = 0
+		
+	stair_length_percentage = new_value
 	generate_geometry(true)
 	
 func update_stair_count(new_value):

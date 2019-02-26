@@ -62,6 +62,7 @@ export(bool) var flip_uvs_horizontally = false setget update_flip_uvs_horizontal
 export(bool) var flip_uvs_vertically = false setget update_flip_uvs_vertically
 
 # MATERIALS
+export(bool) var smooth_normals = true setget update_smooth_normals
 export(Material) var material = null setget update_material
 
 # ////////////////////////////////////////////////////////////
@@ -70,23 +71,21 @@ export(Material) var material = null setget update_material
 
 # Global initialisation
 func _enter_tree():
+	
+	#print("ONYXCUBE _enter_tree")
 		
 	# Load and generate geometry
 	generate_geometry(true) 
 		
 	# set gizmo stuff
-#	old_handles = onyx_mesh.get_all_centre_points()
+	
 		
 	# If this is being run in the editor, sort out the gizmo.
 	if Engine.editor_hint == true:
 		
-		# load gizmos
+		# load plugin
 		plugin = get_node("/root/EditorNode/Onyx")
-		
-		var new_gizmo = plugin.create_spatial_gizmo(self)
-		self.set_gizmo(new_gizmo)
-		print(gizmo)
-		
+
 		set_notify_local_transform(true)
 		set_notify_transform(true)
 		set_ignore_transform_notification(false)
@@ -97,12 +96,13 @@ func _ready():
 
 	
 func _notification(what):
-	if what == Spatial.NOTIFICATION_TRANSFORM_CHANGED:
-		
-		# check that transform changes are local only
-		if local_tracked_pos != translation:
-			local_tracked_pos = translation
-			call_deferred("_editor_transform_changed")
+	pass
+	
+#	if what == Spatial.NOTIFICATION_TRANSFORM_CHANGED:
+#		# check that transform changes are local only
+#		if local_tracked_pos != translation:
+#			local_tracked_pos = translation
+#			call_deferred("_editor_transform_changed")
 		
 func _editor_transform_changed():
 	pass
@@ -203,6 +203,10 @@ func update_flip_uvs_vertically(new_value):
 	flip_uvs_vertically = new_value
 	generate_geometry(true)
 	
+func update_smooth_normals(new_value):
+	smooth_normals = new_value
+	generate_geometry(true)
+	
 func update_material(new_value):
 	material = new_value
 	
@@ -287,7 +291,7 @@ func generate_geometry(fix_to_origin_setting):
 			
 	
 	var mesh_factory = OnyxMeshFactory.new()
-	onyx_mesh = mesh_factory.build_sphere(height, x_width, z_width, segments, rings, position, 0, 0, 1, true, true)
+	onyx_mesh = mesh_factory.build_sphere(height, x_width, z_width, segments, rings, position, 0, 0, 1, true, true, smooth_normals)
 	render_onyx_mesh()
 	
 	# UPDATE HANDLES

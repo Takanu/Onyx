@@ -63,6 +63,7 @@ export(bool) var flip_uvs_horizontally = false setget update_flip_uvs_horizontal
 export(bool) var flip_uvs_vertically = false setget update_flip_uvs_vertically
 
 # MATERIALS
+export(bool) var smooth_normals = true setget update_smooth_normals
 export(Material) var material = null setget update_material
 
 
@@ -72,23 +73,21 @@ export(Material) var material = null setget update_material
 
 # Global initialisation
 func _enter_tree():
+	
+	#print("ONYXCUBE _enter_tree")
 		
 	# Load and generate geometry
 	generate_geometry(true) 
 		
 	# set gizmo stuff
-	#old_handles = onyx_mesh.get_all_centre_points()
+	
 		
 	# If this is being run in the editor, sort out the gizmo.
 	if Engine.editor_hint == true:
 		
-		# load gizmos
+		# load plugin
 		plugin = get_node("/root/EditorNode/Onyx")
-		
-		var new_gizmo = plugin.create_spatial_gizmo(self)
-		self.set_gizmo(new_gizmo)
-		#print(gizmo)
-		
+
 		set_notify_local_transform(true)
 		set_notify_transform(true)
 		set_ignore_transform_notification(false)
@@ -206,6 +205,10 @@ func update_flip_uvs_vertically(new_value):
 	flip_uvs_vertically = new_value
 	generate_geometry(true)
 	
+func update_smooth_normals(new_value):
+	smooth_normals = new_value
+	generate_geometry(true)
+	
 func update_material(new_value):
 	material = new_value
 	
@@ -299,7 +302,8 @@ func generate_geometry(fix_to_origin_setting):
 #	print("mesh position: ", position)
 #
 	var mesh_factory = OnyxMeshFactory.new()
-	onyx_mesh = mesh_factory.build_cylinder(sides, height, x_width, z_width, rings, position, unwrap_method)
+	onyx_mesh.clear()
+	mesh_factory.build_cylinder(onyx_mesh, sides, height, x_width, z_width, rings, position, unwrap_method, smooth_normals)
 	render_onyx_mesh()
 	
 	# UPDATE HANDLES
