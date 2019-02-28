@@ -6,10 +6,10 @@ extends CSGMesh
 
 # allows origin point re-orientation, for precise alignments and convenience.
 enum OriginPosition {CENTER, BASE, BASE_CORNER}
-export(OriginPosition) var origin_setting = OriginPosition.BASE setget update_origin_mode
+export(OriginPosition) var origin_mode = OriginPosition.BASE setget update_origin_mode
 
 # used to keep track of how to move the origin point into a new position.
-var previous_origin_setting = OriginPosition.BASE
+var previous_origin_mode = OriginPosition.BASE
 
 # used to force an origin update when using the sliders to adjust positions.
 export(bool) var update_origin_setting = true setget update_positions
@@ -25,9 +25,6 @@ var onyx_mesh = OnyxMesh.new()
 
 # The handle points that will be used to resize the cube (NOT built in the format required by the gizmo)
 var handles = []
-
-# The handle points designed to provide the gizmo with information on how it should operate.
-var gizmo_handles = []
 
 # Old handle points that are saved every time a handle has finished moving.
 var old_handles = []
@@ -174,14 +171,14 @@ func update_origin_mode(new_value):
 	
 # 	print("updating origin...")
 	
-	if previous_origin_setting == new_value:
+	if previous_origin_mode == new_value:
 		return
 	
-	origin_setting = new_value
+	origin_mode = new_value
 	update_origin()
 	balance_handles()
 	generate_geometry(true)
-	previous_origin_setting = origin_setting
+	previous_origin_mode = origin_mode
 	
 
 func update_unwrap_method(new_value):
@@ -232,6 +229,7 @@ func update_origin():
 	if self.is_inside_tree() == false:
 		return
 	
+	#Re-add once handles are a thing, otherwise this breaks the origin stuff.
 #	if handles.size() == 0:
 #		return
 
@@ -239,10 +237,10 @@ func update_origin():
 	# based on the current position and properties, work out how much to move the origin.
 	var diff = Vector3(0, 0, 0)
 
-	match previous_origin_setting:
+	match previous_origin_mode:
 
 		OriginPosition.CENTER:
-			match origin_setting:
+			match origin_mode:
 
 				OriginPosition.BASE:
 					diff = Vector3(0, -height / 2, 0)
@@ -250,7 +248,7 @@ func update_origin():
 					diff = Vector3(-x_width / 2, -height / 2, -z_width / 2)
 
 		OriginPosition.BASE:
-			match origin_setting:
+			match origin_mode:
 
 				OriginPosition.CENTER:
 					diff = Vector3(0, height / 2, 0)
@@ -258,7 +256,7 @@ func update_origin():
 					diff = Vector3(-x_width / 2, 0, -z_width / 2)
 
 		OriginPosition.BASE_CORNER:
-			match origin_setting:
+			match origin_mode:
 
 				OriginPosition.BASE:
 					diff = Vector3(x_width / 2, 0, z_width / 2)
@@ -286,7 +284,7 @@ func generate_geometry(fix_to_origin_setting):
 	
 	# Ensure the geometry is generated to fit around the current origin point.
 	var position = Vector3(0, 0, 0)
-	match origin_setting:
+	match origin_mode:
 		OriginPosition.CENTER:
 			position = Vector3(0, 0, 0)
 		OriginPosition.BASE:
@@ -440,7 +438,7 @@ func move_handle(index, coordinate):
 	
 func balance_handles():
 	pass
-#	match origin_setting:
+#	match origin_mode:
 #		OriginPosition.CENTER:
 #			var diff = abs(height_max - height_min)
 #			height_max = diff / 2

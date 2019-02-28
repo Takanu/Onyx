@@ -5,14 +5,12 @@ extends CSGMesh
 # TOOL ENUMS
 
 # allows origin point re-orientation, for precise alignments and convenience.
-enum OriginPosition {CENTER, BASE, BASE_CORNER}
-export(OriginPosition) var origin_setting = OriginPosition.BASE setget update_origin_mode
+# NOT AVAILABLE ON TYPES WITH SPLINES OR POSITION POINTS.
 
-# used to keep track of how to move the origin point into a new position.
-var previous_origin_setting = OriginPosition.BASE
-
-# used to force an origin update when using the sliders to adjust positions.
-export(bool) var update_origin_setting = true setget update_positions
+#enum OriginPosition {CENTER, BASE, BASE_CORNER}
+#export(OriginPosition) var origin_mode = OriginPosition.BASE setget update_origin_mode
+#var previous_origin_mode = OriginPosition.BASE
+#export(bool) var update_origin_setting = true setget update_positions
 
 # ////////////////////////////////////////////////////////////
 # PROPERTIES
@@ -25,9 +23,6 @@ var onyx_mesh = OnyxMesh.new()
 
 # The handle points that will be used to resize the mesh (NOT built in the format required by the gizmo)
 var handles = {}
-
-# The handle points designed to provide the gizmo with information on how it should operate.
-#var gizmo_handles = []
 
 # Old handle points that are saved every time a handle has finished moving.
 var old_handles = {}
@@ -170,27 +165,6 @@ func update_stair_count(new_value):
 	stair_count = new_value
 	generate_geometry(true)
 	
-	
-# Used to recalibrate both the origin point location and the position handles.
-func update_positions(new_value):
-	#print("ONYXCUBE update_positions")
-	update_origin_setting = true
-	update_origin()
-	balance_handles()
-	generate_geometry(true)
-	
-func update_origin_mode(new_value):
-	#print("ONYXCUBE set_origin_mode")
-	
-	if previous_origin_setting == new_value:
-		return
-	
-	origin_setting = new_value
-	update_origin()
-	balance_handles()
-	generate_geometry(true)
-	previous_origin_setting = origin_setting
-	
 func update_unwrap_method(new_value):
 	unwrap_method = new_value
 	generate_geometry(true)
@@ -223,59 +197,6 @@ func update_material(new_value):
 	set_mesh(mesh)
 	
 
-# Updates the origin during generate_geometry() as well as the currently defined handles, 
-# to ensure it's anchored where it needs to be.
-func update_origin():
-	
-	# Used to prevent the function from triggering when not inside the tree.
-	# This happens during duplication and replication and causes incorrect node placement.
-	if is_inside_tree() == false:
-		return
-	
-	#print("ONYXCUBE update_origin")
-	
-	pass
-#
-#	if handles.size() == 0:
-#		return
-#
-#	# based on the current position and properties, work out how much to move the origin.
-#	var diff = Vector3(0, 0, 0)
-#
-#	match previous_origin_setting:
-#
-#		OriginPosition.CENTER:
-#			match origin_setting:
-#
-#				OriginPosition.BASE:
-#					diff = Vector3(0, y_minus_position, 0)
-#				OriginPosition.BASE_CORNER:
-#					diff = Vector3(x_minus_position, y_minus_position, z_minus_position)
-#
-#		OriginPosition.BASE:
-#			match origin_setting:
-#
-#				OriginPosition.CENTER:
-#					diff = Vector3(0, y_plus_position / 2, 0)
-#				OriginPosition.BASE_CORNER:
-#					diff = Vector3(x_minus_position, 0, z_minus_position)
-#
-#		OriginPosition.BASE_CORNER:
-#			match origin_setting:
-#
-#				OriginPosition.BASE:
-#					diff = Vector3(x_plus_position / 2, 0, z_plus_position / 2)
-#				OriginPosition.CENTER:
-#					diff = Vector3(x_plus_position / 2, y_plus_position / 2, z_plus_position / 2)
-#
-#	# Get the difference
-#	var new_loc = self.translation + diff
-#	var old_loc = self.translation
-#	#print("MOVING LOCATION: ", old_loc, " -> ", new_loc)
-#
-#	# set it
-#	self.global_translate(new_loc - old_loc)
-
 # ////////////////////////////////////////////////////////////
 # GEOMETRY GENERATION
 
@@ -287,23 +208,6 @@ func generate_geometry(fix_to_origin_setting):
 		return
 	
 	print(self, " - Generating geometry")
-	
-#	var maxPoint = Vector3(x_plus_position, y_plus_position, z_plus_position)
-#	var minPoint = Vector3(x_minus_position, y_minus_position, z_minus_position)
-#
-#	if fix_to_origin_setting == true:
-#		match origin_setting:
-#			OriginPosition.BASE:
-#				maxPoint = Vector3(x_plus_position, (y_plus_position + (y_minus_position * -1)), z_plus_position)
-#				minPoint = Vector3(x_minus_position, 0, z_minus_position)
-#
-#			OriginPosition.BASE_CORNER:
-#				maxPoint = Vector3(
-#					(x_plus_position + (x_minus_position * -1)), 
-#					(y_plus_position + (y_minus_position * -1)), 
-#					(z_plus_position + (z_minus_position * -1))
-#					)
-#				minPoint = Vector3(0, 0, 0)
 
 	# This shape is too custom to delegate, so it's being done here
 	#   X---------X  e1 e2
@@ -544,7 +448,6 @@ func handle_change(index, coord):
 func handle_commit(index, coord):
 	
 	update_handle_from_gizmo(index, coord)
-	update_origin()
 	balance_handles()
 	generate_geometry(true)
 	
@@ -558,7 +461,7 @@ func balance_handles():
 	#print("ONYXCUBE balance_handles")
 	pass
 	
-#	match origin_setting:
+#	match origin_mode:
 #		OriginPosition.CENTER:
 #			var diff = abs(x_plus_position - x_minus_position)
 #			x_plus_position = diff / 2

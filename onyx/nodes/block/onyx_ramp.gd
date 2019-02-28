@@ -5,14 +5,12 @@ extends CSGMesh
 # TOOL ENUMS
 
 # allows origin point re-orientation, for precise alignments and convenience.
-enum OriginPosition {CENTER, BASE, BASE_CORNER}
-export(OriginPosition) var origin_setting = OriginPosition.BASE setget update_origin_mode
+# NOT AVAILABLE ON TYPES WITH SPLINES OR POSITION POINTS.
 
-# used to keep track of how to move the origin point into a new position.
-var previous_origin_setting = OriginPosition.BASE
-
-# used to force an origin update when using the sliders to adjust positions.
-export(bool) var update_origin_setting = true setget update_positions
+#enum OriginPosition {CENTER, BASE, BASE_CORNER}
+#export(OriginPosition) var origin_mode = OriginPosition.BASE setget update_origin_mode
+#var previous_origin_mode = OriginPosition.BASE
+#export(bool) var update_origin_setting = true setget update_positions
 
 # ////////////////////////////////////////////////////////////
 # PROPERTIES
@@ -25,9 +23,6 @@ var onyx_mesh = OnyxMesh.new()
 
 # The handle points that will be used to resize the cube (NOT built in the format required by the gizmo)
 var handles = []
-
-# The handle points designed to provide the gizmo with information on how it should operate.
-var gizmo_handles = []
 
 # Old handle points that are saved every time a handle has finished moving.
 var old_handles = []
@@ -42,7 +37,7 @@ var local_tracked_pos = Vector3(0, 0, 0)
 # Must be exported to be saved in a scene?  smh.
 export(Vector3) var start_position = Vector3(0, 0, 0) setget update_start_position
 export(Vector3) var start_rotation = Vector3(0, 0, 0) setget update_start_rotation
-export(Vector3) var end_position = Vector3(0, 1, 1) setget update_end_position
+export(Vector3) var end_position = Vector3(0, 1, 2) setget update_end_position
 export(Vector3) var end_rotation = Vector3(0, 0, 0) setget update_end_rotation
 
 export(float) var ramp_width = 1 setget update_ramp_width
@@ -156,26 +151,6 @@ func update_ramp_fill_type(new_value):
 	ramp_fill_type = new_value
 	generate_geometry(true)
 	
-# Used to recalibrate both the origin point location and the position handles.
-func update_positions(new_value):
-	update_origin_setting = true
-	update_origin()
-	balance_handles()
-	generate_geometry(true)
-	
-# Changes the origin position relative to the shape and regenerates geometry and handles.
-func update_origin_mode(new_value):
-	
-	if previous_origin_setting == new_value:
-		return
-	
-	origin_setting = new_value
-	update_origin()
-	balance_handles()
-	generate_geometry(true)
-	previous_origin_setting = origin_setting
-	
-	
 func update_unwrap_method(new_value):
 	unwrap_method = new_value
 	generate_geometry(true)
@@ -208,60 +183,6 @@ func update_material(new_value):
 	set_mesh(mesh)
 	
 
-	
-# Updates the origin during generate_geometry() as well as the currently defined handles, 
-# to ensure it's anchored where it needs to be.
-func update_origin():
-	
-# 	print("updating origin222...")
-	
-	# Used to prevent the function from triggering when not inside the tree.
-	# This happens during duplication and replication and causes incorrect node placement.
-	if self.is_inside_tree() == false:
-		return
-	
-#	if handles.size() == 0:
-#		return
-
-	
-#	# based on the current position and properties, work out how much to move the origin.
-#	var diff = Vector3(0, 0, 0)
-#
-#	match previous_origin_setting:
-#
-#		OriginPosition.CENTER:
-#			match origin_setting:
-#
-#				OriginPosition.BASE:
-#					diff = Vector3(0, -point_position.y / 2, 0)
-#				OriginPosition.BASE_CORNER:
-#					diff = Vector3(-max_x / 2, -point_position.y / 2, -base_z_size / 2)
-#
-#		OriginPosition.BASE:
-#			match origin_setting:
-#
-#				OriginPosition.CENTER:
-#					diff = Vector3(0, point_position.y / 2, 0)
-#				OriginPosition.BASE_CORNER:
-#					diff = Vector3(-max_x / 2, 0, -base_z_size / 2)
-#
-#		OriginPosition.BASE_CORNER:
-#			match origin_setting:
-#
-#				OriginPosition.BASE:
-#					diff = Vector3(max_x / 2, 0, base_z_size / 2)
-#				OriginPosition.CENTER:
-#					diff = Vector3(max_x / 2, point_position.y / 2, base_z_size / 2)
-
-	# Get the difference
-#	var new_loc = self.translation + diff
-#	var old_loc = self.translation
-# 	print("MOVING LOCATION: ", old_loc, " -> ", new_loc)
-
-#	# set it
-#	self.global_translate(new_loc - old_loc)
-	
-
 # ////////////////////////////////////////////////////////////
 # GEOMETRY GENERATION
 
@@ -272,24 +193,10 @@ func generate_geometry(fix_to_origin_setting):
 	if is_inside_tree() == false:
 		return
 	
-	# Ensure the geometry is generated to fit around the current origin point.
+	# Get some basic transform data.
 	var position = Vector3(0, 0, 0)
 	var start_tf = Transform(Basis(start_rotation), start_position)
 	var end_tf = Transform(Basis(end_rotation), end_position)
-#	var max_x = 0
-#	if base_x_size < point_size:
-#		max_x = point_size
-#	else:
-#		max_x = base_x_size
-#
-#	match origin_setting:
-#		OriginPosition.CENTER:
-#			position = Vector3(0, -point_position.y / 2, 0)
-#		OriginPosition.BASE:
-#			position = Vector3(0, 0, 0)
-#		OriginPosition.BASE_CORNER:
-#			position = Vector3(max_x / 2, 0, base_z_size / 2)
-			
 	
 	var mesh_factory = OnyxMeshFactory.new()
 	onyx_mesh = mesh_factory.build_ramp(start_tf, end_tf, ramp_width, ramp_depth, maintain_width, iterations, ramp_fill_type, position)
@@ -394,7 +301,7 @@ func handle_change(index, coord):
 func handle_commit(index, coord):
 	
 	change_handle(index, coord)
-	update_origin()
+	#update_origin()
 	balance_handles()
 	generate_geometry(true)
 	
@@ -436,7 +343,7 @@ func move_handle(index, coordinate):
 	
 func balance_handles():
 	pass
-#	match origin_setting:
+#	match origin_mode:
 #		OriginPosition.CENTER:
 #			var diff = abs(height_max - height_min)
 #			height_max = diff / 2

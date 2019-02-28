@@ -6,10 +6,10 @@ extends CSGMesh
 
 # allows origin point re-orientation, for precise alignments and convenience.
 enum OriginPosition {CENTER, BASE, BASE_CORNER}
-export(OriginPosition) var origin_setting = OriginPosition.BASE setget update_origin_mode
+export(OriginPosition) var origin_mode = OriginPosition.BASE setget update_origin_mode
 
 # used to keep track of how to move the origin point into a new position.
-var previous_origin_setting = OriginPosition.BASE
+var previous_origin_mode = OriginPosition.BASE
 
 # used to force an origin update when using the sliders to adjust positions.
 export(bool) var update_origin_setting = true setget update_positions
@@ -28,9 +28,6 @@ var onyx_gizmo
 
 # The handle points that will be used to resize the mesh (NOT built in the format required by the gizmo)
 var handles = {}
-
-# The handle points designed to provide the gizmo with information on how it should operate.
-#var gizmo_handles = []
 
 # Old handle points that are saved every time a handle has finished moving.
 var old_handles = {}
@@ -135,7 +132,7 @@ func update_x_plus(new_value):
 	
 func update_x_minus(new_value):
 	#print("ONYXCUBE update_x_minus")
-	if new_value > 0 || origin_setting == OriginPosition.BASE_CORNER:
+	if new_value > 0 || origin_mode == OriginPosition.BASE_CORNER:
 		new_value = 0
 		
 	x_minus_position = new_value
@@ -151,7 +148,7 @@ func update_y_plus(new_value):
 	
 func update_y_minus(new_value):
 	#print("ONYXCUBE update_y_minus")
-	if new_value > 0 || origin_setting == OriginPosition.BASE_CORNER || origin_setting == OriginPosition.BASE:
+	if new_value > 0 || origin_mode == OriginPosition.BASE_CORNER || origin_mode == OriginPosition.BASE:
 		new_value = 0
 		
 	y_minus_position = new_value
@@ -167,7 +164,7 @@ func update_z_plus(new_value):
 	
 func update_z_minus(new_value):
 	#print("ONYXCUBE update_z_minus")
-	if new_value > 0 || origin_setting == OriginPosition.BASE_CORNER:
+	if new_value > 0 || origin_mode == OriginPosition.BASE_CORNER:
 		new_value = 0
 		
 	z_minus_position = new_value
@@ -209,14 +206,14 @@ func update_positions(new_value):
 func update_origin_mode(new_value):
 	#print("ONYXCUBE set_origin_mode")
 	
-	if previous_origin_setting == new_value:
+	if previous_origin_mode == new_value:
 		return
 	
-	origin_setting = new_value
+	origin_mode = new_value
 	update_origin()
 	balance_handles()
 	generate_geometry(true)
-	previous_origin_setting = origin_setting
+	previous_origin_mode = origin_mode
 	
 func update_unwrap_method(new_value):
 	unwrap_method = new_value
@@ -261,16 +258,17 @@ func update_origin():
 	
 	#print("ONYXCUBE update_origin")
 	
-	if handles.size() == 0:
-		return
+	#Re-add once handles are a thing, otherwise this breaks the origin stuff.
+#	if handles.size() == 0:
+#		return
 	
 	# based on the current position and properties, work out how much to move the origin.
 	var diff = Vector3(0, 0, 0)
 	
-	match previous_origin_setting:
+	match previous_origin_mode:
 		
 		OriginPosition.CENTER:
-			match origin_setting:
+			match origin_mode:
 				
 				OriginPosition.BASE:
 					diff = Vector3(0, y_minus_position, 0)
@@ -278,7 +276,7 @@ func update_origin():
 					diff = Vector3(x_minus_position, y_minus_position, z_minus_position)
 			
 		OriginPosition.BASE:
-			match origin_setting:
+			match origin_mode:
 				
 				OriginPosition.CENTER:
 					diff = Vector3(0, y_plus_position / 2, 0)
@@ -286,7 +284,7 @@ func update_origin():
 					diff = Vector3(x_minus_position, 0, z_minus_position)
 					
 		OriginPosition.BASE_CORNER:
-			match origin_setting:
+			match origin_mode:
 				
 				OriginPosition.BASE:
 					diff = Vector3(x_plus_position / 2, 0, z_plus_position / 2)
@@ -317,7 +315,7 @@ func generate_geometry(fix_to_origin_setting):
 	var minPoint = Vector3(x_minus_position, y_minus_position, z_minus_position)
 	
 	if fix_to_origin_setting == true:
-		match origin_setting:
+		match origin_mode:
 			OriginPosition.BASE:
 				maxPoint = Vector3(x_plus_position, (y_plus_position + (y_minus_position * -1)), z_plus_position)
 				minPoint = Vector3(x_minus_position, 0, z_minus_position)
@@ -505,7 +503,7 @@ func balance_handles():
 	#print("balancing coordinates")
 	#print("ONYXCUBE balance_handles")
 	
-	match origin_setting:
+	match origin_mode:
 		OriginPosition.CENTER:
 			var diff = abs(x_plus_position - x_minus_position)
 			x_plus_position = diff / 2
@@ -618,7 +616,7 @@ func idek():
 	
 	# Check if we need to offset geometry based on the origin
 	var offset = Vector3()
-	match origin_setting:
+	match origin_mode:
 		OriginPosition.BASE:
 			offset = Vector3(x_plus_position, y_minus_position, z_plus_position)
 		OriginPosition.BASE_CORNER:

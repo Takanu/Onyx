@@ -444,7 +444,7 @@ stair_count = 6
 material = ExtResource( 1 )
 
 [node name="OnyxStairs9" type="CSGMesh" parent="stairs"]
-transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -13.635, 1.68942, -0.0138786 )
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, -13.635, 1.58942, -0.0138786 )
 mesh = SubResource( 8 )
 script = ExtResource( 2 )
 __meta__ = {
