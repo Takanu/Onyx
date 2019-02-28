@@ -23,12 +23,6 @@ var plugin
 # The face set script, used for managing geometric data.
 var onyx_mesh = OnyxMesh.new()
 
-# The gizmo to be used with the node.
-var onyx_gizmo
-
-# Materials assigned to gizmos.
-var gizmo_mat = load("res://addons/onyx/materials/gizmo_t1.tres")
-
 # The handle points that will be used to resize the mesh (NOT built in the format required by the gizmo)
 var handles = {}
 
@@ -44,7 +38,8 @@ var origin_offset = Vector3(0, 0, 0)
 # Used to decide whether to update the geometry.  Enables parents to be moved without forcing updates.
 var local_tracked_pos = Vector3(0, 0, 0)
 
-var color = Vector3(1, 1, 1)
+# ////////////////////////////////////////////////////////////
+# EXPORTS
 
 # Exported variables representing all usable handles for re-shaping the mesh, in order.
 # Must be exported to be saved in a scene?  smh.
@@ -53,8 +48,8 @@ export(Vector3) var end_position = Vector3(0.0, 1.0, 2.0) setget update_end_posi
 
 export(float) var stair_width = 2 setget update_stair_width
 export(float) var stair_depth = 2 setget update_stair_depth
-export(Vector2) var stair_width_percentage setget update_stair_width_percentage
-export(Vector2) var stair_length_percentage setget update_stair_length_percentage
+export(Vector2) var stair_width_percentage = Vector2(1, 1) setget update_stair_width_percentage
+export(Vector2) var stair_length_percentage = Vector2(1, 1) setget update_stair_length_percentage
 
 export(int) var stair_count = 4 setget update_stair_count
 
@@ -82,14 +77,8 @@ export(Material) var material = null setget update_material
 
 # Global initialisation
 func _enter_tree():
-	
 	#print("ONYXCUBE _enter_tree")
 		
-	# Load and generate geometry
-	generate_geometry(true) 
-		
-	# set gizmo stuff
-	
 		
 	# If this is being run in the editor, sort out the gizmo.
 	if Engine.editor_hint == true:
@@ -100,13 +89,17 @@ func _enter_tree():
 		set_notify_local_transform(true)
 		set_notify_transform(true)
 		set_ignore_transform_notification(false)
+		
+		
 
 func _exit_tree():
     pass
 	
 func _ready():
-	#print("ONYXCUBE _enter_tree")
-	pass
+	# Only generate geometry if we have nothing and we're running inside the editor, this likely indicates the node is brand new.
+	if Engine.editor_hint == true:
+		if mesh == null:
+			generate_geometry(true)
 
 	
 func _notification(what):
@@ -217,6 +210,10 @@ func update_flip_uvs_vertically(new_value):
 func update_material(new_value):
 	material = new_value
 	
+	# Prevents geometry generation if the node hasn't loaded yet
+	if is_inside_tree() == false:
+		return
+	
 	var array_mesh = onyx_mesh.render_surface_geometry(material)
 	var helper = MeshDataTool.new()
 	var mesh = Mesh.new()
@@ -232,7 +229,7 @@ func update_origin():
 	
 	# Used to prevent the function from triggering when not inside the tree.
 	# This happens during duplication and replication and causes incorrect node placement.
-	if self.is_inside_tree() == false:
+	if is_inside_tree() == false:
 		return
 	
 	#print("ONYXCUBE update_origin")
@@ -284,6 +281,12 @@ func update_origin():
 
 # Using the set handle points, geometry is generated and drawn.  The handles owned by the gizmo are also updated.
 func generate_geometry(fix_to_origin_setting):
+	
+	# Prevents geometry generation if the node hasn't loaded yet
+	if is_inside_tree() == false:
+		return
+	
+	print(self, " - Generating geometry")
 	
 #	var maxPoint = Vector3(x_plus_position, y_plus_position, z_plus_position)
 #	var minPoint = Vector3(x_minus_position, y_minus_position, z_minus_position)

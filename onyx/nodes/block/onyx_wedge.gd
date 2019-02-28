@@ -23,9 +23,6 @@ var plugin
 # The face set script, used for managing geometric data.
 var onyx_mesh = OnyxMesh.new()
 
-# Materials assigned to gizmos.
-var gizmo_mat = load("res://addons/onyx/materials/gizmo_t1.tres")
-
 # The handle points that will be used to resize the cube (NOT built in the format required by the gizmo)
 var handles = []
 
@@ -41,7 +38,6 @@ var origin_offset = Vector3(0, 0, 0)
 # Used to decide whether to update the geometry.  Enables parents to be moved without forcing updates.
 var local_tracked_pos = Vector3(0, 0, 0)
 
-var color = Vector3(1, 1, 1)
 
 # Exported variables representing all usable handles for re-shaping the mesh, in order.
 # Must be exported to be saved in a scene?  smh.
@@ -69,14 +65,10 @@ export(Material) var material = null setget update_material
 
 # Global initialisation
 func _enter_tree():
-	
 	#print("ONYXCUBE _enter_tree")
 		
 	# Load and generate geometry
-	generate_geometry(true) 
-		
-	# set gizmo stuff
-	
+	#generate_geometry(true) 
 		
 	# If this is being run in the editor, sort out the gizmo.
 	if Engine.editor_hint == true:
@@ -88,9 +80,16 @@ func _enter_tree():
 		set_notify_transform(true)
 		set_ignore_transform_notification(false)
 		
+		
+
+func _exit_tree():
+    pass
 	
 func _ready():
-	pass
+	# Only generate geometry if we have nothing and we're running inside the editor, this likely indicates the node is brand new.
+	if Engine.editor_hint == true:
+		if mesh == null:
+			generate_geometry(true)
 
 	
 func _notification(what):

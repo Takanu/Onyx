@@ -26,9 +26,6 @@ var onyx_mesh = OnyxMesh.new()
 # The gizmo to be used with the node.
 var onyx_gizmo
 
-# Materials assigned to gizmos.
-var gizmo_mat = load("res://addons/onyx/materials/gizmo_t1.tres")
-
 # The handle points that will be used to resize the mesh (NOT built in the format required by the gizmo)
 var handles = {}
 
@@ -44,7 +41,6 @@ var origin_offset = Vector3(0, 0, 0)
 # Used to decide whether to update the geometry.  Enables parents to be moved without forcing updates.
 var local_tracked_pos = Vector3(0, 0, 0)
 
-var color = Vector3(1, 1, 1)
 
 # Exported variables representing all usable handles for re-shaping the mesh, in order.
 # Must be exported to be saved in a scene?  smh.
@@ -83,14 +79,7 @@ export(Material) var material = null setget update_material
 
 # Global initialisation
 func _enter_tree():
-	
-	#print("ONYXCUBE _enter_tree")
-		
-	# Load and generate geometry
-	generate_geometry(true) 
-		
-	# set gizmo stuff
-	
+	print("ONYXCUBE _enter_tree")
 		
 	# If this is being run in the editor, sort out the gizmo.
 	if Engine.editor_hint == true:
@@ -106,8 +95,12 @@ func _exit_tree():
     pass
 	
 func _ready():
-	#print("ONYXCUBE _enter_tree")
-	pass
+	print("ONYXCUBE _ready")
+	
+	# Only generate geometry if we have nothing and we're running inside the editor, this likely indicates the node is brand new.
+	if Engine.editor_hint == true:
+		if mesh == null:
+			generate_geometry(true)
 
 	
 func _notification(what):
@@ -244,6 +237,10 @@ func update_flip_uvs_vertically(new_value):
 func update_material(new_value):
 	material = new_value
 	
+	# Prevents geometry generation if the node hasn't loaded yet, otherwise it will try to set a blank mesh.
+	if is_inside_tree() == false:
+		return
+	
 	var array_mesh = onyx_mesh.render_surface_geometry(material)
 	var helper = MeshDataTool.new()
 	var mesh = Mesh.new()
@@ -259,7 +256,7 @@ func update_origin():
 	
 	# Used to prevent the function from triggering when not inside the tree.
 	# This happens during duplication and replication and causes incorrect node placement.
-	if self.is_inside_tree() == false:
+	if is_inside_tree() == false:
 		return
 	
 	#print("ONYXCUBE update_origin")
@@ -310,8 +307,11 @@ func update_origin():
 # Using the set handle points, geometry is generated and drawn.  The handles owned by the gizmo are also updated.
 func generate_geometry(fix_to_origin_setting):
 	
-	#print("ONYXCUBE generate_geometry")
-	#print("Regenerating geometry")
+	# Prevents geometry generation if the node hasn't loaded yet
+	if is_inside_tree() == false:
+		return
+	
+	print("ONYXCUBE generate_geometry")
 	
 	var maxPoint = Vector3(x_plus_position, y_plus_position, z_plus_position)
 	var minPoint = Vector3(x_minus_position, y_minus_position, z_minus_position)
@@ -333,9 +333,16 @@ func generate_geometry(fix_to_origin_setting):
 	# Generate the geometry
 	var mesh_factory = OnyxMeshFactory.new()
 	onyx_mesh.clear()
-	
+
 	mesh_factory.build_cuboid(onyx_mesh, maxPoint, minPoint, unwrap_method, subdivisions)
 	render_onyx_mesh()
+
+#	var cylinder = CylinderMesh.new()
+#	cylinder.top_radius = 2
+#	cylinder.bottom_radius = 2
+#	cylinder.height = 4
+#
+#	set_mesh(cylinder)
 	
 	# Re-submit the handle positions based on the built faces, so other handles that aren't the
 	# focus of a handle operation are being updated

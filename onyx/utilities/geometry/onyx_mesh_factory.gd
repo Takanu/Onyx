@@ -115,9 +115,11 @@ func build_sphere(height, x_width, z_width, segments, height_segments, position,
 			theta2 += deltaTheta
 			
 		var point = 0
+		phi1 = 0.0
+		phi2 = deltaPhi
 			
 #		print("thetas: ", theta1, theta2)
-#		print("NEW RING===========")
+		print("NEW RING===========")
 		
 		while point <= segments - 1:
 			if point != 0:
@@ -155,24 +157,30 @@ func build_sphere(height, x_width, z_width, segments, height_segments, position,
 			# If we have smooth normals, we need extra points of detail
 			if smooth_normals == true:
 				# Get the right circle positions \o/
-				var theta0 = OnyxUtils.bend_int( (theta1 - deltaTheta), 0, PI)
-				var theta3 = OnyxUtils.bend_int( (theta2 + deltaTheta), 0, PI)
-				var phi0 = OnyxUtils.bend_int( (phi1 - deltaPhi), 0, PI * 2)
-				var phi3 = OnyxUtils.bend_int( (phi2 + deltaPhi), 0, PI * 2)
+				var theta0 = theta1 - deltaTheta
+				var theta3 = theta2 + deltaTheta
+				var phi0 = phi1 - deltaPhi
+				var phi3 = phi2 + deltaPhi
 				
-				if ring == 0 || ring == height_segments:
-					phi0 = OnyxUtils.loop_int( (phi2 + PI), 0, PI * 2)
-					phi3 = OnyxUtils.loop_int( (phi1 + PI), 0, PI * 2)
+#				if point == segments - 1:
+#					phi3 = deltaPhi
+#					phi2 = 0
+				
+#				if ring == 0 || ring == height_segments:
+#					theta0 = OnyxUtils.loop_int( (theta1 + PI), 0, PI * 2)
+#					theta3 = OnyxUtils.loop_int( (theta2 + PI), 0, PI * 2)
+					
+				print("phis - ", phi0, " ", phi1, " ", phi2, " ", phi3)
 				
 				# BUILD EXTRA POINTS
-				var up_1 = Vector3(sin(theta0) * cos(phi1) * (x_width/2),  cos(theta2) * (height/2),  sin(theta0) * sin(phi1) * (z_width/2))
-				var up_2 = Vector3(sin(theta0) * cos(phi2) * (x_width/2),  cos(theta2) * (height/2),  sin(theta0) * sin(phi2) * (z_width/2))
-				var left_1 = Vector3(sin(theta1) * cos(phi3) * (x_width/2),  cos(theta2) * (height/2),  sin(theta1) * sin(phi3) * (z_width/2))
+				var up_1 = Vector3(sin(theta0) * cos(phi1) * (x_width/2),  cos(theta0) * (height/2),  sin(theta0) * sin(phi1) * (z_width/2))
+				var up_2 = Vector3(sin(theta0) * cos(phi2) * (x_width/2),  cos(theta0) * (height/2),  sin(theta0) * sin(phi2) * (z_width/2))
+				var left_1 = Vector3(sin(theta1) * cos(phi3) * (x_width/2),  cos(theta1) * (height/2),  sin(theta1) * sin(phi3) * (z_width/2))
 				var left_2 = Vector3(sin(theta2) * cos(phi3) * (x_width/2),  cos(theta2) * (height/2),  sin(theta2) * sin(phi3) * (z_width/2))
-				var right_1 = Vector3(sin(theta1) * cos(phi0) * (x_width/2),  cos(theta2) * (height/2),  sin(theta1) * sin(phi0) * (z_width/2))
+				var right_1 = Vector3(sin(theta1) * cos(phi0) * (x_width/2),  cos(theta1) * (height/2),  sin(theta1) * sin(phi0) * (z_width/2))
 				var right_2 = Vector3(sin(theta2) * cos(phi0) * (x_width/2),  cos(theta2) * (height/2),  sin(theta2) * sin(phi0) * (z_width/2))
-				var down_1 = Vector3(sin(theta3) * cos(phi1) * (x_width/2),  cos(theta2) * (height/2),  sin(theta3) * sin(phi1) * (z_width/2))
-				var down_2 = Vector3(sin(theta3) * cos(phi2) * (x_width/2),  cos(theta2) * (height/2),  sin(theta3) * sin(phi2) * (z_width/2))
+				var down_1 = Vector3(sin(theta3) * cos(phi1) * (x_width/2),  cos(theta3) * (height/2),  sin(theta3) * sin(phi1) * (z_width/2))
+				var down_2 = Vector3(sin(theta3) * cos(phi2) * (x_width/2),  cos(theta3) * (height/2),  sin(theta3) * sin(phi2) * (z_width/2))
 				
 				# GET NORMALS
 				var n_0_0 = OnyxUtils.get_triangle_normal([vertex1, up_1, right_1])
@@ -190,12 +198,14 @@ func build_sphere(height, x_width, z_width, segments, height_segments, position,
 				# COMBINE FOR EACH VERTEX
 				var normal_1 = (n_0_0 + n_1_0 + n_0_1 + n_1_1).normalized()
 				var normal_2 = (n_1_0 + n_2_0 + n_1_1 + n_2_1).normalized()
-				var normal_3 = (n_0_1 + n_1_1 + n_0_2 + n_1_2).normalized()
-				var normal_4 = (n_1_1 + n_2_1 + n_1_2 + n_2_2).normalized()
+				var normal_3 = (n_1_1 + n_2_1 + n_1_2 + n_2_2).normalized()
+				var normal_4 = (n_0_1 + n_1_1 + n_0_2 + n_1_2).normalized()
 				
 				normals = [normal_1, normal_2, normal_3, normal_4]
-				
-				pass
+#				print(normals)
+				if point == 0 || point == segments - 1:
+					print(normals)
+					
 			else:
 				var normal = OnyxUtils.get_triangle_normal([vertex3, vertex2, vertex4])
 				normals = [normal, normal, normal, normal]
@@ -217,6 +227,8 @@ func build_sphere(height, x_width, z_width, segments, height_segments, position,
 			point += 1
 			
 		
+#		if ring == 1:
+#			return onyx_mesh
 		ring += 1
 			
 	return onyx_mesh
