@@ -42,7 +42,7 @@ export(Vector3) var start_position = Vector3(0.0, 0.0, 0.0) setget update_start_
 export(Vector3) var end_position = Vector3(0.0, 1.0, 2.0) setget update_end_position
 
 export(float) var stair_width = 2 setget update_stair_width
-export(float) var stair_depth = 2 setget update_stair_depth
+export(float) var stair_depth = 0.4 setget update_stair_depth
 export(Vector2) var stair_width_percentage = Vector2(1, 1) setget update_stair_width_percentage
 export(Vector2) var stair_length_percentage = Vector2(1, 1) setget update_stair_length_percentage
 

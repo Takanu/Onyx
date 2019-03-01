@@ -40,7 +40,7 @@ export(Vector3) var start_rotation = Vector3(0, 0, 0) setget update_start_rotati
 export(Vector3) var end_position = Vector3(0, 1, 2) setget update_end_position
 export(Vector3) var end_rotation = Vector3(0, 0, 0) setget update_end_rotation
 
-export(float) var ramp_width = 1 setget update_ramp_width
+export(float) var ramp_width = 2 setget update_ramp_width
 export(float) var ramp_depth = 0.5 setget update_ramp_depth
 export(bool) var maintain_width = true setget update_maintain_width
 export(int) var iterations = 0 setget update_iterations

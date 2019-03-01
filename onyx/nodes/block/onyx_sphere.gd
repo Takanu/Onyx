@@ -41,9 +41,9 @@ var local_tracked_pos = Vector3(0, 0, 0)
 export(int) var segments = 16 setget update_segments
 export(int) var rings = 8 setget update_rings
 
-export(float) var height = 2 setget update_height
-export(float) var x_width = 2 setget update_x_width
-export(float) var z_width = 2 setget update_z_width
+export(float) var height = 1 setget update_height
+export(float) var x_width = 1 setget update_x_width
+export(float) var z_width = 1 setget update_z_width
 export(bool) var keep_shape_proportional = false setget update_proportional_toggle
 
 # UVS
@@ -232,7 +232,6 @@ func update_origin():
 	#Re-add once handles are a thing, otherwise this breaks the origin stuff.
 #	if handles.size() == 0:
 #		return
-
 	
 	# based on the current position and properties, work out how much to move the origin.
 	var diff = Vector3(0, 0, 0)

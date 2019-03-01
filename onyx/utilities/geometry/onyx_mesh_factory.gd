@@ -119,7 +119,7 @@ func build_sphere(height, x_width, z_width, segments, height_segments, position,
 		phi2 = deltaPhi
 			
 #		print("thetas: ", theta1, theta2)
-		print("NEW RING===========")
+#		print("NEW RING===========")
 		
 		while point <= segments - 1:
 			if point != 0:
@@ -170,7 +170,7 @@ func build_sphere(height, x_width, z_width, segments, height_segments, position,
 #					theta0 = OnyxUtils.loop_int( (theta1 + PI), 0, PI * 2)
 #					theta3 = OnyxUtils.loop_int( (theta2 + PI), 0, PI * 2)
 					
-				print("phis - ", phi0, " ", phi1, " ", phi2, " ", phi3)
+#				print("phis - ", phi0, " ", phi1, " ", phi2, " ", phi3)
 				
 				# BUILD EXTRA POINTS
 				var up_1 = Vector3(sin(theta0) * cos(phi1) * (x_width/2),  cos(theta0) * (height/2),  sin(theta0) * sin(phi1) * (z_width/2))
@@ -203,8 +203,8 @@ func build_sphere(height, x_width, z_width, segments, height_segments, position,
 				
 				normals = [normal_1, normal_2, normal_3, normal_4]
 #				print(normals)
-				if point == 0 || point == segments - 1:
-					print(normals)
+#				if point == 0 || point == segments - 1:
+#					print(normals)
 					
 			else:
 				var normal = OnyxUtils.get_triangle_normal([vertex3, vertex2, vertex4])

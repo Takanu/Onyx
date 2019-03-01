@@ -4,6 +4,10 @@ importer="texture"
 type="StreamTexture"
 path.s3tc="res://.import/onyx_handle_1.png-a5f56fcd5f1127e7c2c090de1f53cdbb.s3tc.stex"
 path.etc2="res://.import/onyx_handle_1.png-a5f56fcd5f1127e7c2c090de1f53cdbb.etc2.stex"
+metadata={
+"imported_formats": [ "s3tc", "etc2" ],
+"vram_texture": true
+}
 
 [deps]
 

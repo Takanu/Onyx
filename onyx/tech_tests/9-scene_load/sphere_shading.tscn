@@ -30,6 +30,9 @@ __meta__ = {
 "_editor_icon": ExtResource( 2 )
 }
 segments = 8
+height = 2.0
+x_width = 2
+z_width = 2
 
 [node name="CSGSphere" type="CSGSphere" parent="."]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 2.16489, 1.03974, 0 )

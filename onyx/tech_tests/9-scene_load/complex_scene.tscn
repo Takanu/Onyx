@@ -371,6 +371,7 @@ __meta__ = {
 "_editor_icon": ExtResource( 3 )
 }
 end_position = Vector3( 0, 6.38, 12.43 )
+stair_depth = 2
 stair_count = 17
 material = ExtResource( 1 )
 
@@ -382,6 +383,7 @@ __meta__ = {
 "_editor_icon": ExtResource( 3 )
 }
 end_position = Vector3( 0, 6.38, 12.43 )
+stair_depth = 2
 stair_count = 17
 material = ExtResource( 1 )
 
@@ -392,8 +394,8 @@ script = ExtResource( 2 )
 __meta__ = {
 "_editor_icon": ExtResource( 3 )
 }
-origin_setting = 0
 end_position = Vector3( 0, 6.38, 12.43 )
+stair_depth = 2
 stair_count = 17
 material = ExtResource( 1 )
 
@@ -405,6 +407,7 @@ __meta__ = {
 "_editor_icon": ExtResource( 3 )
 }
 end_position = Vector3( 0, 6.38, 12.43 )
+stair_depth = 2
 stair_count = 17
 material = ExtResource( 1 )
 
@@ -416,6 +419,7 @@ __meta__ = {
 "_editor_icon": ExtResource( 3 )
 }
 end_position = Vector3( 0, 6.38, 12.43 )
+stair_depth = 2
 stair_count = 6
 material = ExtResource( 1 )
 
@@ -427,6 +431,7 @@ __meta__ = {
 "_editor_icon": ExtResource( 3 )
 }
 end_position = Vector3( 0, 6.38, 12.43 )
+stair_depth = 2
 stair_count = 6
 material = ExtResource( 1 )
 
@@ -465,6 +470,7 @@ __meta__ = {
 }
 end_position = Vector3( 0, 6.38, 12.43 )
 stair_width = 12.0
+stair_depth = 2
 stair_count = 17
 material = ExtResource( 1 )
 
@@ -547,10 +553,8 @@ script = ExtResource( 6 )
 __meta__ = {
 "_editor_icon": ExtResource( 3 )
 }
+sides = 10
 height_max = 8.11
-height_min = 0
-x_width = 0.5
-z_width = 0.5
 keep_width_proportional = true
 
 [node name="OnyxCylinder8" type="CSGMesh" parent="."]
@@ -560,10 +564,8 @@ script = ExtResource( 6 )
 __meta__ = {
 "_editor_icon": ExtResource( 3 )
 }
+sides = 10
 height_max = 8.11
-height_min = 0
-x_width = 0.5
-z_width = 0.5
 keep_width_proportional = true
 
 [node name="OnyxCylinder2" type="CSGMesh" parent="."]
@@ -573,10 +575,8 @@ script = ExtResource( 6 )
 __meta__ = {
 "_editor_icon": ExtResource( 3 )
 }
+sides = 10
 height_max = 11.6
-height_min = 0
-x_width = 0.5
-z_width = 0.5
 keep_width_proportional = true
 
 [node name="OnyxCylinder12" type="CSGMesh" parent="."]
@@ -586,10 +586,8 @@ script = ExtResource( 6 )
 __meta__ = {
 "_editor_icon": ExtResource( 3 )
 }
+sides = 10
 height_max = 11.6
-height_min = 0
-x_width = 0.5
-z_width = 0.5
 keep_width_proportional = true
 
 [node name="OnyxCylinder3" type="CSGMesh" parent="."]
@@ -599,10 +597,8 @@ script = ExtResource( 6 )
 __meta__ = {
 "_editor_icon": ExtResource( 3 )
 }
+sides = 10
 height_max = 15.12
-height_min = 0
-x_width = 0.5
-z_width = 0.5
 keep_width_proportional = true
 
 [node name="OnyxCylinder9" type="CSGMesh" parent="."]
@@ -612,10 +608,8 @@ script = ExtResource( 6 )
 __meta__ = {
 "_editor_icon": ExtResource( 3 )
 }
+sides = 10
 height_max = 15.12
-height_min = 0
-x_width = 0.5
-z_width = 0.5
 keep_width_proportional = true
 
 [node name="OnyxCylinder4" type="CSGMesh" parent="."]
@@ -625,10 +619,8 @@ script = ExtResource( 6 )
 __meta__ = {
 "_editor_icon": ExtResource( 3 )
 }
+sides = 10
 height_max = 16.27
-height_min = 0
-x_width = 0.5
-z_width = 0.5
 keep_width_proportional = true
 
 [node name="OnyxCylinder10" type="CSGMesh" parent="."]
@@ -638,10 +630,8 @@ script = ExtResource( 6 )
 __meta__ = {
 "_editor_icon": ExtResource( 3 )
 }
+sides = 10
 height_max = 16.27
-height_min = 0
-x_width = 0.5
-z_width = 0.5
 keep_width_proportional = true
 
 [node name="OnyxCylinder5" type="CSGMesh" parent="."]
@@ -651,10 +641,8 @@ script = ExtResource( 6 )
 __meta__ = {
 "_editor_icon": ExtResource( 3 )
 }
+sides = 10
 height_max = 17.31
-height_min = 0
-x_width = 0.5
-z_width = 0.5
 keep_width_proportional = true
 
 [node name="OnyxCylinder13" type="CSGMesh" parent="."]
@@ -664,10 +652,8 @@ script = ExtResource( 6 )
 __meta__ = {
 "_editor_icon": ExtResource( 3 )
 }
+sides = 10
 height_max = 17.31
-height_min = 0
-x_width = 0.5
-z_width = 0.5
 keep_width_proportional = true
 
 [node name="OnyxCylinder6" type="CSGMesh" parent="."]
@@ -677,10 +663,8 @@ script = ExtResource( 6 )
 __meta__ = {
 "_editor_icon": ExtResource( 3 )
 }
+sides = 10
 height_max = 16.53
-height_min = 0
-x_width = 0.5
-z_width = 0.5
 keep_width_proportional = true
 
 [node name="OnyxCylinder11" type="CSGMesh" parent="."]
@@ -690,10 +674,8 @@ script = ExtResource( 6 )
 __meta__ = {
 "_editor_icon": ExtResource( 3 )
 }
+sides = 10
 height_max = 16.53
-height_min = 0
-x_width = 0.5
-z_width = 0.5
 keep_width_proportional = true
 
 [node name="OnyxCylinder7" type="CSGMesh" parent="."]
@@ -703,10 +685,8 @@ script = ExtResource( 6 )
 __meta__ = {
 "_editor_icon": ExtResource( 3 )
 }
+sides = 10
 height_max = 15.21
-height_min = 0
-x_width = 0.5
-z_width = 0.5
 keep_width_proportional = true
 
 [node name="OnyxCylinder14" type="CSGMesh" parent="."]
@@ -716,10 +696,8 @@ script = ExtResource( 6 )
 __meta__ = {
 "_editor_icon": ExtResource( 3 )
 }
+sides = 10
 height_max = 15.21
-height_min = 0
-x_width = 0.5
-z_width = 0.5
 keep_width_proportional = true
 
 [node name="OnyxCube" type="CSGMesh" parent="."]
@@ -729,11 +707,9 @@ script = ExtResource( 7 )
 __meta__ = {
 "_editor_icon": ExtResource( 3 )
 }
-origin_setting = 0
 x_plus_position = 10.0
 x_minus_position = -10.0
 y_plus_position = 0.5
-y_minus_position = -0.78
 z_plus_position = 8.7
 z_minus_position = -8.7
 material = ExtResource( 1 )
@@ -745,11 +721,9 @@ script = ExtResource( 7 )
 __meta__ = {
 "_editor_icon": ExtResource( 3 )
 }
-origin_setting = 0
 x_plus_position = 20.0
 x_minus_position = -20.0
 y_plus_position = 0.5
-y_minus_position = -17.16
 z_plus_position = 8.7
 z_minus_position = -8.7
 material = ExtResource( 1 )
@@ -761,11 +735,9 @@ script = ExtResource( 7 )
 __meta__ = {
 "_editor_icon": ExtResource( 3 )
 }
-origin_setting = 0
 x_plus_position = 20.0
 x_minus_position = -20.0
 y_plus_position = 0.5
-y_minus_position = -17.16
 z_plus_position = 8.7
 z_minus_position = -8.7
 material = ExtResource( 1 )
@@ -777,11 +749,9 @@ script = ExtResource( 7 )
 __meta__ = {
 "_editor_icon": ExtResource( 3 )
 }
-origin_setting = 0
 x_plus_position = 20.0
 x_minus_position = -20.0
 y_plus_position = 0.5
-y_minus_position = -17.16
 z_plus_position = 8.7
 z_minus_position = -8.7
 material = ExtResource( 1 )
@@ -793,11 +763,9 @@ script = ExtResource( 7 )
 __meta__ = {
 "_editor_icon": ExtResource( 3 )
 }
-origin_setting = 0
 x_plus_position = 20.0
 x_minus_position = -20.0
 y_plus_position = 0.5
-y_minus_position = -17.16
 z_plus_position = 8.7
 z_minus_position = -8.7
 material = ExtResource( 1 )
@@ -809,11 +777,9 @@ script = ExtResource( 7 )
 __meta__ = {
 "_editor_icon": ExtResource( 3 )
 }
-origin_setting = 0
 x_plus_position = 10.0
 x_minus_position = -10.0
 y_plus_position = 0.5
-y_minus_position = -6.36
 z_plus_position = 8.7
 z_minus_position = -8.7
 material = ExtResource( 1 )

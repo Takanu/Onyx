@@ -38,13 +38,13 @@ var local_tracked_pos = Vector3(0, 0, 0)
 
 # Exported variables representing all usable handles for re-shaping the cube, in order.
 # Must be exported to be saved in a scene?  smh.
-export(int) var sides = 10 setget update_sides
+export(int) var sides = 12 setget update_sides
 export(int) var rings = 1 setget update_rings
-export(float) var height_max = 3 setget update_height_max
-export(float) var height_min = -3 setget update_height_min
+export(float) var height_max = 1 setget update_height_max
+export(float) var height_min = 0 setget update_height_min
 
-export(float) var x_width = 2 setget update_x_width
-export(float) var z_width = 2 setget update_z_width
+export(float) var x_width = 0.5 setget update_x_width
+export(float) var z_width = 0.5 setget update_z_width
 export(bool) var keep_width_proportional = false setget update_proportional_toggle
 
 # UVS
