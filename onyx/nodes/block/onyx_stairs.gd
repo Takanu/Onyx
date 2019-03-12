@@ -55,7 +55,7 @@ export(int) var stair_count = 4 setget update_stair_count
 #export(BevelTarget) var bevel_target = BevelTarget.Y_AXIS setget update_bevel_target
 
 # UVS
-enum UnwrapMethod {CLAMPED_OVERLAP, PROPORTIONAL_OVERLAP, PROPORTIONAL_ISLANDS, CROSS_UNFOLD}
+enum UnwrapMethod {CLAMPED_OVERLAP, PROPORTIONAL_OVERLAP}
 export(UnwrapMethod) var unwrap_method = UnwrapMethod.CLAMPED_OVERLAP setget update_unwrap_method
 
 export(Vector2) var uv_scale = Vector2(1.0, 1.0) setget update_uv_scale
@@ -187,6 +187,10 @@ func update_material(new_value):
 	# Prevents geometry generation if the node hasn't loaded yet
 	if is_inside_tree() == false:
 		return
+	
+	# If we don't have an onyx_mesh with any data in it, we need to construct that first to apply a material to it.
+	if onyx_mesh.tris == null:
+		generate_geometry(true)
 	
 	var array_mesh = onyx_mesh.render_surface_geometry(material)
 	var helper = MeshDataTool.new()

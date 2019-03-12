@@ -59,7 +59,7 @@ export(Vector3) var subdivisions = Vector3(1, 1, 1)
 #export(BevelTarget) var bevel_target = BevelTarget.Y_AXIS setget update_bevel_target
 
 # UVS
-enum UnwrapMethod {CLAMPED_OVERLAP, PROPORTIONAL_OVERLAP, PROPORTIONAL_ISLANDS, CROSS_UNFOLD}
+enum UnwrapMethod {CLAMPED_OVERLAP, PROPORTIONAL_OVERLAP}
 export(UnwrapMethod) var unwrap_method = UnwrapMethod.CLAMPED_OVERLAP setget update_unwrap_method
 
 export(Vector2) var uv_scale = Vector2(1.0, 1.0) setget update_uv_scale
@@ -76,7 +76,7 @@ export(Material) var material = null setget update_material
 
 # Global initialisation
 func _enter_tree():
-	print("ONYXCUBE _enter_tree")
+	#print("ONYXCUBE _enter_tree")
 		
 	# If this is being run in the editor, sort out the gizmo.
 	if Engine.editor_hint == true:
@@ -92,7 +92,7 @@ func _exit_tree():
     pass
 	
 func _ready():
-	print("ONYXCUBE _ready")
+	#print("ONYXCUBE _ready")
 	
 	# Only generate geometry if we have nothing and we're running inside the editor, this likely indicates the node is brand new.
 	if Engine.editor_hint == true:
@@ -237,6 +237,10 @@ func update_material(new_value):
 	# Prevents geometry generation if the node hasn't loaded yet, otherwise it will try to set a blank mesh.
 	if is_inside_tree() == false:
 		return
+		
+	# If we don't have an onyx_mesh with any data in it, we need to construct that first to apply a material to it.
+	if onyx_mesh.tris == null:
+		generate_geometry(true)
 	
 	var array_mesh = onyx_mesh.render_surface_geometry(material)
 	var helper = MeshDataTool.new()
@@ -309,7 +313,7 @@ func generate_geometry(fix_to_origin_setting):
 	if is_inside_tree() == false:
 		return
 	
-	print("ONYXCUBE generate_geometry")
+	#print("ONYXCUBE generate_geometry")
 	
 	var maxPoint = Vector3(x_plus_position, y_plus_position, z_plus_position)
 	var minPoint = Vector3(x_minus_position, y_minus_position, z_minus_position)
@@ -331,8 +335,98 @@ func generate_geometry(fix_to_origin_setting):
 	# Generate the geometry
 	var mesh_factory = OnyxMeshFactory.new()
 	onyx_mesh.clear()
+	
+	# Build 8 vertex points
+	var top_x = Vector3(maxPoint.x, maxPoint.y, minPoint.z)
+	var top_xz = Vector3(maxPoint.x, maxPoint.y, maxPoint.z)
+	var top_z = Vector3(minPoint.x, maxPoint.y, maxPoint.z)
+	var top = Vector3(minPoint.x, maxPoint.y, minPoint.z)
+	
+	var bottom_x = Vector3(maxPoint.x, minPoint.y, minPoint.z)
+	var bottom_xz = Vector3(maxPoint.x, minPoint.y, maxPoint.z)
+	var bottom_z = Vector3(minPoint.x, minPoint.y, maxPoint.z)
+	var bottom = Vector3(minPoint.x, minPoint.y, minPoint.z)
+	
+	# Build the 6 vertex Lists
+	var vec_x_minus = [bottom, top, top_z, bottom_z]
+	var vec_x_plus = [bottom_xz, top_xz, top_x, bottom_x]
+	var vec_y_minus = [bottom_x, bottom, bottom_z, bottom_xz]
+	var vec_y_plus = [top, top_x, top_xz, top_z]
+	var vec_z_minus = [bottom_x, top_x, top, bottom]
+	var vec_z_plus = [bottom_z, top_z, top_xz, bottom_xz]
+	
+	var surfaces = []
+	surfaces.append( mesh_factory.internal_build_surface(bottom, top_z, top, bottom_z, Vector2(subdivisions.z, subdivisions.y), 0) )
+	surfaces.append( mesh_factory.internal_build_surface(bottom_xz, top_x, top_xz, bottom_x, Vector2(subdivisions.z, subdivisions.y), 0) )
+	
+	surfaces.append( mesh_factory.internal_build_surface(bottom_x, bottom_z, bottom, bottom_xz, Vector2(subdivisions.z, subdivisions.x), 0) )
+	surfaces.append( mesh_factory.internal_build_surface(top, top_xz, top_x, top_z, Vector2(subdivisions.z, subdivisions.x), 0) )
+	
+	surfaces.append( mesh_factory.internal_build_surface(bottom_x, top, top_x, bottom, Vector2(subdivisions.x, subdivisions.y), 0) )
+	surfaces.append( mesh_factory.internal_build_surface(bottom_z, top_xz, top_z, bottom_xz, Vector2(subdivisions.x, subdivisions.y), 0) )
+	
+	var i = 0
+	
+	for surface in surfaces:
+		
+		var vertices = []
+		for quad in surface:
+			for vertex in quad[0]:
+				vertices.append(vertex)
+		
+		for quad in surface:
+			
+			# UV UNWRAPPING
+			
+			# 1:1 Overlap is Default
+			var uvs = quad[3]
+			
+			# Proportional Overlap
+			# Try and work out how to properly reorient the UVS later...
+			if unwrap_method == UnwrapMethod.PROPORTIONAL_OVERLAP:
+				if i == 0 || i == 1:
+					uvs = OnyxUtils.vector3_to_vector2_array(quad[0], 'X', 'Z')
+					uvs = [uvs[2], uvs[3], uvs[0], uvs[1]]
+#					if i == 0:
+#						uvs = OnyxUtils.reverse_array(uvs)
+				elif i == 2 || i == 3:
+					uvs = OnyxUtils.vector3_to_vector2_array(quad[0], 'Y', 'X')
+					uvs = [uvs[2], uvs[3], uvs[0], uvs[1]]
+					#uvs = OnyxUtils.reverse_array(uvs)
+				elif i == 4 || i == 5:
+					uvs = OnyxUtils.vector3_to_vector2_array(quad[0], 'Z', 'X')
+					uvs = [uvs[2], uvs[3], uvs[0], uvs[1]]
+#					if i == 5:
+#						uvs = OnyxUtils.reverse_array(uvs)
+				
+#				print(uvs)
+			
+			# Island Split - UV split up into two thirds.
+#			elif unwrap_method == UnwrapMethod.ISLAND_SPLIT:
+#
+#				# get the max and min
+#				var surface_range = OnyxUtils.get_vector3_ranges(vertices)
+#				var max_point = surface_range['max']
+#				var min_point = surface_range['min']
+#				var diff = max_point - min_point
+#
+#				var initial_uvs = []
+#
+#				if i == 0 || i == 1:
+#					initial_uvs = OnyxUtils.vector3_to_vector2_array(quad[0], 'X', 'Z')
+#				elif i == 2 || i == 3:
+#					initial_uvs = OnyxUtils.vector3_to_vector2_array(quad[0], 'Y', 'X')
+#				elif i == 4 || i == 5:
+#					initial_uvs = OnyxUtils.vector3_to_vector2_array(quad[0], 'Z', 'X')
+#
+#				for uv in initial_uvs:
+#					uv
+			
+			onyx_mesh.add_ngon(quad[0], quad[1], quad[2], uvs, quad[4])
+			
+		i += 1
 
-	mesh_factory.build_cuboid(onyx_mesh, maxPoint, minPoint, unwrap_method, subdivisions)
+	# RENDER THE MESH
 	render_onyx_mesh()
 
 #	var cylinder = CylinderMesh.new()

@@ -277,6 +277,24 @@ static func get_triangle_normal(tris : Array) -> Vector3:
 	return line_a.cross(line_b)
 	
 	
+static func subdivide_edge(start : Vector3, end : Vector3, subdivisions : int) -> Array:
+	
+	if subdivisions == 0:
+		return [start, end]
+	
+	var results = []
+	
+	var diff = end - start
+	var increment = diff / (subdivisions + 1)
+	results.append(start)
+	
+	for i in subdivisions:
+		results.append(start + (increment * (i + 1)))
+		
+	results.append(end)
+	return results
+	
+	
 # Projects an array of Vector3 values onto a single Vector3 value and returns the results
 static func project_vector3_array(input_array : Array, projection_vec : Vector3) -> Array:
 	
@@ -385,6 +403,34 @@ static func reverse_array(array_input : Array) -> Array:
 		i -= 1
 		
 	return results
+	
+# Shifts the order of all elements in the array forwards or backwards by the given amount.  
+# Items that are pushed off one end of the array are re-added to the other end.
+static func push_array_order(array_input : Array, shift_amount : int) -> Array:
+	
+	if shift_amount == 0:
+		return array_input.duplicate()
+	
+	var results = array_input.duplicate()
+	
+	if shift_amount < 0:
+		
+		var i = 0
+		while i > shift_amount:
+			var item = results.pop_front()
+			results.push_back(item)
+			i -= 1
+			
+	elif shift_amount > 0:
+		
+		var i = 0
+		while i > shift_amount:
+			var item = results.pop_baack()
+			results.push_front(item)
+			i += 1
+	
+	return results
+	
 	
 # "Loops" the variable to the max value if lower than the minimum, and vice-versa.  The difference determines how much it loops back or forward.
 static func loop_int(input : int, min_value : int, max_value : int) -> int:

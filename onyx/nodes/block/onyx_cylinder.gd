@@ -48,7 +48,7 @@ export(float) var z_width = 0.5 setget update_z_width
 export(bool) var keep_width_proportional = false setget update_proportional_toggle
 
 # UVS
-enum UnwrapMethod {CLAMPED_OVERLAP, PROPORTIONAL_OVERLAP, DIRECT_ZONE, PROPORTIONAL_ZONE}
+enum UnwrapMethod {CLAMPED_OVERLAP, PROPORTIONAL_OVERLAP, PROPORTIONAL_OVERLAP_SEGMENTS}
 export(UnwrapMethod) var unwrap_method = UnwrapMethod.CLAMPED_OVERLAP setget update_unwrap_method
 
 export(Vector2) var uv_scale = Vector2(1.0, 1.0) setget update_uv_scale
@@ -206,6 +206,10 @@ func update_material(new_value):
 	# Prevents geometry generation if the node hasn't loaded yet, otherwise it will try to set a blank mesh.
 	if is_inside_tree() == false:
 		return
+	
+	# If we don't have an onyx_mesh with any data in it, we need to construct that first to apply a material to it.
+	if onyx_mesh.tris == null:
+		generate_geometry(true)
 	
 	var array_mesh = onyx_mesh.render_surface_geometry(material)
 	var helper = MeshDataTool.new()

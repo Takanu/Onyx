@@ -72,7 +72,7 @@ export(CornerAxis) var corner_axis = CornerAxis.X setget update_corner_axis
 #export(BevelTarget) var bevel_target = BevelTarget.Y_AXIS setget update_bevel_target
 
 # UVS
-enum UnwrapMethod {CLAMPED_OVERLAP, PROPORTIONAL_OVERLAP, PROPORTIONAL_ISLANDS, CROSS_UNFOLD}
+enum UnwrapMethod {CLAMPED_OVERLAP, PROPORTIONAL_OVERLAP}
 export(UnwrapMethod) var unwrap_method = UnwrapMethod.CLAMPED_OVERLAP setget update_unwrap_method
 
 export(Vector2) var uv_scale = Vector2(1.0, 1.0) setget update_uv_scale
@@ -301,6 +301,10 @@ func update_material(new_value):
 	# Prevents geometry generation if the node hasn't loaded yet, otherwise it will try to set a blank mesh.
 	if is_inside_tree() == false:
 		return
+		
+	# If we don't have an onyx_mesh with any data in it, we need to construct that first to apply a material to it.
+	if onyx_mesh.tris == null:
+		generate_geometry(true)
 	
 	var array_mesh = onyx_mesh.render_surface_geometry(material)
 	var helper = MeshDataTool.new()
@@ -397,7 +401,7 @@ func generate_geometry(fix_to_origin_setting):
 	var mesh_factory = OnyxMeshFactory.new()
 	onyx_mesh.clear()
 	
-	mesh_factory.build_rounded_rect(onyx_mesh, minPoint, maxPoint, 'X', corner_size, corner_iterations, smooth_normals)
+	mesh_factory.build_rounded_rect(onyx_mesh, minPoint, maxPoint, 'X', corner_size, corner_iterations, smooth_normals, unwrap_method)
 	render_onyx_mesh()
 	
 	# Re-submit the handle positions based on the built faces, so other handles that aren't the

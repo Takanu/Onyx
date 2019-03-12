@@ -47,6 +47,11 @@ func add_tri(vertices : Array, colors : Array, tangents : Array, uvs : Array, no
 		var line_b = (vertices[2] - vertices[0]).normalized()
 		var normal = line_a.cross(line_b)
 		normals = [normal, normal, normal]
+		
+	# not currently needed
+#	if tangents.size() == 0:
+#		var tangent = Plane(vertices[0], vertices[1], vertices[2])
+#		tangents = [tangent, tangent, tangent]
 	
 	tris.append( [vertices, colors, tangents, uvs, normals] )
 	

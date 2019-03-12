@@ -45,7 +45,7 @@ export(float) var base_z_size = 2 setget update_base_z_size
 export(bool) var keep_shape_proportional = false setget update_proportional_toggle
 
 # UVS
-enum UnwrapMethod {DIRECT_OVERLAP, PROPORTIONAL_OVERLAP, DIRECT_ZONE, PROPORTIONAL_ZONE}
+enum UnwrapMethod {DIRECT_OVERLAP, PROPORTIONAL_OVERLAP}
 export(UnwrapMethod) var unwrap_method = UnwrapMethod.DIRECT_OVERLAP setget update_unwrap_method
 
 export(Vector2) var uv_scale = Vector2(1.0, 1.0) setget update_uv_scale
@@ -179,6 +179,14 @@ func update_flip_uvs_vertically(new_value):
 
 func update_material(new_value):
 	material = new_value
+	
+	# Prevents geometry generation if the node hasn't loaded yet
+	if is_inside_tree() == false:
+		return
+	
+	# If we don't have an onyx_mesh with any data in it, we need to construct that first to apply a material to it.
+	if onyx_mesh.tris == null:
+		generate_geometry(true)
 	
 	var array_mesh = onyx_mesh.render_surface_geometry(material)
 	var helper = MeshDataTool.new()

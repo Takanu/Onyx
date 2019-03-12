@@ -291,7 +291,7 @@ func build_wedge(base_x, base_z, point_width, point_position, position):
 
 
 # Builds a rounded rectangle where the corners around one axis are rounded.
-func build_rounded_rect(mesh: OnyxMesh, min_point, max_point, axis: String, corner_size : float, corner_iterations : int, smooth_normals : bool):
+func build_rounded_rect(mesh: OnyxMesh, min_point, max_point, axis: String, corner_size : float, corner_iterations : int, smooth_normals : bool, unwrap_mode : int):
 	
 	# Clamp important values
 	if corner_size < 0:
@@ -375,8 +375,38 @@ func build_rounded_rect(mesh: OnyxMesh, min_point, max_point, axis: String, corn
 		var tf_end_cap = Transform(Basis(), Vector3(max_point.x - min_point.x, 0, 0)) 
 		var end_cap = OnyxUtils.transform_vector3_array(start_cap, tf_end_cap)
 		
-		mesh.add_ngon(OnyxUtils.reverse_array(start_cap), [], [], [], [])
-		mesh.add_ngon(end_cap, [], [], [], [])
+		# UVS
+		var start_cap_uvs = []
+		var end_cap_uvs = []
+		
+		# 0 - Clamped Overlap
+		if unwrap_mode == 0:
+			var diff = max_point - min_point
+			var clamped_vs = []
+			
+			# for every vertex, minus it by the min and divide by the difference.
+			for vertex in start_cap:
+				clamped_vs.append( (vertex - min_point) / diff )
+			start_cap_uvs = OnyxUtils.vector3_to_vector2_array(clamped_vs, 'X', 'Z')
+			
+			# for every vertex, minus it by the min and divide by the difference.
+#			for vertex in end_cap:
+#				clamped_vs.append( (vertex - min_point) / diff )
+#			end_cap_uvs = OnyxUtils.vector3_to_vector2_array(clamped_vs, 'X', 'Z')
+			
+			for uv in start_cap_uvs:
+				end_cap_uvs.append(uv * Vector2(-1.0, -1.0))
+		
+		# 1 - Proportional Overlap
+		if unwrap_mode == 1:
+			start_cap_uvs = OnyxUtils.vector3_to_vector2_array(start_cap, 'X', 'Z')
+			end_cap_uvs = OnyxUtils.vector3_to_vector2_array(end_cap, 'X', 'Z')
+		
+		mesh.add_ngon(OnyxUtils.reverse_array(start_cap), [], [], start_cap_uvs, [])
+		mesh.add_ngon(end_cap, [], [], end_cap_uvs, [])
+		
+		# used for Proportional Unwrap.
+		var total_edge_length = 0.0
 		
 		# Build side edges
 		var v_1 = 0
@@ -412,11 +442,27 @@ func build_rounded_rect(mesh: OnyxMesh, min_point, max_point, axis: String, corn
 			else:
 				var normal = OnyxUtils.get_triangle_normal( [b_1, t_1, b_2] )
 				normals = [normal, normal, normal, normal]
+				
+				
+			# UVS
+			var uvs = []
+			
+			# 0 - Clamped Overlap
+			if unwrap_mode == 0:
+				uvs = [Vector2(0.0, 0.0), Vector2(1.0, 0.0), Vector2(1.0, 1.0), Vector2(0.0, 1.0)]
+			
+			# 1 - Proportional Overlap
+			elif unwrap_mode == 1:
+				var height = (t_1 - b_1).length()
+				var new_width = (t_2 - t_1).length()
+				uvs = [Vector2(total_edge_length, 0.0), Vector2(total_edge_length + new_width, 0.0), 
+				Vector2(total_edge_length + new_width, height), Vector2(total_edge_length, height)]
 			
 			var vertex_set = [b_1, b_2, t_2, t_1]
-			mesh.add_ngon(vertex_set, [], [], [], normals)
+			mesh.add_ngon(vertex_set, [], [], uvs, normals)
 			
 			v_1 += 1
+			total_edge_length += (t_2 - t_1).length()
 		
 	
 	
@@ -434,6 +480,9 @@ func build_ramp(start_tf, end_tf, width, depth, maintain_width, iterations, ramp
 	#   X---------X  s3 s4
 	
 	var tris = OnyxMesh.new()
+	
+	print("START TF: ", start_tf)
+	print("END TF: ", end_tf)
 	
 	# get main 4 vectors
 	var v1 = Vector3(-width/2, depth/2, 0)
@@ -471,34 +520,32 @@ func build_ramp(start_tf, end_tf, width, depth, maintain_width, iterations, ramp
 	tris.add_ngon([s3, s4, s2, s1], [], [], cap_uv, [])
 	tris.add_ngon([e4, e3, e1, e2], [], [], cap_uv, [])
 	
-	
 	# calculate iterations
 	iterations = iterations + 1
 	var increment = 1.0/float(iterations)
 	
-	var d1 = s1.distance_to(e1) * increment
-	var d2 = s2.distance_to(e2) * increment
-	var d3 = s3.distance_to(e3) * increment
-	var d4 = s4.distance_to(e4) * increment
-	
-	var u1 = e1 - s1
-	var u2 = e2 - s2
-	var u3 = e3 - s3
-	var u4 = e4 - s4
-	u1 = u1.normalized(); u2 = u2.normalized(); u3 = u3.normalized(); u4 = u4.normalized()
-	
 	var i = 0
 	while i < iterations:
 		
-		var s1_move = s1 + (u1 * (d1 * i))
-		var s2_move = s2 + (u2 * (d2 * i))
-		var s3_move = s3 + (u3 * (d3 * i))
-		var s4_move = s4 + (u4 * (d4 * i))
+		# transform the starts and ends by the interpolation between the start and end transformation
+		var start_percentage = float(i) / iterations
+		var end_percentage = float(i + 1) / iterations
+			
+		var s_tf = start_tf.interpolate_with(end_tf, start_percentage)
+		var e_tf = start_tf.interpolate_with(end_tf, end_percentage)
 		
-		var e1_move = s1 + (u1 * (d1 * (i + 1)))
-		var e2_move = s2 + (u2 * (d2 * (i + 1)))
-		var e3_move = s3 + (u3 * (d3 * (i + 1)))
-		var e4_move = s4 + (u4 * (d4 * (i + 1)))
+		print(start_percentage)
+		
+		# Calculate the current positions
+		var s1_move = s_tf.xform(v1)
+		var s2_move = s_tf.xform(v2)
+		var s3_move = s_tf.xform(v3)
+		var s4_move = s_tf.xform(v4)
+		
+		var e1_move = e_tf.xform(v1)
+		var e2_move = e_tf.xform(v2)
+		var e3_move = e_tf.xform(v3)
+		var e4_move = e_tf.xform(v4)
 		
 		var start_uv_z = 0
 		var end_uv_z = 1
@@ -555,9 +602,12 @@ func build_polygon_extrusion(mesh : OnyxMesh, points : Array, depth : float, rin
 	var base_extrusion_depth = Vector3()
 	var distance_vec = extrusion_axis * extrusion_step
 	var face_count = 0
-
+	
 	for i in rings:
-
+		
+		# Used for Proportional Unwrap methods.
+		var total_edge_length = 0.0
+		
 		# go roooound the extrusion
 		for v_1 in base_vertices.size():
 			
@@ -601,27 +651,31 @@ func build_polygon_extrusion(mesh : OnyxMesh, points : Array, depth : float, rin
 				uvs = [Vector2(0.0, 1.0), Vector2(0.0, 0.0), Vector2(1.0, 0.0), Vector2(1.0, 1.0)]
 
 			# UNWRAP METHOD 1 - PROPORTIONAL OVERLAP
+			# Unwraps evenly across all rings, scaling based on vertex position.
 			elif unwrap_method == 1:
-				var face_transform = OnyxUtils.get_uv_triangle_transform([b_1, t_1, b_2])
+				var base_width = (b_2 - b_1).length()
+				var base_height = (t_1 - b_1).length()
 				
-				print('TRANSFORM = ', face_transform)
-				print('VERTICES = ', vertices)
-				uvs = OnyxUtils.transform_vector3_array(vertices, face_transform)
+				uvs = [Vector2(total_edge_length, b_1.y), Vector2(total_edge_length, t_1.y), 
+				Vector2(total_edge_length + base_width, t_1.y), Vector2(total_edge_length + base_width, b_1.y)]
 				
-				# ATTEMPT 1
-				var uv_ranges = OnyxUtils.get_vector2_ranges(uvs)
-				print('TRANSFORM UVS = ', uvs)
-
-				uvs = OnyxUtils.vector3_to_vector2_array(uvs, 'Y', 'Z')
-				uv_ranges = OnyxUtils.get_vector2_ranges(uvs)
-				print('NEW_UVS = ', uvs)
-
-				# ATTEMPT 2
-				print('xxxxxxxxxxxxxxxxxxxx')
+				total_edge_length += base_width
+				
+			# UNWRAP METHOD 1 - PROPORTIONAL OVERLAP SEGMENTS
+			# Proportionally unwraps horizontally, but applies the same unwrap coordinates to all rings.
+			elif unwrap_method == 2:
+				var base_width = (b_2 - b_1).length()
+				var base_height = (t_1 - b_1).length()
+				
+				uvs = [Vector2(total_edge_length, 0.0), Vector2(total_edge_length, base_height), 
+				Vector2(total_edge_length + base_width, base_height), Vector2(total_edge_length + base_width, 0.0)]
+				
+				total_edge_length += base_width
 				
 			# ADD FACE
 			mesh.add_ngon(vertices, [], tangents, uvs, normals)
 			face_count += 1
+			
 
 		base_extrusion_depth += distance_vec
 		
@@ -651,14 +705,27 @@ func build_polygon_extrusion(mesh : OnyxMesh, points : Array, depth : float, rin
 	
 	var top_uvs = []
 	var bottom_uvs = []
-	for vector in v_cap_top:
-		var uv = Vector2(vector.x / top_range.x, vector.z / top_range.z)
-		uv = uv + Vector2(0.5, 0.5)
-		top_uvs.append(uv)
-	for vector in v_cap_bottom:
-		var uv = Vector2(vector.x / bottom_range.x, vector.z / bottom_range.z)
-		uv = uv + Vector2(0.5, 0.5)
-		bottom_uvs.append(uv)
+	
+	# UNWRAP METHOD 0 - CLAMPED OVERLAP
+	if unwrap_method == 0:
+		for vector in v_cap_top:
+			var uv = Vector2(vector.x / top_range.x, vector.z / top_range.z)
+			uv = uv + Vector2(0.5, 0.5)
+			top_uvs.append(uv)
+		
+		for vector in v_cap_bottom:
+			var uv = Vector2(vector.x / bottom_range.x, vector.z / bottom_range.z)
+			uv = uv + Vector2(0.5, 0.5)
+			bottom_uvs.append(uv)
+		
+	# UNWRAP METHOD 1+2 - PROPORTIONAL OVERLAP AND SEGMENTS
+	# Unwraps evenly across all rings, scaling based on vertex position.
+	elif unwrap_method == 1 || unwrap_method == 2:
+		for vector in v_cap_top:
+			top_uvs.append(Vector2(vector.x, vector.z))
+		for vector in v_cap_bottom:
+			bottom_uvs.append(Vector2(vector.x, vector.z))
+			
 		
 	mesh.add_ngon(v_cap_top, [], [], top_uvs, [])
 	mesh.add_ngon(v_cap_bottom, [], [], bottom_uvs, [])
@@ -714,9 +781,10 @@ func internal_build_surface(start_pos : Vector3, end_pos : Vector3, up_max : Vec
 			if unwrap_mode == 0:
 				uvs = [Vector2(0.0, 1.0), Vector2(0.0, 0.0), Vector2(1.0, 0.0), Vector2(1.0, 1.0)]
 				
-			# UNWRAP MODE - PROPORTIONAL OVERLAP
-			elif unwrap_mode == 1:
-				uvs = OnyxUtils.vector3_to_vector2_array(vectors, 'X', 'Z')
+#			# UNWRAP MODE - PROPORTIONAL OVERLAP
+			# Can't do this until I understand UV projection.
+#			elif unwrap_mode == 1:
+#				uvs = OnyxUtils.vector3_to_vector2_array(vectors, 'X', 'Z')
 			
 			results.append([ vectors, [], [], uvs, [] ])
 			
