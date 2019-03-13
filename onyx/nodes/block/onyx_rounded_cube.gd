@@ -46,13 +46,13 @@ var color = Vector3(1, 1, 1)
 # Exported variables representing all usable handles for re-shaping the mesh, in order.
 # Must be exported to be saved in a scene?  smh.
 export(float) var x_plus_position = 0.5 setget update_x_plus
-export(float) var x_minus_position = -0.5 setget update_x_minus
+export(float) var x_minus_position = 0.5 setget update_x_minus
 
 export(float) var y_plus_position = 1.0 setget update_y_plus
 export(float) var y_minus_position = 0.0 setget update_y_minus
 
 export(float) var z_plus_position = 0.5 setget update_z_plus
-export(float) var z_minus_position = -0.5 setget update_z_minus
+export(float) var z_minus_position = 0.5 setget update_z_minus
 
 export(float) var corner_size = 0.2 setget update_corner_size
 export(int) var corner_iterations = 4 setget update_corner_iterations
@@ -179,7 +179,7 @@ func update_z_plus(new_value):
 	
 func update_z_minus(new_value):
 	print("UPDATE!")
-	if new_value > 0 || origin_mode == OriginPosition.BASE_CORNER:
+	if new_value < 0 || origin_mode == OriginPosition.BASE_CORNER:
 		new_value = 0
 		
 	z_minus_position = new_value
@@ -191,9 +191,9 @@ func update_corner_size(new_value):
 		new_value = 0.01
 		
 	# ensure the rounded corners do not surpass the bounds of the size of the shape sides.
-	var x_range = (x_plus_position - x_minus_position) / 2
-	var y_range = (y_plus_position - y_minus_position) / 2
-	var z_range = (z_plus_position - z_minus_position) / 2
+	var x_range = (x_plus_position - -x_minus_position) / 2
+	var y_range = (y_plus_position - -y_minus_position) / 2
+	var z_range = (z_plus_position - -z_minus_position) / 2
 	
 	match corner_axis:
 		CornerAxis.X:
@@ -339,9 +339,9 @@ func update_origin():
 			match origin_mode:
 				
 				OriginPosition.BASE:
-					diff = Vector3(0, y_minus_position, 0)
+					diff = Vector3(0, -y_minus_position, 0)
 				OriginPosition.BASE_CORNER:
-					diff = Vector3(x_minus_position, y_minus_position, z_minus_position)
+					diff = Vector3(-x_minus_position, -y_minus_position, -z_minus_position)
 			
 		OriginPosition.BASE:
 			match origin_mode:
@@ -349,7 +349,7 @@ func update_origin():
 				OriginPosition.CENTER:
 					diff = Vector3(0, y_plus_position / 2, 0)
 				OriginPosition.BASE_CORNER:
-					diff = Vector3(x_minus_position, 0, z_minus_position)
+					diff = Vector3(-x_minus_position, 0, -z_minus_position)
 					
 		OriginPosition.BASE_CORNER:
 			match origin_mode:
@@ -381,19 +381,19 @@ func generate_geometry(fix_to_origin_setting):
 	#print("Regenerating geometry")
 	
 	var maxPoint = Vector3(x_plus_position, y_plus_position, z_plus_position)
-	var minPoint = Vector3(x_minus_position, y_minus_position, z_minus_position)
+	var minPoint = Vector3(-x_minus_position, -y_minus_position, -z_minus_position)
 	
 	if fix_to_origin_setting == true:
 		match origin_mode:
 			OriginPosition.BASE:
 				maxPoint = Vector3(x_plus_position, (y_plus_position + (y_minus_position * -1)), z_plus_position)
-				minPoint = Vector3(x_minus_position, 0, z_minus_position)
+				minPoint = Vector3(-x_minus_position, 0, -z_minus_position)
 				
 			OriginPosition.BASE_CORNER:
 				maxPoint = Vector3(
-					(x_plus_position + (x_minus_position * -1)), 
-					(y_plus_position + (y_minus_position * -1)), 
-					(z_plus_position + (z_minus_position * -1))
+					(x_plus_position + (-x_minus_position * -1)), 
+					(y_plus_position + (-y_minus_position * -1)), 
+					(z_plus_position + (-z_minus_position * -1))
 					)
 				minPoint = Vector3(0, 0, 0)
 	
@@ -473,15 +473,15 @@ func render_onyx_mesh():
 func generate_handles():
 	handles.clear()
 	
-	var x_mid = x_plus_position - x_minus_position
-	var y_mid = y_plus_position - y_minus_position
-	var z_mid = z_plus_position - z_minus_position
+	var x_mid = x_plus_position - -x_minus_position
+	var y_mid = y_plus_position - -y_minus_position
+	var z_mid = z_plus_position - -z_minus_position
 	
-	handles["x_minus"] = Vector3(x_minus_position, y_mid, z_mid)
+	handles["x_minus"] = Vector3(-x_minus_position, y_mid, z_mid)
 	handles["x_plus"] = Vector3(x_plus_position, y_mid, z_mid)
-	handles["y_minus"] = Vector3(x_mid, y_minus_position, z_mid)
+	handles["y_minus"] = Vector3(x_mid, -y_minus_position, z_mid)
 	handles["y_plus"] = Vector3(x_mid, y_plus_position, z_mid)
-	handles["z_minus"] = Vector3(x_mid, y_mid, z_minus_position)
+	handles["z_minus"] = Vector3(x_mid, y_mid, -z_minus_position)
 	handles["z_plus"] = Vector3(x_mid, y_mid, z_plus_position)
 	
 
