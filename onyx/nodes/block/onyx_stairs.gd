@@ -43,10 +43,10 @@ export(Vector3) var end_position = Vector3(0.0, 1.0, 2.0) setget update_end_posi
 
 export(float) var stair_width = 2 setget update_stair_width
 export(float) var stair_depth = 0.4 setget update_stair_depth
-export(Vector2) var stair_width_percentage = Vector2(1, 1) setget update_stair_width_percentage
+export(int) var stair_count = 4 setget update_stair_count
+
 export(Vector2) var stair_length_percentage = Vector2(1, 1) setget update_stair_length_percentage
 
-export(int) var stair_count = 4 setget update_stair_count
 
 
 # BEVELS
@@ -55,8 +55,8 @@ export(int) var stair_count = 4 setget update_stair_count
 #export(BevelTarget) var bevel_target = BevelTarget.Y_AXIS setget update_bevel_target
 
 # UVS
-enum UnwrapMethod {CLAMPED_OVERLAP, PROPORTIONAL_OVERLAP}
-export(UnwrapMethod) var unwrap_method = UnwrapMethod.CLAMPED_OVERLAP setget update_unwrap_method
+enum UnwrapMethod {PROPORTIONAL_OVERLAP, CLAMPED_OVERLAP}
+export(UnwrapMethod) var unwrap_method = UnwrapMethod.PROPORTIONAL_OVERLAP setget update_unwrap_method
 
 export(Vector2) var uv_scale = Vector2(1.0, 1.0) setget update_uv_scale
 export(bool) var flip_uvs_horizontally = false setget update_flip_uvs_horizontally
@@ -140,15 +140,6 @@ func update_stair_depth(new_value):
 	stair_depth = new_value
 	generate_geometry(true)
 	
-func update_stair_width_percentage(new_value):
-	if new_value.x < 0:
-		new_value.x = 0
-	if new_value.y < 0:
-		new_value.y = 0
-		
-	stair_width_percentage = new_value
-	generate_geometry(true)
-	
 func update_stair_length_percentage(new_value):
 	if new_value.x < 0:
 		new_value.x = 0
@@ -228,7 +219,8 @@ func generate_geometry(fix_to_origin_setting):
 	var x_axis = z_axis.cross(y_axis)
 	
 	var mesh_pos = Vector3()
-	var path_tf = Transform(x_axis, y_axis, z_axis, mesh_pos)
+	var start_tf = Transform(x_axis, y_axis, z_axis, start_position)
+	#var end_tf = Transform(x_axis, y_axis, z_axis, end_position)
 	
 	onyx_mesh.clear()
 	
@@ -243,51 +235,72 @@ func generate_geometry(fix_to_origin_setting):
 	var v3 = Vector3(-stair_width/2, -stair_depth/2, 0)
 	var v4 = Vector3(stair_width/2, -stair_depth/2, 0)
 	
+	var length_percentage_minus = Vector3(0, 0, diff_inc.z/2 * -stair_length_percentage.x)
+	var length_percentage_plus = Vector3(0, 0, diff_inc.z/2 * stair_length_percentage.y)
+	
+	var s1 = v1 + length_percentage_plus
+	var s2 = v2 + length_percentage_plus
+	var s3 = v3 + length_percentage_plus
+	var s4 = v4 + length_percentage_plus
+		
+	var e1 = v1 + length_percentage_minus
+	var e2 = v2 + length_percentage_minus
+	var e3 = v3 + length_percentage_minus
+	var e4 = v4 + length_percentage_minus
+	
+	# setup uv arrays
+	var x_minus_uv = [];  var x_plus_uv = []
+	var y_minus_uv = [];  var y_plus_uv = []
+	var z_minus_uv = [];  var z_plus_uv = []
+	
+	# UNWRAP 0 : 1:1 Overlap
+	if unwrap_method == UnwrapMethod.CLAMPED_OVERLAP:
+		var wrap = [Vector2(0.0, 1.0), Vector2(0.0, 0.0), Vector2(1.0, 0.0), Vector2(1.0, 1.0)]
+		x_minus_uv = wrap;  x_plus_uv = wrap;
+		y_minus_uv = wrap;  y_plus_uv = wrap;
+		z_minus_uv = wrap;  z_plus_uv = wrap;
+	
+	elif unwrap_method == UnwrapMethod.PROPORTIONAL_OVERLAP:
+		x_minus_uv = [Vector2(e3.z, -e3.y), Vector2(e1.z, -e1.y), Vector2(s1.z, -s1.y), Vector2(s3.z, -s3.y)]
+		x_plus_uv = [Vector2(s4.z, -s4.y), Vector2(s2.z, -s2.y), Vector2(e2.z, -e2.y), Vector2(e4.z, -e4.y)]
+		
+		y_minus_uv = [Vector2(s4.x, -s4.z), Vector2(e4.x, -e4.z), Vector2(e3.x, -e3.z), Vector2(s3.x, -s3.z)]
+		y_plus_uv = [Vector2(-s1.x, -s1.z), Vector2(-e1.x, -e1.z), Vector2(-e2.x, -e2.z), Vector2(-s2.x, -s2.z)]
+		
+		z_minus_uv = [Vector2(-s3.x, -s3.y), Vector2(-s1.x, -s1.y), Vector2(-s2.x, -s2.y), Vector2(-s4.x, -s4.y)]
+		z_plus_uv = [Vector2(-e4.x, -e4.y), Vector2(-e2.x, -e2.y), Vector2(-e1.x, -e1.y), Vector2(-e3.x, -e3.y)]
+	
 	var path_i = start_position + (diff_inc / 2)
 	var i = 0
 	
 	# iterate through path
 	while i < stair_count:
 		var step_start = path_i
-		#var step_end = path_i + diff_inc
+		var step_tf = Transform(Basis(), step_start)
 		
 		# transform them for the start and finish
-		var p1 = path_tf.xform(v1)
-		var p2 = path_tf.xform(v2)
-		var p3 = path_tf.xform(v3)
-		var p4 = path_tf.xform(v4)
+		var ms_1 = step_tf.xform(s1)
+		var ms_2 = step_tf.xform(s2)
+		var ms_3 = step_tf.xform(s3)
+		var ms_4 = step_tf.xform(s4)
+		
+		var me_1 = step_tf.xform(e1)
+		var me_2 = step_tf.xform(e2)
+		var me_3 = step_tf.xform(e3)
+		var me_4 = step_tf.xform(e4)
 		
 		var flat_distance = Vector3(diff_inc.x, 0, diff_inc.z) / 2
 		
-		var s1 = p1 + step_start - flat_distance
-		var s2 = p2 + step_start - flat_distance
-		var s3 = p3 + step_start - flat_distance
-		var s4 = p4 + step_start - flat_distance
-		
-		var e1 = p1 + step_start + flat_distance
-		var e2 = p2 + step_start + flat_distance
-		var e3 = p3 + step_start + flat_distance
-		var e4 = p4 + step_start + flat_distance
-		
 		# build the step vertices
-		var x_minus = [e3, e1, s1, s3]
-		var x_plus = [s4, s2, e2, e4]
-		var y_minus = [s4, e4, e3, s3]
-		var y_plus = [s1, e1, e2, s2]
-		var z_minus = [s3, s1, s2, s4]
-		var z_plus = [e4, e2, e1, e3]
+		var x_minus = [me_3, me_1, ms_1, ms_3]
+		var x_plus = [ms_4, ms_2, me_2, me_4]
 		
-		# setup uv arrays
-		var x_minus_uv = [];  var x_plus_uv = []
-		var y_minus_uv = [];  var y_plus_uv = []
-		var z_minus_uv = [];  var z_plus_uv = []
+		var y_minus = [ms_4, me_4, me_3, ms_3]
+		var y_plus = [ms_1, me_1, me_2, ms_2]
 		
-		# UNWRAP 0 : 1:1 Overlap
-		if unwrap_method == 0:
-			var wrap = [Vector2(0.0, 1.0), Vector2(0.0, 0.0), Vector2(1.0, 0.0), Vector2(1.0, 1.0)]
-			x_minus_uv = wrap;  x_plus_uv = wrap;
-			y_minus_uv = wrap;  y_plus_uv = wrap;
-			z_minus_uv = wrap;  z_plus_uv = wrap;
+		var z_minus = [ms_3, ms_1, ms_2, ms_4]
+		var z_plus = [me_4, me_2, me_1, me_3]
+		
 		
 		# add it to the mesh
 		onyx_mesh.add_ngon(x_minus, [], [], x_minus_uv, [])
@@ -307,31 +320,8 @@ func generate_geometry(fix_to_origin_setting):
 	# Re-submit the handle positions based on the built faces, so other handles that aren't the
 	# focus of a handle operation are being updated
 	
-	generate_handles()
-	update_gizmo()
-	
-#	var boundary = onyx_mesh.get_aabb()
-#	var center_points = OnyxUtils.get_aabb_boundary_points(boundary)
-#	#print(boundary)
-#	#print(center_points)
-#
-#	handles = center_points
-#	#print(handles[0])
-#
-#	x_plus_position = center_points[0].x
-#	x_minus_position = center_points[1].x
-#	y_plus_position = center_points[2].y
-#	y_minus_position = center_points[3].y
-#	z_plus_position = center_points[4].z
-#	z_minus_position = center_points[5].z
-
-#	gizmo_handles = []
-#	for i in handles.size():
-#		gizmo_handles.append([handles[i] ])
-#
-#	# Submit the changes to the gizmo
-#	if gizmo:
-#		update_gizmo()
+	#generate_handles()
+	#update_gizmo()
 		
 		
 

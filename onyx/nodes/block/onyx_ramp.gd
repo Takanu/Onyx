@@ -50,8 +50,8 @@ enum RampFillType {NONE, MINUS_Y, PLUS_Y}
 export(RampFillType) var ramp_fill_type = RampFillType.NONE setget update_ramp_fill_type
 
 # UVS
-enum UnwrapMethod {DIRECT_OVERLAP, PROPORTIONAL_OVERLAP}
-export(UnwrapMethod) var unwrap_method = UnwrapMethod.DIRECT_OVERLAP setget update_unwrap_method
+enum UnwrapMethod {PROPORTIONAL_OVERLAP, DIRECT_OVERLAP}
+export(UnwrapMethod) var unwrap_method = UnwrapMethod.PROPORTIONAL_OVERLAP setget update_unwrap_method
 
 export(Vector2) var uv_scale = Vector2(1.0, 1.0) setget update_uv_scale
 export(bool) var flip_uvs_horizontally = false setget update_flip_uvs_horizontally

@@ -45,8 +45,8 @@ export(float) var base_z_size = 2 setget update_base_z_size
 export(bool) var keep_shape_proportional = false setget update_proportional_toggle
 
 # UVS
-enum UnwrapMethod {DIRECT_OVERLAP, PROPORTIONAL_OVERLAP}
-export(UnwrapMethod) var unwrap_method = UnwrapMethod.DIRECT_OVERLAP setget update_unwrap_method
+enum UnwrapMethod {PROPORTIONAL_OVERLAP, DIRECT_OVERLAP}
+export(UnwrapMethod) var unwrap_method = UnwrapMethod.PROPORTIONAL_OVERLAP setget update_unwrap_method
 
 export(Vector2) var uv_scale = Vector2(1.0, 1.0) setget update_uv_scale
 export(bool) var flip_uvs_horizontally = false setget update_flip_uvs_horizontally
@@ -279,38 +279,70 @@ func generate_geometry(fix_to_origin_setting):
 			position = Vector3(max_x / 2, 0, base_z_size / 2)
 			
 	
-	var mesh_factory = OnyxMeshFactory.new()
-	onyx_mesh = mesh_factory.build_wedge(base_x_size, base_z_size, point_size, point_position, position)
+	# GENERATE MESH
+	onyx_mesh.clear()
+	
+	#   X---------X  b1 b2
+	#	|         |
+	#		X---------X   p2 p1
+	#	|		  |
+	#   X---------X  b3 b4
+	
+	var base_1 = Vector3(base_x_size/2, 0, base_z_size/2) + position
+	var base_2 = Vector3(-base_x_size/2, 0, base_z_size/2) + position
+	
+	var base_3 = Vector3(base_x_size/2, 0, -base_z_size/2) + position
+	var base_4 = Vector3(-base_x_size/2, 0, -base_z_size/2) + position
+	
+	var point_1 = Vector3(-point_size/2 + point_position.x, point_position.y, point_position.z) + position
+	var point_2 = Vector3(point_size/2 + point_position.x, point_position.y, point_position.z) + position
+	
+	# UVS
+	var left_triangle_uv = []
+	var right_triangle_uv = []
+	var bottom_quad_uv = []
+	var top_quad_uv = []
+	var base_uv = []
+	
+	if unwrap_method == UnwrapMethod.DIRECT_OVERLAP:
+		left_triangle_uv = [Vector2(0.0, 1.0), Vector2(0.5, 0.0), Vector2(1.0, 1.0)]
+		right_triangle_uv = left_triangle_uv
+		bottom_quad_uv = [Vector2(0.0, 0.0), Vector2(1.0, 0.0), Vector2(1.0, 1.0), Vector2(0.0, 1.0)]
+		top_quad_uv = bottom_quad_uv
+		base_uv = bottom_quad_uv
+		
+	elif unwrap_method == UnwrapMethod.PROPORTIONAL_OVERLAP:
+		
+		# Triangle UVs
+		# Get the length between the ramp point and the base
+		var above_right_point = Vector3(point_1.x, point_1.y, base_4.z)
+		var right_triangle_length = (above_right_point - base_4).length()
+		right_triangle_uv = [Vector2(base_4.z, base_4.y), Vector2(point_1.z, -right_triangle_length), Vector2(base_2.z, base_2.y)]
+		
+		var above_left_point = Vector3(point_2.x, point_2.y, base_3.z)
+		var left_triangle_length = (above_left_point - base_3).length()
+		left_triangle_uv = [Vector2(base_1.z, base_1.y), Vector2(point_2.z, -left_triangle_length), Vector2(base_3.z, base_3.y)]
+		
+		# Slope UVs
+		var median_point = Vector3(0.0, point_position.y, point_position.z)
+		var median_bottom_point = Vector3(0.0, 0.0, -base_z_size / 2)
+		var median_top_point = Vector3(0.0, 0.0, base_z_size / 2)
+		
+		var bottom_quad_length = (median_point - median_bottom_point).length()
+		var top_quad_length = (median_point - median_top_point).length()
+		bottom_quad_uv = [Vector2(-point_2.x, 0.0), Vector2(-point_1.x, 0.0), Vector2(-base_4.x, bottom_quad_length), Vector2(-base_3.x, bottom_quad_length)]
+		top_quad_uv = [Vector2(-point_1.x, 0.0), Vector2(-point_2.x, 0.0), Vector2(-base_1.x, top_quad_length), Vector2(-base_2.x, top_quad_length)]
+		
+		# Base UVs
+		base_uv = [Vector2(base_1.x, base_1.z), Vector2(base_2.x, base_2.z), Vector2(base_4.x, base_4.z), Vector2(base_3.x, base_3.z)]
+	
+	onyx_mesh.add_tri([base_1, point_2, base_3], [], [], left_triangle_uv, [])
+	onyx_mesh.add_tri([base_4, point_1, base_2], [], [], right_triangle_uv, [])
+	onyx_mesh.add_ngon([point_2, point_1, base_4, base_3], [], [], bottom_quad_uv, [])
+	onyx_mesh.add_ngon([point_1, point_2, base_1, base_2], [], [], top_quad_uv, [])
+	onyx_mesh.add_ngon([base_2, base_1, base_3, base_4], [], [], base_uv, [])
+	
 	render_onyx_mesh()
-	
-	# UPDATE HANDLES
-	# dumbass reminder - handles are in local space
-	
-#	var aabb = AABB(position, Vector3(x_width, height_max - height_min, z_width))
-#
-#	# Re-submit the handle positions based on the built faces, so other handles that aren't being actively edited are updated to
-#	# reflect the new mesh shape and bounds.
-#	handles = []
-#	handles.append(Vector3(0, aabb.position.y + aabb.size.y, 0))
-#	handles.append(Vector3(0, aabb.position.y, 0))
-#	handles.append(Vector3(x_width, aabb.position.y + (aabb.size.y / 2), 0))
-#	handles.append(Vector3(0, aabb.position.y + (aabb.size.y / 2), z_width))
-#
-#	print("new handles = ", handles)
-	
-	# Build handle points in the required gizmo format.
-#	var face_list = face_set.get_face_vertices()
-#
-#	gizmo_handles = []
-#	for i in handles.size():
-#		gizmo_handles.append([handles[i], face_list[i] ])
-#
-#	# Submit the changes to the gizmo
-#	if gizmo:
-#		#gizmo.add_handles(gizmo_handles, gizmo_mat)
-#
-#		# disabled during alpha
-#		update_gizmo()
 	
 
 func render_onyx_mesh():

@@ -48,8 +48,8 @@ export(float) var z_width = 0.5 setget update_z_width
 export(bool) var keep_width_proportional = false setget update_proportional_toggle
 
 # UVS
-enum UnwrapMethod {CLAMPED_OVERLAP, PROPORTIONAL_OVERLAP, PROPORTIONAL_OVERLAP_SEGMENTS}
-export(UnwrapMethod) var unwrap_method = UnwrapMethod.CLAMPED_OVERLAP setget update_unwrap_method
+enum UnwrapMethod {PROPORTIONAL_OVERLAP, PROPORTIONAL_OVERLAP_SEGMENTS, CLAMPED_OVERLAP}
+export(UnwrapMethod) var unwrap_method = UnwrapMethod.PROPORTIONAL_OVERLAP setget update_unwrap_method
 
 export(Vector2) var uv_scale = Vector2(1.0, 1.0) setget update_uv_scale
 export(bool) var flip_uvs_horizontally = false setget update_flip_uvs_horizontally
@@ -303,35 +303,6 @@ func generate_geometry(fix_to_origin_setting):
 	onyx_mesh.clear()
 	mesh_factory.build_cylinder(onyx_mesh, sides, height, x_width, z_width, rings, position, unwrap_method, smooth_normals)
 	render_onyx_mesh()
-	
-	# UPDATE HANDLES
-	# dumbass reminder - handles are in local space
-	
-#	var aabb = AABB(position, Vector3(x_width, height_max - height_min, z_width))
-#
-#	# Re-submit the handle positions based on the built faces, so other handles that aren't being actively edited are updated to
-#	# reflect the new mesh shape and bounds.
-#	handles = []
-#	handles.append(Vector3(0, aabb.position.y + aabb.size.y, 0))
-#	handles.append(Vector3(0, aabb.position.y, 0))
-#	handles.append(Vector3(x_width, aabb.position.y + (aabb.size.y / 2), 0))
-#	handles.append(Vector3(0, aabb.position.y + (aabb.size.y / 2), z_width))
-	
-	#print("new handles = ", handles)
-	
-	# Build handle points in the required gizmo format.
-#	var face_list = onyx_mesh.get_face_vertices()
-#
-#	gizmo_handles = []
-#	for i in handles.size():
-#		gizmo_handles.append([handles[i], face_list[i] ])
-#
-#	# Submit the changes to the gizmo
-#	if gizmo:
-#		#gizmo.add_handles(gizmo_handles, gizmo_mat)
-#
-#		# disabled during alpha
-#		update_gizmo()
 	
 	
 func render_onyx_mesh():

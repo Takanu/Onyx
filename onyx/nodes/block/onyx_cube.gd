@@ -59,8 +59,8 @@ export(Vector3) var subdivisions = Vector3(1, 1, 1)
 #export(BevelTarget) var bevel_target = BevelTarget.Y_AXIS setget update_bevel_target
 
 # UVS
-enum UnwrapMethod {CLAMPED_OVERLAP, PROPORTIONAL_OVERLAP}
-export(UnwrapMethod) var unwrap_method = UnwrapMethod.CLAMPED_OVERLAP setget update_unwrap_method
+enum UnwrapMethod {PROPORTIONAL_OVERLAP, CLAMPED_OVERLAP}
+export(UnwrapMethod) var unwrap_method = UnwrapMethod.PROPORTIONAL_OVERLAP setget update_unwrap_method
 
 export(Vector2) var uv_scale = Vector2(1.0, 1.0) setget update_uv_scale
 export(bool) var flip_uvs_horizontally = false setget update_flip_uvs_horizontally
