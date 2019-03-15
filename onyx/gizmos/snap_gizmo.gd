@@ -81,8 +81,8 @@ func redraw():
 		print(line_set[0].size())
 		add_lines(line_set[0], mat_solid_color(line_set[1].r, line_set[1].g, line_set[1].b), false)
 		
-		
-		#plugin.update_overlays() 
+	# I have no idea what this does tbqh
+	plugin.update_overlays() 
 	
 	
 # ////////////////////////////////////////////////////////////

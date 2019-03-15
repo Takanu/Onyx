@@ -82,9 +82,9 @@ func add_ngon(vertices : Array, colors : Array, tangents : Array, uvs : Array, n
 		temp_normal = line_b.cross(line_a)
 		
 	# Go through each set of vertices in sequence
-	var a = 0
-	var b = 1
-	while a < vertices.size() - 1:
+	var a = 1
+	var b = 2
+	while a <= vertices.size() - 2:
 		var new_vs = [vertices[0], vertices[a], vertices[b]]
 		
 		var new_cs = []
