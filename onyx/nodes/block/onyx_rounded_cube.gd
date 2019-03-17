@@ -142,7 +142,6 @@ func _editor_transform_changed():
 	
 # Used when a handle variable changes in the properties panel.
 func update_x_plus(new_value):
-	print("UPDATE!")
 	if new_value < 0:
 		new_value = 0
 		
@@ -151,7 +150,6 @@ func update_x_plus(new_value):
 	
 	
 func update_x_minus(new_value):
-	print("UPDATE!")
 	if new_value > 0 || origin_mode == OriginPosition.BASE_CORNER:
 		new_value = 0
 		
@@ -159,7 +157,6 @@ func update_x_minus(new_value):
 	generate_geometry(true)
 	
 func update_y_plus(new_value):
-	print("UPDATE!")
 	if new_value < 0:
 		new_value = 0
 		
@@ -167,7 +164,6 @@ func update_y_plus(new_value):
 	generate_geometry(true)
 	
 func update_y_minus(new_value):
-	print("UPDATE!")
 	if new_value > 0 || origin_mode == OriginPosition.BASE_CORNER || origin_mode == OriginPosition.BASE:
 		new_value = 0
 		
@@ -175,7 +171,6 @@ func update_y_minus(new_value):
 	generate_geometry(true)
 	
 func update_z_plus(new_value):
-	print("UPDATE!")
 	if new_value < 0:
 		new_value = 0
 		
@@ -183,7 +178,6 @@ func update_z_plus(new_value):
 	generate_geometry(true)
 	
 func update_z_minus(new_value):
-	print("UPDATE!")
 	if new_value < 0 || origin_mode == OriginPosition.BASE_CORNER:
 		new_value = 0
 		
@@ -191,7 +185,6 @@ func update_z_minus(new_value):
 	generate_geometry(true)
 	
 func update_corner_size(new_value):
-	print("UPDATE!")
 	if new_value <= 0:
 		new_value = 0.01
 		
@@ -221,7 +214,6 @@ func update_corner_size(new_value):
 	generate_geometry(true)
 	
 func update_corner_iterations(new_value):
-	print("UPDATE!")
 	if new_value <= 0:
 		new_value = 1
 		
@@ -229,7 +221,6 @@ func update_corner_iterations(new_value):
 	generate_geometry(true)
 	
 func update_corner_axis(new_value):
-	print("UPDATE!")
 	corner_axis = new_value
 	generate_geometry(true)
 
@@ -252,7 +243,6 @@ func update_corner_axis(new_value):
 	
 # Used to recalibrate both the origin point location and the position handles.
 func update_positions(new_value):
-	print("UPDATE!")
 	#print("ONYXCUBE update_positions")
 	update_origin_setting = true
 	update_origin()
@@ -260,13 +250,9 @@ func update_positions(new_value):
 	generate_geometry(true)
 	
 func update_origin_mode(new_value):
-	print("UPDATE!")
-	print("ONYXCUBE set_origin_mode")
 	
 	if previous_origin_mode == new_value:
 		return
-	
-	print("continuing update")
 	
 	origin_mode = new_value
 	update_origin()
@@ -275,32 +261,26 @@ func update_origin_mode(new_value):
 	previous_origin_mode = origin_mode
 	
 func update_unwrap_method(new_value):
-	print("UPDATE!")
 	unwrap_method = new_value
 	generate_geometry(true)
 
 func update_uv_scale(new_value):
-	print("UPDATE!")
 	uv_scale = new_value
 	generate_geometry(true)
 
 func update_flip_uvs_horizontally(new_value):
-	print("UPDATE!")
 	flip_uvs_horizontally = new_value
 	generate_geometry(true)
 	
 func update_flip_uvs_vertically(new_value):
-	print("UPDATE!")
 	flip_uvs_vertically = new_value
 	generate_geometry(true)
 	
 func update_smooth_normals(new_value):
-	print("UPDATE!")
 	smooth_normals = new_value
 	generate_geometry(true)
 	
 func update_material(new_value):
-	print("UPDATE!")
 	material = new_value
 	
 	# Prevents geometry generation if the node hasn't loaded yet, otherwise it will try to set a blank mesh.
@@ -415,60 +395,10 @@ func generate_geometry(fix_to_origin_setting):
 	generate_handles()
 	update_gizmo()
 	
-#	var boundary = onyx_mesh.get_aabb()
-#	var center_points = VectorUtils.get_aabb_boundary_points(boundary)
-#	#print(boundary)
-#	#print(center_points)
-#
-#	handles = center_points
-#	#print(handles[0])
-#
-#	x_plus_position = center_points[0].x
-#	x_minus_position = center_points[1].x
-#	y_plus_position = center_points[2].y
-#	y_minus_position = center_points[3].y
-#	z_plus_position = center_points[4].z
-#	z_minus_position = center_points[5].z
 
-#	gizmo_handles = []
-#	for i in handles.size():
-#		gizmo_handles.append([handles[i] ])
-#
-#	# Submit the changes to the gizmo
-#	if gizmo:
-#		update_gizmo()
-		
-		
-
+# Makes any final tweaks, then prepares and transfers the mesh.
 func render_onyx_mesh():
-	
-	# Optional UV Modifications
-	var tf_vec = uv_scale
-	if tf_vec.x == 0:
-		tf_vec.x = 0.0001
-	if tf_vec.y == 0:
-		tf_vec.y = 0.0001
-	
-#	if self.invert_faces == true:
-#		tf_vec.x = tf_vec.x * -1.0
-	if flip_uvs_vertically == true:
-		tf_vec.y = tf_vec.y * -1.0
-	if flip_uvs_horizontally == true:
-		tf_vec.x = tf_vec.x * -1.0
-	
-	onyx_mesh.multiply_uvs(tf_vec)
-	
-	# Create new mesh
-	var array_mesh = onyx_mesh.render_surface_geometry(material)
-	var helper = MeshDataTool.new()
-	var mesh = Mesh.new()
-	
-	# Set the new mesh
-	helper.create_from_surface(array_mesh, 0)
-	helper.commit_to_surface(mesh)
-	set_mesh(mesh)
-	
-
+	OnyxUtils.render_onyx_mesh(self)
 
 
 # ////////////////////////////////////////////////////////////
@@ -478,9 +408,9 @@ func render_onyx_mesh():
 func generate_handles():
 	handles.clear()
 	
-	var x_mid = x_plus_position - -x_minus_position
-	var y_mid = y_plus_position - -y_minus_position
-	var z_mid = z_plus_position - -z_minus_position
+	var x_mid = (x_plus_position - x_minus_position) / 2
+	var y_mid = (y_plus_position - y_minus_position) / 2
+	var z_mid = (z_plus_position - z_minus_position) / 2
 	
 	handles["x_minus"] = Vector3(-x_minus_position, y_mid, z_mid)
 	handles["x_plus"] = Vector3(x_plus_position, y_mid, z_mid)
@@ -489,7 +419,6 @@ func generate_handles():
 	handles["z_minus"] = Vector3(x_mid, y_mid, -z_minus_position)
 	handles["z_plus"] = Vector3(x_mid, y_mid, z_plus_position)
 	
-
 
 # Converts the dictionary format of handles to a pair of handles with optional triangle for normal snaps.
 func convert_handles_to_gizmo() -> Array:
@@ -503,6 +432,8 @@ func convert_handles_to_gizmo() -> Array:
 	
 	# convert handle values to an array
 	var handle_array = handles.values()
+#	print("HANDLE ARRAY BEING SUBMITTED - ", handle_array)
+
 	result.append( [handle_array[0], triangle_x] )
 	result.append( [handle_array[1], triangle_x] )
 	result.append( [handle_array[2], triangle_y] )
@@ -527,48 +458,35 @@ func convert_handles_to_onyx(handles) -> Dictionary:
 	return result
 	
 
-
 # Changes the handle based on the given index and coordinates.
 func update_handle_from_gizmo(index, coordinate):
 	
+	#print("UPDATING HANDLE FROM GIZMO - ", coordinate)
+	
 	match index:
-		0: x_plus_position = coordinate.x
-		1: x_minus_position = coordinate.x
-		2: y_plus_position = coordinate.y
-		3: y_minus_position = coordinate.y
-		4: z_plus_position = coordinate.z
-		5: z_minus_position = coordinate.z
+		0: x_minus_position = min(coordinate.x, 0) * -1
+		1: x_plus_position = max(coordinate.x, 0)
+		2: y_minus_position = min(coordinate.y, 0) * -1
+		3: y_plus_position = max(coordinate.y, 0)
+		4: z_minus_position = min(coordinate.z, 0) * -1
+		5: z_plus_position = max(coordinate.z, 0)
 		
-
-# Pushes the handles currently held by the shape to the gizmo.
-#func refresh_gizmo_handles():
-#	gizmo.handle_set = convert_handles_to_gizmo()
-
-
-# Notifies the node that a handle has changed.
-func handle_change(index, coord):
-	
-	update_handle_from_gizmo(index, coord)
-	generate_geometry(false)
+	generate_handles()
 	
 
-
-# Called when a handle has stopped being dragged.
-func handle_commit(index, coord):
-	
-	update_handle_from_gizmo(index, coord)
-	update_origin()
-	balance_handles()
-	generate_geometry(true)
-	
-	# store old handle points for later.
-#	old_handles = face_set.get_all_centre_points()
+# Applies the current handle values to the shape attributes
+func apply_handle_attributes():
+	x_minus_position = handles["x_minus"].x * -1
+	x_plus_position = handles["x_plus"].x
+	y_minus_position = handles["y_minus"].y * -1
+	y_plus_position = handles["y_plus"].y
+	z_minus_position = handles["z_minus"].z * -1
+	z_plus_position = handles["z_plus"].z
 	
 
-
+# Calibrates the stored properties if they need to change before the origin is updated.
+# Only called during Gizmo movements for origin auto-updating.
 func balance_handles():
-	#print("balancing coordinates")
-	#print("ONYXCUBE balance_handles")
 	
 	match origin_mode:
 		OriginPosition.CENTER:
@@ -622,46 +540,35 @@ func balance_handles():
 #	diff = abs(z_plus_position - z_minus_position)
 #	z_plus_position = diff / 2
 #	z_minus_position = (diff / 2) * -1
-	
-	
-	
-# Updates the collision triangles responsible for detecting cursor selection in the editor.
-func get_gizmo_collision():
-##	var triangles = face_set.get_triangles()
-#
-#	var return_t = PoolVector3Array()
-##	for triangle in triangles:
-#		return_t.append(triangle * 10)
-#
-#	return return_t
-	pass
+
+# ////////////////////////////////////////////////////////////
+# STANDARD HANDLE FUNCTIONS
+# (DO NOT CHANGE THESE BETWEEN SCRIPTS)
+
+# Notifies the node that a handle has changed.
+func handle_change(index, coord):
+	OnyxUtils.handle_change(self, index, coord)
+
+# Called when a handle has stopped being dragged.
+func handle_commit(index, coord):
+	OnyxUtils.handle_commit(self, index, coord)
 
 
 
 # ////////////////////////////////////////////////////////////
 # STATES
-# Returns a state that can be used to undo a previous change to the shape.
-func get_undo_state():
+# Returns a state that can be used to undo or redo a previous change to the shape.
+func get_gizmo_redo_state():
+	return OnyxUtils.get_gizmo_redo_state(self)
 	
-	return [old_handles, self.translation]
-	
+# Returns a state specifically for undo functions in SnapGizmo.
+func get_gizmo_undo_state():
+	return OnyxUtils.get_gizmo_undo_state(self)
 
 # Restores the state of the shape to a previous given state.
 func restore_state(state):
+	OnyxUtils.restore_state(self, state)
 	var new_handles = state[0]
-	var stored_translation = state[1]
-	
-	x_plus_position = new_handles[0].x
-	x_minus_position = new_handles[1].x
-	y_plus_position = new_handles[2].y
-	y_minus_position = new_handles[3].y
-	z_plus_position = new_handles[4].z
-	z_minus_position = new_handles[5].z
-	
-	self.translation = stored_translation
-	self.old_handles = new_handles
-	generate_geometry(true)
-
 
 
 # ////////////////////////////////////////////////////////////
@@ -670,22 +577,7 @@ func restore_state(state):
 func editor_select():
 	pass
 	
-	
 func editor_deselect():
 	pass
 	
 	
-
-# ////////////////////////////////////////////////////////////
-# HELPERS
-
-func idek():
-	
-	# Check if we need to offset geometry based on the origin
-	var offset = Vector3()
-	match origin_mode:
-		OriginPosition.BASE:
-			offset = Vector3(x_plus_position, y_minus_position, z_plus_position)
-		OriginPosition.BASE_CORNER:
-			offset = Vector3(x_minus_position, y_minus_position, z_minus_position)
-

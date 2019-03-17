@@ -432,13 +432,6 @@ func generate_geometry(fix_to_origin_setting):
 
 	# RENDER THE MESH
 	render_onyx_mesh()
-
-#	var cylinder = CylinderMesh.new()
-#	cylinder.top_radius = 2
-#	cylinder.bottom_radius = 2
-#	cylinder.height = 4
-#
-#	set_mesh(cylinder)
 	
 	# Re-submit the handle positions based on the built faces, so other handles that aren't the
 	# focus of a handle operation are being updated
@@ -447,35 +440,9 @@ func generate_geometry(fix_to_origin_setting):
 	update_gizmo()
 	
 
-
+# Makes any final tweaks, then prepares and transfers the mesh.
 func render_onyx_mesh():
-	
-	# Optional UV Modifications
-	var tf_vec = uv_scale
-	if tf_vec.x == 0:
-		tf_vec.x = 0.0001
-	if tf_vec.y == 0:
-		tf_vec.y = 0.0001
-	
-#	if self.invert_faces == true:
-#		tf_vec.x = tf_vec.x * -1.0
-	if flip_uvs_vertically == true:
-		tf_vec.y = tf_vec.y * -1.0
-	if flip_uvs_horizontally == true:
-		tf_vec.x = tf_vec.x * -1.0
-	
-	onyx_mesh.multiply_uvs(tf_vec)
-	
-	# Create new mesh
-	var array_mesh = onyx_mesh.render_surface_geometry(material)
-	var helper = MeshDataTool.new()
-	var mesh = Mesh.new()
-	
-	# Set the new mesh
-	helper.create_from_surface(array_mesh, 0)
-	helper.commit_to_surface(mesh)
-	set_mesh(mesh)
-	
+	OnyxUtils.render_onyx_mesh(self)
 
 
 # ////////////////////////////////////////////////////////////
@@ -551,7 +518,7 @@ func update_handle_from_gizmo(index, coordinate):
 	generate_handles()
 	
 
-# Applies tuhe current handle values to the shape attributes
+# Applies the current handle values to the shape attributes
 func apply_handle_attributes():
 	x_minus_position = handles["x_minus"].x * -1
 	x_plus_position = handles["x_plus"].x
@@ -561,9 +528,9 @@ func apply_handle_attributes():
 	z_plus_position = handles["z_plus"].z
 	
 
+# Calibrates the stored properties if they need to change before the origin is updated.
+# Only called during Gizmo movements for origin auto-updating.
 func balance_handles():
-	#print("balancing coordinates")
-	#print("ONYXCUBE balance_handles")
 	
 	match origin_mode:
 		OriginPosition.CENTER:
@@ -624,40 +591,11 @@ func balance_handles():
 
 # Notifies the node that a handle has changed.
 func handle_change(index, coord):
-	
-	update_handle_from_gizmo(index, coord)
-	generate_geometry(false)
-	
-	# FALLBACK HANDLE STUFF
-	# Designed to compensate for when no old_handles data exists, to ensure undos still work.
-	if old_handles.size() == 0 || old_handles == null:
-		old_handles = handles.duplicate(true)
-	
-
+	OnyxUtils.handle_change(self, index, coord)
 
 # Called when a handle has stopped being dragged.
 func handle_commit(index, coord):
-	
-	update_handle_from_gizmo(index, coord)
-	generate_geometry(true)
-	
-	# store current handle points as the old ones, so they can be used later
-	# as an undo point before the next commit.
-	old_handles = handles.duplicate(true)
-	
-	
-	
-# Updates the collision triangles responsible for detecting cursor selection in the editor.
-# I NO LONGER HAVE ANY IDEA WHAT THIS IS.
-func get_gizmo_collision():
-##	var triangles = face_set.get_triangles()
-#
-#	var return_t = PoolVector3Array()
-##	for triangle in triangles:
-#		return_t.append(triangle * 10)
-#
-#	return return_t
-	pass
+	OnyxUtils.handle_commit(self, index, coord)
 
 
 
@@ -665,26 +603,16 @@ func get_gizmo_collision():
 # STATES
 # Returns a state that can be used to undo or redo a previous change to the shape.
 func get_gizmo_redo_state():
-	return [handles.duplicate(true), self.translation]
+	return OnyxUtils.get_gizmo_redo_state(self)
 	
 # Returns a state specifically for undo functions in SnapGizmo.
 func get_gizmo_undo_state():
-	return [old_handles.duplicate(true), self.translation]
+	return OnyxUtils.get_gizmo_undo_state(self)
 
 # Restores the state of the shape to a previous given state.
 func restore_state(state):
+	OnyxUtils.restore_state(self, state)
 	var new_handles = state[0]
-	var stored_translation = state[1]
-	
-	print("RESTORING STATE -", state)
-	
-	handles = new_handles.duplicate(true)
-	old_handles = handles.duplicate(true)
-	apply_handle_attributes()
-	generate_geometry(true)
-	
-	self.translation = stored_translation
-	
 
 
 # ////////////////////////////////////////////////////////////

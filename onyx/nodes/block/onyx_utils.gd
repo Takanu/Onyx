@@ -8,7 +8,7 @@ extends Node
 # ////////////////////////////////////////////////////////////
 # MESH RENDERING
 
-func render_onyx_mesh(node):
+static func render_onyx_mesh(node):
 	
 	# Optional UV Modifications
 	var tf_vec = node.uv_scale
@@ -40,7 +40,7 @@ func render_onyx_mesh(node):
 # HANDLE MANAGEMENT FUNCTIONS
 
 # Notifies the node that a handle has changed.
-func handle_change(node, index, coord):
+static func handle_change(node, index, coord):
 	
 	node.update_handle_from_gizmo(index, coord)
 	node.generate_geometry(false)
@@ -53,7 +53,7 @@ func handle_change(node, index, coord):
 
 
 # Called when a handle has stopped being dragged.
-func handle_commit(node, index, coord):
+static func handle_commit(node, index, coord):
 	
 	node.update_handle_from_gizmo(index, coord)
 	node.generate_geometry(true)
@@ -66,24 +66,24 @@ func handle_commit(node, index, coord):
 # ////////////////////////////////////////////////////////////
 # UNDO/REDO STATES
 # Returns a state that can be used to undo or redo a previous change to the shape.
-func get_gizmo_redo_state(node):
+static func get_gizmo_redo_state(node):
 	return [node.handles.duplicate(true), node.translation]
 
 
 # Returns a state specifically for undo functions in SnapGizmo.
-func get_gizmo_undo_state(node):
+static func get_gizmo_undo_state(node):
 	return [node.old_handles.duplicate(true), node.translation]
 
 
 # Restores the state of the shape to a previous given state.
-func restore_state(node, state):
+static func restore_state(node, state):
 	var new_handles = state[0]
 	var stored_translation = state[1]
 	
 	print("RESTORING STATE -", state)
 	
-	node.handles = node.new_handles.duplicate(true)
-	node.old_handles = node.handles.duplicate(true)
+	node.handles = new_handles.duplicate(true)
+	node.old_handles = new_handles.duplicate(true)
 	node.apply_handle_attributes()
 	node.generate_geometry(true)
 	

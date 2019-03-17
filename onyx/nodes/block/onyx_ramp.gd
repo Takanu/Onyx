@@ -404,160 +404,95 @@ func generate_geometry(fix_to_origin_setting):
 	
 	
 
+# Makes any final tweaks, then prepares and transfers the mesh.
 func render_onyx_mesh():
-	
-	# Optional UV Modifications
-	var tf_vec = uv_scale
-	if tf_vec.x == 0:
-		tf_vec.x = 0.0001
-	if tf_vec.y == 0:
-		tf_vec.y = 0.0001
-	
-#	if self.invert_faces == true:
-#		tf_vec.x = tf_vec.x * -1.0
-	if flip_uvs_vertically == true:
-		tf_vec.y = tf_vec.y * -1.0
-	if flip_uvs_horizontally == true:
-		tf_vec.x = tf_vec.x * -1.0
-	
-	onyx_mesh.multiply_uvs(tf_vec)
-	
-	# Create new mesh
-	var array_mesh = onyx_mesh.render_surface_geometry(material)
-	var helper = MeshDataTool.new()
-	var mesh = Mesh.new()
-	
-	# Set the new mesh
-	helper.create_from_surface(array_mesh, 0)
-	helper.commit_to_surface(mesh)
-	set_mesh(mesh)
-	
-	
+	OnyxUtils.render_onyx_mesh(self)
+
+
 # ////////////////////////////////////////////////////////////
-# EDIT STATE
+# GIZMO HANDLES
 
-func get_undo_state():
+# Uses the current settings to refresh the handle list.
+func generate_handles():
+	handles.clear()
 	
-	return [old_handles, self.translation]
-	
-
-# Restores the state of the cube to a previous given state.
-func restore_state(state):
-	pass
-#	var new_handles = state[0]
-#	var stored_translation = state[1]
-#
-#	handles[0] = height_max
-#	handles[1] = height_min
-#	handles[2] = x_width
-#	handles[3] = z_width
-#
-#	height_max = handles[0]
-#	height_min = handles[1]
-#	x_width = handles[2]
-#	z_width = handles[3]
-#
-#	self.translation = stored_translation
-#	self.old_handles = new_handles
-#	generate_geometry(true)
-
-
-# Notifies the node that a handle has changed.
-func handle_change(index, coord):
-	
-	change_handle(index, coord)
-	generate_geometry(false)
+	# build handles
 	
 
-# Called when a handle has stopped being dragged.
-func handle_commit(index, coord):
+# Converts the dictionary format of handles to a pair of handles with optional triangle for normal snaps.
+func convert_handles_to_gizmo() -> Array:
 	
-	change_handle(index, coord)
-	#update_origin()
-	balance_handles()
-	generate_geometry(true)
+	# convert handles here
+	var result = []
 	
-	# store old handle points for later.
-#	old_handles = face_set.get_all_centre_points()
+	return result
+
+
+# Converts the gizmo handle format of an array of points and applies it to the dictionary format for Onyx.
+func convert_handles_to_onyx(handles) -> Dictionary:
 	
-			
-# Returns the handle with the corresponding coordinates.	
-func get_handle(index):
+	var result = {}
 	
-	return handles[index]
+	return result
 	
 
 # Changes the handle based on the given index and coordinates.
-func change_handle(index, coordinate):
+func update_handle_from_gizmo(index, coordinate):
+	
+	# update properties here
+	
+	generate_handles()
+	
+
+# Applies the current handle values to the shape attributes
+func apply_handle_attributes():
+	
+	# apply all handles to attributes here
 	pass
-	
-#	match index:
-#		0: x_plus_position = coordinate.x
-#		1: x_minus_position = coordinate.x
-#		2: y_plus_position = coordinate.y
-#		3: y_minus_position = coordinate.y
-#		4: z_plus_position = coordinate.z
-#		5: z_minus_position = coordinate.z
-	
-	
-# Moves the handle by the given index and coordinate offset.
-func move_handle(index, coordinate):
-	pass
-	
-#	match index:
-#		0: x_plus_position += coordinate.x
-#		1: x_minus_position += coordinate.x
-#		2: y_plus_position += coordinate.y
-#		3: y_minus_position += coordinate.y
-#		4: z_plus_position += coordinate.z
-#		5: z_minus_position += coordinate.z
-	
-	
+
+# Calibrates the stored properties if they need to change before the origin is updated.
+# Only called during Gizmo movements for origin auto-updating.
 func balance_handles():
+	
+	# balance handles here
 	pass
-#	match origin_mode:
-#		OriginPosition.CENTER:
-#			var diff = abs(height_max - height_min)
-#			height_max = diff / 2
-#			height_min = (diff / 2) * -1
-#
-#		OriginPosition.BASE:
-#			var diff = abs(height_max - height_min)
-#			height_max = diff
-#			height_min = 0
-#
-#		OriginPosition.BASE_CORNER:
-#			var diff = abs(height_max - height_min)
-#			height_max = diff
-#			height_min = 0
-#
-#	print("balanced handles: ", height_max, height_min)
+
+# ////////////////////////////////////////////////////////////
+# STANDARD HANDLE FUNCTIONS
+# (DO NOT CHANGE THESE BETWEEN SCRIPTS)
+
+# Notifies the node that a handle has changed.
+func handle_change(index, coord):
+	OnyxUtils.handle_change(self, index, coord)
+
+# Called when a handle has stopped being dragged.
+func handle_commit(index, coord):
+	OnyxUtils.handle_commit(self, index, coord)
+
+
+
+# ////////////////////////////////////////////////////////////
+# STATES
+# Returns a state that can be used to undo or redo a previous change to the shape.
+func get_gizmo_redo_state():
+	return OnyxUtils.get_gizmo_redo_state(self)
 	
-	
-# Updates the collision triangles responsible for detecting cursor selection in the editor.
-func get_gizmo_collision():
-	pass
-#	var triangles = onyx_mesh.get_triangles()
-#
-#	var return_t = PoolVector3Array()
-#	for triangle in triangles:
-#		return_t.append(triangle * 10)
-#
-#	return return_t
-	
-	
+# Returns a state specifically for undo functions in SnapGizmo.
+func get_gizmo_undo_state():
+	return OnyxUtils.get_gizmo_undo_state(self)
+
+# Restores the state of the shape to a previous given state.
+func restore_state(state):
+	OnyxUtils.restore_state(self, state)
+	var new_handles = state[0]
+
+
 # ////////////////////////////////////////////////////////////
 # SELECTION
 
 func editor_select():
 	pass
 	
-	
 func editor_deselect():
 	pass
 	
-	
-
-# ////////////////////////////////////////////////////////////
-# HELPERS
- 
