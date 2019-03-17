@@ -9,7 +9,13 @@ class_name OnyxMeshFactory
 # face_dictionary tuple format:
 # {"name": [[vertices], [colors], [tangents], [uv], normal]}
 	
-	
+
+# ////////////////////////////////////////////////////////////
+# DEPENDENCIES
+var VectorUtils = load("res://addons/onyx/utilities/vector_utils.gd")
+
+# ////////////////////////////////////////////////////////////
+# CONSTANTS
 const TWO_PI = PI * 2
 
 # ////////////////////////////////////////////////////////////
@@ -167,8 +173,8 @@ func build_sphere(height, x_width, z_width, segments, height_segments, position,
 #					phi2 = 0
 				
 #				if ring == 0 || ring == height_segments:
-#					theta0 = OnyxUtils.loop_int( (theta1 + PI), 0, PI * 2)
-#					theta3 = OnyxUtils.loop_int( (theta2 + PI), 0, PI * 2)
+#					theta0 = VectorUtils.loop_int( (theta1 + PI), 0, PI * 2)
+#					theta3 = VectorUtils.loop_int( (theta2 + PI), 0, PI * 2)
 					
 #				print("phis - ", phi0, " ", phi1, " ", phi2, " ", phi3)
 				
@@ -183,17 +189,17 @@ func build_sphere(height, x_width, z_width, segments, height_segments, position,
 				var down_2 = Vector3(sin(theta3) * cos(phi2) * (x_width/2),  cos(theta3) * (height/2),  sin(theta3) * sin(phi2) * (z_width/2))
 				
 				# GET NORMALS
-				var n_0_0 = OnyxUtils.get_triangle_normal([vertex1, up_1, right_1])
-				var n_1_0 = OnyxUtils.get_triangle_normal([vertex2, up_2, vertex1])
-				var n_2_0 = OnyxUtils.get_triangle_normal([left_1, up_2, vertex2])
+				var n_0_0 = VectorUtils.get_triangle_normal([vertex1, up_1, right_1])
+				var n_1_0 = VectorUtils.get_triangle_normal([vertex2, up_2, vertex1])
+				var n_2_0 = VectorUtils.get_triangle_normal([left_1, up_2, vertex2])
 				
-				var n_0_1 = OnyxUtils.get_triangle_normal([vertex4, vertex1, right_2])
-				var n_1_1 = OnyxUtils.get_triangle_normal([vertex3, vertex2, vertex4])
-				var n_2_1 = OnyxUtils.get_triangle_normal([left_2, vertex2, vertex3])
+				var n_0_1 = VectorUtils.get_triangle_normal([vertex4, vertex1, right_2])
+				var n_1_1 = VectorUtils.get_triangle_normal([vertex3, vertex2, vertex4])
+				var n_2_1 = VectorUtils.get_triangle_normal([left_2, vertex2, vertex3])
 				
-				var n_0_2 = OnyxUtils.get_triangle_normal([down_1, vertex4, right_2])
-				var n_1_2 = OnyxUtils.get_triangle_normal([down_2, vertex3, vertex4])
-				var n_2_2 = OnyxUtils.get_triangle_normal([left_2, vertex3, down_2])
+				var n_0_2 = VectorUtils.get_triangle_normal([down_1, vertex4, right_2])
+				var n_1_2 = VectorUtils.get_triangle_normal([down_2, vertex3, vertex4])
+				var n_2_2 = VectorUtils.get_triangle_normal([left_2, vertex3, down_2])
 				
 				# COMBINE FOR EACH VERTEX
 				var normal_1 = (n_0_0 + n_1_0 + n_0_1 + n_1_1).normalized()
@@ -207,7 +213,7 @@ func build_sphere(height, x_width, z_width, segments, height_segments, position,
 #					print(normals)
 					
 			else:
-				var normal = OnyxUtils.get_triangle_normal([vertex3, vertex2, vertex4])
+				var normal = VectorUtils.get_triangle_normal([vertex3, vertex2, vertex4])
 				normals = [normal, normal, normal, normal]
 			
 			# CAP RENDERING
@@ -344,10 +350,10 @@ func build_rounded_rect(mesh: OnyxMesh, min_point, max_point, axis: String, corn
 	
 	# will make a nicer bit of code later...
 	if axis == 'X':
-		var corners_top = OnyxUtils.vector2_to_vector3_array(circle_points[0], 'X', 'Y')
-		var corners_y = OnyxUtils.vector2_to_vector3_array(circle_points[1], 'X', 'Y')
-		var corners_bottom = OnyxUtils.vector2_to_vector3_array(circle_points[2], 'X', 'Y')
-		var corners_x = OnyxUtils.vector2_to_vector3_array(circle_points[3], 'X', 'Y')
+		var corners_top = VectorUtils.vector2_to_vector3_array(circle_points[0], 'X', 'Y')
+		var corners_y = VectorUtils.vector2_to_vector3_array(circle_points[1], 'X', 'Y')
+		var corners_bottom = VectorUtils.vector2_to_vector3_array(circle_points[2], 'X', 'Y')
+		var corners_x = VectorUtils.vector2_to_vector3_array(circle_points[3], 'X', 'Y')
 		
 		# top, top_z, bottom, bottom_z
 		# Get the four inset vertices to position the circle points to
@@ -363,17 +369,17 @@ func build_rounded_rect(mesh: OnyxMesh, min_point, max_point, axis: String, corn
 		var tf_x = Transform(Basis(), offset_x)
 		
 		# Get the circle points and translate each corner set by the above offsets
-		corners_top = OnyxUtils.transform_vector3_array(corners_top, tf_top)
-		corners_y = OnyxUtils.transform_vector3_array(corners_y, tf_y)
-		corners_bottom = OnyxUtils.transform_vector3_array(corners_bottom, tf_bottom)
-		corners_x = OnyxUtils.transform_vector3_array(corners_x, tf_x)
+		corners_top = VectorUtils.transform_vector3_array(corners_top, tf_top)
+		corners_y = VectorUtils.transform_vector3_array(corners_y, tf_y)
+		corners_bottom = VectorUtils.transform_vector3_array(corners_bottom, tf_bottom)
+		corners_x = VectorUtils.transform_vector3_array(corners_x, tf_x)
 		
 		# Stack all the vertices into a single array
-		var start_cap = OnyxUtils.combine_arrays([corners_top, corners_y, corners_bottom, corners_x])\
+		var start_cap = VectorUtils.combine_arrays([corners_top, corners_y, corners_bottom, corners_x])\
 		
 		# Project and duplicate
 		var tf_end_cap = Transform(Basis(), Vector3(max_point.x - min_point.x, 0, 0)) 
-		var end_cap = OnyxUtils.transform_vector3_array(start_cap, tf_end_cap)
+		var end_cap = VectorUtils.transform_vector3_array(start_cap, tf_end_cap)
 		
 		# UVS
 		var start_cap_uvs = []
@@ -387,22 +393,22 @@ func build_rounded_rect(mesh: OnyxMesh, min_point, max_point, axis: String, corn
 			# for every vertex, minus it by the min and divide by the difference.
 			for vertex in start_cap:
 				clamped_vs.append( (vertex - min_point) / diff )
-			start_cap_uvs = OnyxUtils.vector3_to_vector2_array(clamped_vs, 'X', 'Z')
+			start_cap_uvs = VectorUtils.vector3_to_vector2_array(clamped_vs, 'X', 'Z')
 			
 			# for every vertex, minus it by the min and divide by the difference.
 #			for vertex in end_cap:
 #				clamped_vs.append( (vertex - min_point) / diff )
-#			end_cap_uvs = OnyxUtils.vector3_to_vector2_array(clamped_vs, 'X', 'Z')
+#			end_cap_uvs = VectorUtils.vector3_to_vector2_array(clamped_vs, 'X', 'Z')
 			
 			for uv in start_cap_uvs:
 				end_cap_uvs.append(uv * Vector2(-1.0, -1.0))
 		
 		# 1 - Proportional Overlap
 		if unwrap_mode == 1:
-			start_cap_uvs = OnyxUtils.vector3_to_vector2_array(start_cap, 'X', 'Z')
-			end_cap_uvs = OnyxUtils.vector3_to_vector2_array(end_cap, 'X', 'Z')
+			start_cap_uvs = VectorUtils.vector3_to_vector2_array(start_cap, 'X', 'Z')
+			end_cap_uvs = VectorUtils.vector3_to_vector2_array(end_cap, 'X', 'Z')
 		
-		mesh.add_ngon(OnyxUtils.reverse_array(start_cap), [], [], start_cap_uvs, [])
+		mesh.add_ngon(VectorUtils.reverse_array(start_cap), [], [], start_cap_uvs, [])
 		mesh.add_ngon(end_cap, [], [], end_cap_uvs, [])
 		
 		# used for Proportional Unwrap.
@@ -412,7 +418,7 @@ func build_rounded_rect(mesh: OnyxMesh, min_point, max_point, axis: String, corn
 		var v_1 = 0
 		while v_1 < start_cap.size():
 			
-			var v_2 = OnyxUtils.loop_int( (v_1 + 1), 0, (start_cap.size() - 1) )
+			var v_2 = VectorUtils.loop_int( (v_1 + 1), 0, (start_cap.size() - 1) )
 			
 			var b_1 = start_cap[v_1]
 			var b_2 = start_cap[v_2]
@@ -423,24 +429,24 @@ func build_rounded_rect(mesh: OnyxMesh, min_point, max_point, axis: String, corn
 			
 			# SMOOTH SHADING
 			if smooth_normals == true:
-				var v_0 = OnyxUtils.loop_int( (v_1 - 1), 0, (start_cap.size() - 1) )
-				var v_3 = OnyxUtils.loop_int( (v_2 + 1), 0, (start_cap.size() - 1) )
+				var v_0 = VectorUtils.loop_int( (v_1 - 1), 0, (start_cap.size() - 1) )
+				var v_3 = VectorUtils.loop_int( (v_2 + 1), 0, (start_cap.size() - 1) )
 				
 				var b_0 = start_cap[v_0]
 				var b_3 = start_cap[v_3]
 				var t_0 = end_cap[v_0]
 				var t_3 = end_cap[v_3]
 				
-				var n_0 = OnyxUtils.get_triangle_normal( [b_0, t_0, b_1] )
-				var n_1 = OnyxUtils.get_triangle_normal( [b_1, t_1, b_2] )
-				var n_2 = OnyxUtils.get_triangle_normal( [b_2, t_2, b_3] )
+				var n_0 = VectorUtils.get_triangle_normal( [b_0, t_0, b_1] )
+				var n_1 = VectorUtils.get_triangle_normal( [b_1, t_1, b_2] )
+				var n_2 = VectorUtils.get_triangle_normal( [b_2, t_2, b_3] )
 				
 				var normal_1 = (n_0 + n_1).normalized()
 				var normal_2 = (n_1 + n_2).normalized()
 				normals = [normal_1, normal_2, normal_2, normal_1]
 				
 			else:
-				var normal = OnyxUtils.get_triangle_normal( [b_1, t_1, b_2] )
+				var normal = VectorUtils.get_triangle_normal( [b_1, t_1, b_2] )
 				normals = [normal, normal, normal, normal]
 				
 				
@@ -618,9 +624,9 @@ func build_polygon_extrusion(mesh : OnyxMesh, points : Array, depth : float, rin
 			# X--------X  b_1   b_2
 			
 			# Get positions ahead and behind the set we plan on looking at for smooth normals
-			var v_0 = OnyxUtils.loop_int(v_1 - 1, 0, base_vertices.size() - 1)
-			var v_2 = OnyxUtils.loop_int(v_1 + 1, 0, base_vertices.size() - 1)
-			var v_3 = OnyxUtils.loop_int(v_1 + 2, 0, base_vertices.size() - 1)
+			var v_0 = VectorUtils.loop_int(v_1 - 1, 0, base_vertices.size() - 1)
+			var v_2 = VectorUtils.loop_int(v_1 + 1, 0, base_vertices.size() - 1)
+			var v_3 = VectorUtils.loop_int(v_1 + 2, 0, base_vertices.size() - 1)
 
 			var b_0 = base_vertices[v_0]
 			var b_1 = base_vertices[v_1]
@@ -638,11 +644,11 @@ func build_polygon_extrusion(mesh : OnyxMesh, points : Array, depth : float, rin
 			
 			# NORMAL TYPES
 			if smooth_shading == true:
-				var n_1 = OnyxUtils.get_triangle_normal([b_0, b_1, t_1])
-				var n_2 = OnyxUtils.get_triangle_normal([b_2, b_2, b_3])
+				var n_1 = VectorUtils.get_triangle_normal([b_0, b_1, t_1])
+				var n_2 = VectorUtils.get_triangle_normal([b_2, b_2, b_3])
 				normals = [n_1, n_1, n_2, n_2]
 			else:
-				var normal = OnyxUtils.get_triangle_normal([b_1, t_1, b_2])
+				var normal = VectorUtils.get_triangle_normal([b_1, t_1, b_2])
 				normals = [normal, normal, normal, normal]
 				
 			var uvs = []
@@ -697,7 +703,7 @@ func build_polygon_extrusion(mesh : OnyxMesh, points : Array, depth : float, rin
 	#var top_normals = [extrusion_axis, extrusion_axis, extrusion_axis, extrusion_axis]
 	
 	# UVS
-	var utils = OnyxUtils.new()
+	var utils = VectorUtils.new()
 	var top_bounds = utils.get_vector3_ranges(v_cap_top)
 	var bottom_bounds = utils.get_vector3_ranges(v_cap_bottom)
 	
@@ -787,7 +793,7 @@ func internal_build_surface(start_pos : Vector3, end_pos : Vector3, up_max : Vec
 #			# UNWRAP MODE - PROPORTIONAL OVERLAP
 			# Can't do this until I understand UV projection.
 #			elif unwrap_mode == 1:
-#				uvs = OnyxUtils.vector3_to_vector2_array(vectors, 'X', 'Z')
+#				uvs = VectorUtils.vector3_to_vector2_array(vectors, 'X', 'Z')
 			
 			results.append([ vectors, [], [], uvs, [] ])
 			

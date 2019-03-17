@@ -1,24 +1,26 @@
 ## Onyx
-Onyx is a series of custom, modular nodes that work together to help you keep your level designs out of a 3D modelling program and in Godot, letting you keep your designs dynamic and flexible throughout the development process.
+Onyx is a series of custom 3D level design tools that can be used to develop advanced level designs, with the goal of keeping as much of the level design process in Godot where it is immediately interactable and testable.
 
-Onyx nodes will be able to attach themselves to each other to augment the abilities of one node with another naturally, without leading to cumbersome property panel options.
+The first set of tools included are a series of versatile Constructive Solid Geometry (CSG) primitives you can use to block out levels.  Unlike the primitive shapes included with the engine, these let you customise far more shape parameters, offers better origin management and handles, and comes with excellent UV mapping by default.
 
-This plugin is very early in development, in time ill provide additional documentation and usage guidelines.
+As I keep developing this other toolsets will be introduced that can be layered upon each other quickly to create even more complex and production-ready level designs.
 
+## Current Tools Included
 
-### Roadmap
-- OnyxShape - Lots of different CSG shape types with customisation and UV mapping options.
+### Onyx Set
+7 CSG primitives for constructing level prototypes (Cube, RoundedCube, Cylinder, Sphere, Ramp, Wedge, Stairs).
+(currently missing optional material slots, robust origin position settings)
 
-- OnyxSprinkler - Distribute nodes across custom volume areas, snapping to geometric detail in your scene.
+## Future Toolsets
 
-- OnyxFence - Custom collision border system, easily fence off game areas.
+### Blueprint Set
+Mark out, annotate and plan 3D spaces.
 
-- OnyxPlatform - Like CSGPolygon but with spline and curved corner support, as well as UV mapping options.
+### Flex Set
+Develop complex mesh and spatial assets that can be reused, stretched and re-sized intelligently.
 
-- OnyxPillar - Construct a chain of meshes that can be flexibly stretched and flexed, lets you build flexible architectural details and supports that can fit any situation.
+### Adaptive Mesh Set
+Transform pre-existing blocks with insets, stencils, arrays and more.
 
-- OnyxArray - Array-based distribution of other nodes.
-
-- OnyxHammer - The "Punch a hole in anything" node.  Subtract CSG geometry, remove Sprinkler details, create a Fence hole, create a hole in array distribution, can remove anything from any Onyx node.
-
-- OnyxRoad - Versatile road mapping with curve-based UV and road edge shape capabilities, auto-snapping and more.
+### Path Set
+Complex array and pathing tools for barriers, roads and other structures.

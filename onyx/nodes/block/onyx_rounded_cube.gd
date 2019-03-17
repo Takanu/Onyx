@@ -2,6 +2,11 @@ tool
 extends CSGMesh
 
 # ////////////////////////////////////////////////////////////
+# DEPENDENCIES
+var OnyxUtils = load("res://addons/onyx/nodes/block/onyx_utils.gd")
+var VectorUtils = load("res://addons/onyx/utilities/vector_utils.gd")
+
+# ////////////////////////////////////////////////////////////
 # TOOL ENUMS
 
 # allows origin point re-orientation, for precise alignments and convenience.
@@ -411,7 +416,7 @@ func generate_geometry(fix_to_origin_setting):
 	update_gizmo()
 	
 #	var boundary = onyx_mesh.get_aabb()
-#	var center_points = OnyxUtils.get_aabb_boundary_points(boundary)
+#	var center_points = VectorUtils.get_aabb_boundary_points(boundary)
 #	#print(boundary)
 #	#print(center_points)
 #

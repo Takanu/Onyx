@@ -19,18 +19,12 @@ extends EditorSpatialGizmo
 
 # - handle_change(index, coord)
 # - handle_commit(index, coord)
-# - get_undo_state()
+# - get_undo_redo_state()
 # - restore_state(state)
  
 
 # ////////////////////////////////////////////////////////////
 # PROPERTIES
-
-# The node this gizmo belongs to.
-var node
-
-# The plugin thats responsible for providing the gizmo
-var plugin
 
 # The resource used for the handle.
 var handle_billboard = load("res://addons/onyx/gizmos/default_gizmo.tres")
@@ -62,7 +56,7 @@ func _init():
 
 # Redraws all lines, meshes and gizmos.
 func redraw():
-	print("redrawing gizmo!")
+#	print("REDRAWING GIZMO -", self)
 	clear()
 	
 	handle_set = get_spatial_node().convert_handles_to_gizmo()
@@ -74,15 +68,16 @@ func redraw():
 			points.push_back(handle[0])
 		
 		var handle_mat = get_plugin().get_material("handle", self)
-		add_handles(points, handle_mat, true)
-			
+		add_handles(points, handle_mat)
+		
+	
 	for line_set in lines:
 		#print("adding lines~~~")
 		print(line_set[0].size())
 		add_lines(line_set[0], mat_solid_color(line_set[1].r, line_set[1].g, line_set[1].b), false)
 		
 	# I have no idea what this does tbqh
-	plugin.update_overlays() 
+	#get_plugin().update_overlays() 
 	
 	
 # ////////////////////////////////////////////////////////////
@@ -92,8 +87,8 @@ func redraw():
 # (previously added with add_handles) in screen coordinates.
 func set_handle(index, camera, point):
 	
-	#print("++++++++++++++++")
-	#print("SETTING HANDLE")
+#	print("++++++++++++++++")
+#	print("SETTING HANDLE")
 	
 	handle_set = get_spatial_node().convert_handles_to_gizmo()
 	handle_current_index = index
@@ -108,7 +103,7 @@ func set_handle(index, camera, point):
 		coord = handle_current_data
 	
 	# Get some matrices and coordinates
-	var world_matrix = node.global_transform
+	var world_matrix = get_spatial_node().global_transform
 	var camera_matrix = camera.global_transform
 	
 	# Apply the current coordinate to world and camera space
@@ -163,7 +158,7 @@ func set_handle(index, camera, point):
 	handle_set[index] = [coord, triangle]
 	
 	# Notify the node about this new change
-	node.handle_change(index, coord)
+	get_spatial_node().handle_change(index, coord)
 	
 	redraw()
 	
@@ -174,24 +169,37 @@ func get_handle_value(index):
 	
 	
 # Used for undo/redo stuff.
-func restore_undo_state(state):
-	node.restore_state(state)
+# NOT NEEDED, WUPWUP
+#func restore_undo_redo_state(state):
+#	get_spatial_node().restore_state(state)
 	
 	
 # Commits the handle to the property (if not cancelled).
 func commit_handle(index, restore, cancel=false):
 	if not cancel:
 		
+		print("COMMITTING NEW UNDO DATA: ", restore)
+		
+		# Commit the undo data first so we have it for later
 		var new_data = handle_set[index][0]
+		var undo_data = get_spatial_node().get_gizmo_undo_state()
+		get_spatial_node().handle_commit(index, new_data)
 		
-		var undo_data = node.get_undo_state()
-		node.handle_commit(index, new_data)
-		var redo_data = node.get_undo_state()
+		# Now build the redo data
+		var redo_data = get_spatial_node().get_gizmo_redo_state()
 		
-		var undo_redo = plugin.get_undo_redo()
+		print('=================================')
+		print("UNDO DATA: ", undo_data)
+		print('=================================')
+		print("REDO DATA: ", redo_data)
+		print('=================================')
+		print('=================================')
+		
+		# Now commit both pieces of data onto the undo/redo stack.
+		var undo_redo = get_plugin().plugin.get_undo_redo()
 		undo_redo.create_action("Onyx Handle Commit "+str(index))
-		undo_redo.add_do_method(self, "restore_undo_state", redo_data)
-		undo_redo.add_undo_method(self, "restore_undo_state", undo_data)
+		undo_redo.add_do_method(get_spatial_node(), "restore_state", redo_data)
+		undo_redo.add_undo_method(get_spatial_node(), "restore_state", undo_data)
 		undo_redo.commit_action()
 		
 	else:
@@ -199,7 +207,7 @@ func commit_handle(index, restore, cancel=false):
 		handle[0] = handle_current_data
 		handle_set[handle_current_index] = handle
 		
-		node.handle_commit(index, handle_current_data)
+		get_spatial_node().handle_commit(index, handle_current_data)
 	
 	handle_current_data = null
 	handle_current_index = -1

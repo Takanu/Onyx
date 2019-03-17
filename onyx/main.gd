@@ -79,17 +79,12 @@ func handles(object):
 	for handled_object in NodeHandlerList:
 		if object is handled_object:
 			return true
-	
-#	if object is OnyxCube:
-#		return true
-#
-#	if object is OnyxSprinkle:
-#		return true
 #
 	return false
 	
 	
 # Returns a boolean when one of your handled object types is either selected or deselected.
+# Calls a custom function to setup custom functionality.
 func make_visible(is_visible):
 	
 	#print("ONYX make_visible")
@@ -102,6 +97,7 @@ func make_visible(is_visible):
 	
 
 # Receives the objects we have allowed to handle under the handles(object) function.
+# Calls a custom function to setup custom functionality.
 func edit(object):
 	
 	#print("ONYX edit")
@@ -131,8 +127,10 @@ func forward_spatial_gui_input(camera, ev):
 	emit_signal("onyx_viewport_clicked", camera, ev)
 	
 	
-func bind_event(ev):
-	print(ev)
+
+# No idea what this did, not part of the EditorPlugin API atm
+#func bind_event(ev):
+#	print(ev)
 
 
 func _exit_tree():

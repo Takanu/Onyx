@@ -32,15 +32,21 @@ func create_gizmo(spatial):
 	print('GizmoPlugin - Gizmo creation UNSUCCESSFUL, returning nothing (:.')
 	return null
 	
+
+# Custom function to create an undo state for a OnyxGizmo.
+func get_undo_redo() -> UndoRedo:
+	return plugin.get_undo_redo()
+
 # Required to confirm gizmo-ness if the Plugin is doing the drawing
-func has_gizmo(spatial):
-	for handled_object in plugin.NodeHandlerList:
-		if spatial is handled_object:
-			print('GizmoPlugin - Plugin can handle node: ', spatial)
-			return true
-	
-	print('GizmoPlugin - Plugin CANNOT handle node: ', spatial)
-	return false
+# Might be overriding EditorSpatialGizmo delegation for handle editing, commenting out..
+#func has_gizmo(spatial):
+#	for handled_object in plugin.NodeHandlerList:
+#		if spatial is handled_object:
+#			print('GizmoPlugin - Plugin can handle node: ', spatial)
+#			return true
+#
+#	print('GizmoPlugin - Plugin CANNOT handle node: ', spatial)
+#	return false
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 #func _process(delta):

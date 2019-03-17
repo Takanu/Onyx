@@ -2,6 +2,12 @@ tool
 extends CSGMesh
 
 # ////////////////////////////////////////////////////////////
+# DEPENDENCIES
+var OnyxUtils = load("res://addons/onyx/nodes/block/onyx_utils.gd")
+var VectorUtils = load("res://addons/onyx/utilities/vector_utils.gd")
+
+
+# ////////////////////////////////////////////////////////////
 # TOOL ENUMS
 
 # allows origin point re-orientation, for precise alignments and convenience.
@@ -14,6 +20,7 @@ var previous_origin_mode = OriginPosition.BASE
 # used to force an origin update when using the sliders to adjust positions.
 export(bool) var update_origin_setting = true setget update_positions
 
+
 # ////////////////////////////////////////////////////////////
 # PROPERTIES
 
@@ -23,14 +30,11 @@ var plugin
 # The face set script, used for managing geometric data.
 var onyx_mesh = OnyxMesh.new()
 
-# The gizmo to be used with the node.
-var onyx_gizmo
-
 # The handle points that will be used to resize the mesh (NOT built in the format required by the gizmo)
-var handles = {}
+var handles : Dictionary = {}
 
 # Old handle points that are saved every time a handle has finished moving.
-var old_handles = {}
+var old_handles : Dictionary = {}
 
 # The offset of the origin relative to the rest of the mesh.
 var origin_offset = Vector3(0, 0, 0)
@@ -385,19 +389,19 @@ func generate_geometry(fix_to_origin_setting):
 			# Try and work out how to properly reorient the UVS later...
 			if unwrap_method == UnwrapMethod.PROPORTIONAL_OVERLAP:
 				if i == 0 || i == 1:
-					uvs = OnyxUtils.vector3_to_vector2_array(quad[0], 'X', 'Z')
+					uvs = VectorUtils.vector3_to_vector2_array(quad[0], 'X', 'Z')
 					uvs = [uvs[2], uvs[3], uvs[0], uvs[1]]
 #					if i == 0:
-#						uvs = OnyxUtils.reverse_array(uvs)
+#						uvs = VectorUtils.reverse_array(uvs)
 				elif i == 2 || i == 3:
-					uvs = OnyxUtils.vector3_to_vector2_array(quad[0], 'Y', 'X')
+					uvs = VectorUtils.vector3_to_vector2_array(quad[0], 'Y', 'X')
 					uvs = [uvs[2], uvs[3], uvs[0], uvs[1]]
-					#uvs = OnyxUtils.reverse_array(uvs)
+					#uvs = VectorUtils.reverse_array(uvs)
 				elif i == 4 || i == 5:
-					uvs = OnyxUtils.vector3_to_vector2_array(quad[0], 'Z', 'X')
+					uvs = VectorUtils.vector3_to_vector2_array(quad[0], 'Z', 'X')
 					uvs = [uvs[2], uvs[3], uvs[0], uvs[1]]
 #					if i == 5:
-#						uvs = OnyxUtils.reverse_array(uvs)
+#						uvs = VectorUtils.reverse_array(uvs)
 				
 #				print(uvs)
 			
@@ -405,7 +409,7 @@ func generate_geometry(fix_to_origin_setting):
 #			elif unwrap_method == UnwrapMethod.ISLAND_SPLIT:
 #
 #				# get the max and min
-#				var surface_range = OnyxUtils.get_vector3_ranges(vertices)
+#				var surface_range = VectorUtils.get_vector3_ranges(vertices)
 #				var max_point = surface_range['max']
 #				var min_point = surface_range['min']
 #				var diff = max_point - min_point
@@ -413,11 +417,11 @@ func generate_geometry(fix_to_origin_setting):
 #				var initial_uvs = []
 #
 #				if i == 0 || i == 1:
-#					initial_uvs = OnyxUtils.vector3_to_vector2_array(quad[0], 'X', 'Z')
+#					initial_uvs = VectorUtils.vector3_to_vector2_array(quad[0], 'X', 'Z')
 #				elif i == 2 || i == 3:
-#					initial_uvs = OnyxUtils.vector3_to_vector2_array(quad[0], 'Y', 'X')
+#					initial_uvs = VectorUtils.vector3_to_vector2_array(quad[0], 'Y', 'X')
 #				elif i == 4 || i == 5:
-#					initial_uvs = OnyxUtils.vector3_to_vector2_array(quad[0], 'Z', 'X')
+#					initial_uvs = VectorUtils.vector3_to_vector2_array(quad[0], 'Z', 'X')
 #
 #				for uv in initial_uvs:
 #					uv
@@ -442,30 +446,7 @@ func generate_geometry(fix_to_origin_setting):
 	generate_handles()
 	update_gizmo()
 	
-#	var boundary = onyx_mesh.get_aabb()
-#	var center_points = OnyxUtils.get_aabb_boundary_points(boundary)
-#	#print(boundary)
-#	#print(center_points)
-#
-#	handles = center_points
-#	#print(handles[0])
-#
-#	x_plus_position = center_points[0].x
-#	x_minus_position = center_points[1].x
-#	y_plus_position = center_points[2].y
-#	y_minus_position = center_points[3].y
-#	z_plus_position = center_points[4].z
-#	z_minus_position = center_points[5].z
 
-#	gizmo_handles = []
-#	for i in handles.size():
-#		gizmo_handles.append([handles[i] ])
-#
-#	# Submit the changes to the gizmo
-#	if gizmo:
-#		update_gizmo()
-		
-		
 
 func render_onyx_mesh():
 	
@@ -497,7 +478,6 @@ func render_onyx_mesh():
 	
 
 
-
 # ////////////////////////////////////////////////////////////
 # GIZMO HANDLES
 
@@ -505,9 +485,9 @@ func render_onyx_mesh():
 func generate_handles():
 	handles.clear()
 	
-	var x_mid = x_plus_position - -x_minus_position
-	var y_mid = y_plus_position - -y_minus_position
-	var z_mid = z_plus_position - -z_minus_position
+	var x_mid = (x_plus_position - x_minus_position) / 2
+	var y_mid = (y_plus_position - y_minus_position) / 2
+	var z_mid = (z_plus_position - z_minus_position) / 2
 	
 	handles["x_minus"] = Vector3(-x_minus_position, y_mid, z_mid)
 	handles["x_plus"] = Vector3(x_plus_position, y_mid, z_mid)
@@ -516,7 +496,6 @@ func generate_handles():
 	handles["z_minus"] = Vector3(x_mid, y_mid, -z_minus_position)
 	handles["z_plus"] = Vector3(x_mid, y_mid, z_plus_position)
 	
-
 
 # Converts the dictionary format of handles to a pair of handles with optional triangle for normal snaps.
 func convert_handles_to_gizmo() -> Array:
@@ -530,6 +509,8 @@ func convert_handles_to_gizmo() -> Array:
 	
 	# convert handle values to an array
 	var handle_array = handles.values()
+#	print("HANDLE ARRAY BEING SUBMITTED - ", handle_array)
+
 	result.append( [handle_array[0], triangle_x] )
 	result.append( [handle_array[1], triangle_x] )
 	result.append( [handle_array[2], triangle_y] )
@@ -554,44 +535,31 @@ func convert_handles_to_onyx(handles) -> Dictionary:
 	return result
 	
 
-
 # Changes the handle based on the given index and coordinates.
 func update_handle_from_gizmo(index, coordinate):
 	
+	#print("UPDATING HANDLE FROM GIZMO - ", coordinate)
+	
 	match index:
-		0: x_plus_position = coordinate.x
-		1: x_minus_position = -coordinate.x
-		2: y_plus_position = coordinate.y
-		3: y_minus_position = -coordinate.y
-		4: z_plus_position = coordinate.z
-		5: z_minus_position = -coordinate.z
+		0: x_minus_position = min(coordinate.x, 0) * -1
+		1: x_plus_position = max(coordinate.x, 0)
+		2: y_minus_position = min(coordinate.y, 0) * -1
+		3: y_plus_position = max(coordinate.y, 0)
+		4: z_minus_position = min(coordinate.z, 0) * -1
+		5: z_plus_position = max(coordinate.z, 0)
 		
-
-# Pushes the handles currently held by the shape to the gizmo.
-#func refresh_gizmo_handles():
-#	gizmo.handle_set = convert_handles_to_gizmo()
-
-
-# Notifies the node that a handle has changed.
-func handle_change(index, coord):
-	
-	update_handle_from_gizmo(index, coord)
-	generate_geometry(false)
+	generate_handles()
 	
 
-
-# Called when a handle has stopped being dragged.
-func handle_commit(index, coord):
+# Applies tuhe current handle values to the shape attributes
+func apply_handle_attributes():
+	x_minus_position = handles["x_minus"].x * -1
+	x_plus_position = handles["x_plus"].x
+	y_minus_position = handles["y_minus"].y * -1
+	y_plus_position = handles["y_plus"].y
+	z_minus_position = handles["z_minus"].z * -1
+	z_plus_position = handles["z_plus"].z
 	
-	update_handle_from_gizmo(index, coord)
-	update_origin()
-	balance_handles()
-	generate_geometry(true)
-	
-	# store old handle points for later.
-#	old_handles = face_set.get_all_centre_points()
-	
-
 
 func balance_handles():
 	#print("balancing coordinates")
@@ -649,10 +617,38 @@ func balance_handles():
 #	diff = abs(z_plus_position - z_minus_position)
 #	z_plus_position = diff / 2
 #	z_minus_position = (diff / 2) * -1
+
+# ////////////////////////////////////////////////////////////
+# STANDARD HANDLE FUNCTIONS
+# (DO NOT CHANGE THESE BETWEEN SCRIPTS)
+
+# Notifies the node that a handle has changed.
+func handle_change(index, coord):
+	
+	update_handle_from_gizmo(index, coord)
+	generate_geometry(false)
+	
+	# FALLBACK HANDLE STUFF
+	# Designed to compensate for when no old_handles data exists, to ensure undos still work.
+	if old_handles.size() == 0 || old_handles == null:
+		old_handles = handles.duplicate(true)
+	
+
+
+# Called when a handle has stopped being dragged.
+func handle_commit(index, coord):
+	
+	update_handle_from_gizmo(index, coord)
+	generate_geometry(true)
+	
+	# store current handle points as the old ones, so they can be used later
+	# as an undo point before the next commit.
+	old_handles = handles.duplicate(true)
 	
 	
 	
 # Updates the collision triangles responsible for detecting cursor selection in the editor.
+# I NO LONGER HAVE ANY IDEA WHAT THIS IS.
 func get_gizmo_collision():
 ##	var triangles = face_set.get_triangles()
 #
@@ -667,28 +663,28 @@ func get_gizmo_collision():
 
 # ////////////////////////////////////////////////////////////
 # STATES
-# Returns a state that can be used to undo a previous change to the shape.
-func get_undo_state():
+# Returns a state that can be used to undo or redo a previous change to the shape.
+func get_gizmo_redo_state():
+	return [handles.duplicate(true), self.translation]
 	
-	return [old_handles, self.translation]
-	
+# Returns a state specifically for undo functions in SnapGizmo.
+func get_gizmo_undo_state():
+	return [old_handles.duplicate(true), self.translation]
 
 # Restores the state of the shape to a previous given state.
 func restore_state(state):
 	var new_handles = state[0]
 	var stored_translation = state[1]
 	
-	x_plus_position = new_handles[0].x
-	x_minus_position = new_handles[1].x
-	y_plus_position = new_handles[2].y
-	y_minus_position = new_handles[3].y
-	z_plus_position = new_handles[4].z
-	z_minus_position = new_handles[5].z
+	print("RESTORING STATE -", state)
+	
+	handles = new_handles.duplicate(true)
+	old_handles = handles.duplicate(true)
+	apply_handle_attributes()
+	generate_geometry(true)
 	
 	self.translation = stored_translation
-	self.old_handles = new_handles
-	generate_geometry(true)
-
+	
 
 
 # ////////////////////////////////////////////////////////////
@@ -697,22 +693,7 @@ func restore_state(state):
 func editor_select():
 	pass
 	
-	
 func editor_deselect():
 	pass
 	
 	
-
-# ////////////////////////////////////////////////////////////
-# HELPERS
-
-func idek():
-	
-	# Check if we need to offset geometry based on the origin
-	var offset = Vector3()
-	match origin_mode:
-		OriginPosition.BASE:
-			offset = Vector3(x_plus_position, y_minus_position, z_plus_position)
-		OriginPosition.BASE_CORNER:
-			offset = Vector3(x_minus_position, y_minus_position, z_minus_position)
-

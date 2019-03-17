@@ -2,6 +2,11 @@ tool
 extends CSGMesh
 
 # ////////////////////////////////////////////////////////////
+# DEPENDENCIES
+var OnyxUtils = load("res://addons/onyx/nodes/block/onyx_utils.gd")
+var VectorUtils = load("res://addons/onyx/utilities/vector_utils.gd")
+
+# ////////////////////////////////////////////////////////////
 # TOOL ENUMS
 
 # allows origin point re-orientation, for precise alignments and convenience.
@@ -378,9 +383,10 @@ func render_onyx_mesh():
 # EDIT STATE
 
 func get_undo_state():
-	
 	return [old_handles, self.translation]
-	
+
+func get_redo_state():
+	return [handles, self.translation]
 
 # Restores the state of the cube to a previous given state.
 func restore_state(state):

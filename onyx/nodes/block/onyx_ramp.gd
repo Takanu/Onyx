@@ -2,6 +2,11 @@ tool
 extends CSGMesh
 
 # ////////////////////////////////////////////////////////////
+# DEPENDENCIES
+var OnyxUtils = load("res://addons/onyx/nodes/block/onyx_utils.gd")
+var VectorUtils = load("res://addons/onyx/utilities/vector_utils.gd")
+
+# ////////////////////////////////////////////////////////////
 # TOOL ENUMS
 
 # allows origin point re-orientation, for precise alignments and convenience.
@@ -228,14 +233,14 @@ func generate_geometry(fix_to_origin_setting):
 	var v4 = Vector3(ramp_width/2, -ramp_depth/2, 0)
 	
 	# Get our top and bottom iteration lists.
-	var top_verts = OnyxUtils.subdivide_edge(v1, v2, vertical_iterations)
-	var bottom_verts = OnyxUtils.subdivide_edge(v3, v4, vertical_iterations)
+	var top_verts = VectorUtils.subdivide_edge(v1, v2, vertical_iterations)
+	var bottom_verts = VectorUtils.subdivide_edge(v3, v4, vertical_iterations)
 	
 	# Transform each set to the start and finish
-	var top_start_verts = OnyxUtils.transform_vector3_array(top_verts, start_tf)
-	var bottom_start_verts = OnyxUtils.transform_vector3_array(bottom_verts, start_tf)
-	var top_end_verts = OnyxUtils.transform_vector3_array(top_verts, end_tf)
-	var bottom_end_verts = OnyxUtils.transform_vector3_array(bottom_verts, end_tf)
+	var top_start_verts = VectorUtils.transform_vector3_array(top_verts, start_tf)
+	var bottom_start_verts = VectorUtils.transform_vector3_array(bottom_verts, start_tf)
+	var top_end_verts = VectorUtils.transform_vector3_array(top_verts, end_tf)
+	var bottom_end_verts = VectorUtils.transform_vector3_array(bottom_verts, end_tf)
 #
 	# ramp fill type conditionals
 	if ramp_fill_type == 1:
@@ -312,10 +317,10 @@ func generate_geometry(fix_to_origin_setting):
 		var e_tf = Transform(Basis(e_rot), e_pos)
 		
 		# Transform the vertex sets
-		var m1_top = OnyxUtils.transform_vector3_array(top_verts, s_tf)
-		var m1_bottom = OnyxUtils.transform_vector3_array(bottom_verts, s_tf)
-		var m2_top = OnyxUtils.transform_vector3_array(top_verts, e_tf)
-		var m2_bottom = OnyxUtils.transform_vector3_array(bottom_verts, e_tf)
+		var m1_top = VectorUtils.transform_vector3_array(top_verts, s_tf)
+		var m1_bottom = VectorUtils.transform_vector3_array(bottom_verts, s_tf)
+		var m2_top = VectorUtils.transform_vector3_array(top_verts, e_tf)
+		var m2_bottom = VectorUtils.transform_vector3_array(bottom_verts, e_tf)
 		
 		var start_uv_z = 0
 		var end_uv_z = 1
