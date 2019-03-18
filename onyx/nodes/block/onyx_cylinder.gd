@@ -19,6 +19,7 @@ var previous_origin_mode = OriginPosition.BASE
 # used to force an origin update when using the sliders to adjust positions.
 export(bool) var update_origin_setting = true setget update_positions
 
+
 # ////////////////////////////////////////////////////////////
 # PROPERTIES
 
@@ -28,13 +29,13 @@ var plugin
 # The face set script, used for managing geometric data.
 var onyx_mesh = OnyxMesh.new()
 
-# The handle points that will be used to resize the cube (NOT built in the format required by the gizmo)
-var handles = []
+# The handle points that will be used to resize the mesh (NOT built in the format required by the gizmo)
+var handles : Dictionary = {}
 
 # Old handle points that are saved every time a handle has finished moving.
-var old_handles = []
+var old_handles : Dictionary = {}
 
-# The offset of the origin relative to the rest of the shape.
+# The offset of the origin relative to the rest of the mesh.
 var origin_offset = Vector3(0, 0, 0)
 
 # Used to decide whether to update the geometry.  Enables parents to be moved without forcing updates.
@@ -131,7 +132,7 @@ func update_height_max(new_value):
 	generate_geometry(true)
 	
 func update_height_min(new_value):
-	if new_value > 0 || origin_mode == OriginPosition.BASE_CORNER:
+	if new_value < 0:
 		new_value = 0
 		
 	height_min = new_value
@@ -247,9 +248,9 @@ func update_origin():
 			match origin_mode:
 				
 				OriginPosition.BASE:
-					diff = Vector3(0, height_min, 0)
+					diff = Vector3(0, -height_min, 0)
 				OriginPosition.BASE_CORNER:
-					diff = Vector3(-x_width, height_min, -z_width)
+					diff = Vector3(-x_width, -height_min, -z_width)
 			
 		OriginPosition.BASE:
 			match origin_mode:
@@ -291,13 +292,13 @@ func generate_geometry(fix_to_origin_setting):
 	var position = Vector3(0, 0, 0)
 	match origin_mode:
 		OriginPosition.CENTER:
-			height = height_max - height_min
-			position = Vector3(0, height_min, 0)
+			height = height_max - -height_min
+			position = Vector3(0, -height_min, 0)
 		OriginPosition.BASE:
-			height = height_max - height_min
-			position = Vector3(0, height_min, 0)
+			height = height_max - -height_min
+			position = Vector3(0, -height_min, 0)
 		OriginPosition.BASE_CORNER:
-			height = height_max - height_min
+			height = height_max - -height_min
 			position = Vector3(x_width, 0, z_width)
 			
 	
@@ -307,7 +308,13 @@ func generate_geometry(fix_to_origin_setting):
 	var mesh_factory = OnyxMeshFactory.new()
 	onyx_mesh.clear()
 	mesh_factory.build_cylinder(onyx_mesh, sides, height, x_width, z_width, rings, position, unwrap_method, smooth_normals)
+	
 	render_onyx_mesh()
+	
+	# Re-submit the handle positions based on the built faces, so other handles that aren't the
+	# focus of a handle operation are being updated\
+	generate_handles()
+	update_gizmo()
 	
 
 # Makes any final tweaks, then prepares and transfers the mesh.
@@ -322,7 +329,12 @@ func render_onyx_mesh():
 func generate_handles():
 	handles.clear()
 	
-	# build handles
+	var height_mid = (height_max - height_min) / 2
+	
+	handles["height_max"] = Vector3(0, height_max, 0)
+	handles["height_min"] = Vector3(0, -height_min, 0)
+	handles["x_width"] = Vector3(x_width, height_mid, 0)
+	handles["z_width"] = Vector3(0, height_mid, z_width)
 	
 
 # Converts the dictionary format of handles to a pair of handles with optional triangle for normal snaps.
@@ -331,6 +343,19 @@ func convert_handles_to_gizmo() -> Array:
 	# convert handles here
 	var result = []
 	
+	# generate collision triangles
+	var triangle_x = [Vector3(0.0, 1.0, 0.0), Vector3(0.0, 1.0, 1.0), Vector3(0.0, 0.0, 1.0)]
+	var triangle_y = [Vector3(1.0, 0.0, 0.0), Vector3(1.0, 0.0, 1.0), Vector3(0.0, 0.0, 1.0)]
+	var triangle_z = [Vector3(0.0, 1.0, 0.0), Vector3(1.0, 1.0, 0.0), Vector3(1.0, 0.0, 0.0)]
+	
+	# convert handle values to an array
+	var handle_array = handles.values()
+
+	result.append( [handle_array[0], triangle_y] )
+	result.append( [handle_array[1], triangle_y] )
+	result.append( [handle_array[2], triangle_x] )
+	result.append( [handle_array[3], triangle_z] )
+	
 	return result
 
 
@@ -338,6 +363,10 @@ func convert_handles_to_gizmo() -> Array:
 func convert_handles_to_onyx(handles) -> Dictionary:
 	
 	var result = {}
+	result["height_max"] = handles[0]
+	result["height_min"] = handles[1]
+	result["x_width"] = handles[2]
+	result["z_width"] = handles[3]
 	
 	return result
 	
@@ -345,7 +374,22 @@ func convert_handles_to_onyx(handles) -> Dictionary:
 # Changes the handle based on the given index and coordinates.
 func update_handle_from_gizmo(index, coordinate):
 	
-	# update properties here
+	match index:
+		0: height_max = max(coordinate.y, 0)
+		1: height_min = min(coordinate.y, 0) * -1
+		2: x_width = max(coordinate.x, 0)
+		3: z_width = max(coordinate.z, 0)
+		
+	# Keep width proportional with gizmos if true
+	if index == 2  || index == 3:
+		if keep_width_proportional == true:
+			match index:
+				2:
+					x_width = max(coordinate.x, 0)
+					z_width = max(coordinate.x, 0)
+				3:
+					x_width = max(coordinate.z, 0)
+					z_width = max(coordinate.z, 0)
 	
 	generate_handles()
 	
@@ -353,8 +397,11 @@ func update_handle_from_gizmo(index, coordinate):
 # Applies the current handle values to the shape attributes
 func apply_handle_attributes():
 	
-	# apply all handles to attributes here
-	pass
+	height_max = handles["height_max"].y
+	height_min = handles["height_min"].y * -1
+	x_width = handles["x_width"].x
+	z_width = handles["z_width"].z
+	
 
 # Calibrates the stored properties if they need to change before the origin is updated.
 # Only called during Gizmo movements for origin auto-updating.

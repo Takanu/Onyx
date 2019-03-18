@@ -19,6 +19,7 @@ var previous_origin_mode = OriginPosition.BASE
 # used to force an origin update when using the sliders to adjust positions.
 export(bool) var update_origin_setting = true setget update_positions
 
+
 # ////////////////////////////////////////////////////////////
 # PROPERTIES
 
@@ -28,13 +29,13 @@ var plugin
 # The face set script, used for managing geometric data.
 var onyx_mesh = OnyxMesh.new()
 
-# The handle points that will be used to resize the cube (NOT built in the format required by the gizmo)
-var handles = []
+# The handle points that will be used to resize the mesh (NOT built in the format required by the gizmo)
+var handles : Dictionary = {}
 
 # Old handle points that are saved every time a handle has finished moving.
-var old_handles = []
+var old_handles : Dictionary = {}
 
-# The offset of the origin relative to the rest of the shape.
+# The offset of the origin relative to the rest of the mesh.
 var origin_offset = Vector3(0, 0, 0)
 
 # Used to decide whether to update the geometry.  Enables parents to be moved without forcing updates.
@@ -44,7 +45,7 @@ var local_tracked_pos = Vector3(0, 0, 0)
 # Exported variables representing all usable handles for re-shaping the mesh, in order.
 # Must be exported to be saved in a scene?  smh.
 export(Vector3) var point_position = Vector3(0, 1, 0) setget update_point_position
-export(float) var point_size = 2 setget update_point_size
+export(float) var point_width = 2 setget update_point_size
 export(float) var base_x_size = 2 setget update_base_x_size
 export(float) var base_z_size = 2 setget update_base_z_size
 export(bool) var keep_shape_proportional = false setget update_proportional_toggle
@@ -113,7 +114,7 @@ func _editor_transform_changed():
 func update_point_size(new_value):
 	if new_value < 0:
 		new_value = 0
-	point_size = new_value
+	point_width = new_value
 	generate_geometry(true)
 	
 func update_point_position(new_value):
@@ -217,8 +218,8 @@ func update_origin():
 #		return
 	
 	var max_x = 0
-	if base_x_size < point_size:
-		max_x = point_size
+	if base_x_size < point_width:
+		max_x = point_width
 	else:
 		max_x = base_x_size
 
@@ -270,8 +271,8 @@ func generate_geometry(fix_to_origin_setting):
 	# Ensure the geometry is generated to fit around the current origin point.
 	var position = Vector3(0, 0, 0)
 	var max_x = 0
-	if base_x_size < point_size:
-		max_x = point_size
+	if base_x_size < point_width:
+		max_x = point_width
 	else:
 		max_x = base_x_size
 		
@@ -299,8 +300,8 @@ func generate_geometry(fix_to_origin_setting):
 	var base_3 = Vector3(base_x_size/2, 0, -base_z_size/2) + position
 	var base_4 = Vector3(-base_x_size/2, 0, -base_z_size/2) + position
 	
-	var point_1 = Vector3(-point_size/2 + point_position.x, point_position.y, point_position.z) + position
-	var point_2 = Vector3(point_size/2 + point_position.x, point_position.y, point_position.z) + position
+	var point_1 = Vector3(-point_width/2 + point_position.x, point_position.y, point_position.z) + position
+	var point_2 = Vector3(point_width/2 + point_position.x, point_position.y, point_position.z) + position
 	
 	# UVS
 	var left_triangle_uv = []
@@ -349,6 +350,11 @@ func generate_geometry(fix_to_origin_setting):
 	
 	render_onyx_mesh()
 	
+	# Re-submit the handle positions based on the built faces, so other handles that aren't the
+	# focus of a handle operation are being updated\
+	generate_handles()
+	update_gizmo()
+	
 
 # Makes any final tweaks, then prepares and transfers the mesh.
 func render_onyx_mesh():
@@ -358,18 +364,41 @@ func render_onyx_mesh():
 # ////////////////////////////////////////////////////////////
 # GIZMO HANDLES
 
+const transform_handle_x = Vector3(0.3, 0, 0)
+const transform_handle_y = Vector3(0, 0.3, 0)
+const transform_handle_z = Vector3(0, 0, 0.3)
+const transform_offset = Vector3(0, 0.3, 0)
+
 # Uses the current settings to refresh the handle list.
 func generate_handles():
 	handles.clear()
 	
-	# build handles
+	handles["point_position_x"] = point_position + transform_handle_x + transform_offset
+	handles["point_position_y"] = point_position + transform_handle_y + transform_offset
+	handles["point_position_z"] = point_position + transform_handle_z + transform_offset
+	handles['point_width'] = Vector3(point_position.x + point_width / 2, point_position.y, point_position.z)
+	handles['base_x_size'] = Vector3(base_x_size / 2, 0, 0)
+	handles['base_z_size'] = Vector3(0, 0, base_z_size / 2)
 	
 
 # Converts the dictionary format of handles to a pair of handles with optional triangle for normal snaps.
 func convert_handles_to_gizmo() -> Array:
 	
-	# convert handles here
 	var result = []
+	
+	# generate collision triangles
+	var triangle_x = [Vector3(0.0, 1.0, 0.0), Vector3(0.0, 1.0, 1.0), Vector3(0.0, 0.0, 1.0)]
+	var triangle_y = [Vector3(1.0, 0.0, 0.0), Vector3(1.0, 0.0, 1.0), Vector3(0.0, 0.0, 1.0)]
+	var triangle_z = [Vector3(0.0, 1.0, 0.0), Vector3(1.0, 1.0, 0.0), Vector3(1.0, 0.0, 0.0)]
+	
+	# convert handle values to an array
+	var handle_array = handles.values()
+	result.append( [handle_array[0], triangle_x] )
+	result.append( [handle_array[1], triangle_y] )
+	result.append( [handle_array[2], triangle_z] )
+	result.append( [handle_array[3], triangle_x] )
+	result.append( [handle_array[4], triangle_x] )
+	result.append( [handle_array[5], triangle_z] )
 	
 	return result
 
@@ -378,6 +407,12 @@ func convert_handles_to_gizmo() -> Array:
 func convert_handles_to_onyx(handles) -> Dictionary:
 	
 	var result = {}
+	result["point_position_x"] = handles[0]
+	result["point_position_y"] = handles[1]
+	result["point_position_z"] = handles[2]
+	result["point_width"] = handles[3]
+	result["base_x_size"] = handles[4]
+	result["base_z_size"] = handles[5]
 	
 	return result
 	
@@ -385,16 +420,29 @@ func convert_handles_to_onyx(handles) -> Dictionary:
 # Changes the handle based on the given index and coordinates.
 func update_handle_from_gizmo(index, coordinate):
 	
-	# update properties here
-	
+	match index:
+		0: point_position.x = coordinate.x - transform_handle_x.x - transform_offset.x
+		1: point_position.y = coordinate.y - transform_handle_y.y - transform_offset.y
+		2: point_position.z = coordinate.z - transform_handle_z.z - transform_offset.z
+		3: point_width = ( max(coordinate.x, 0) - point_position.x) * 2
+		4: base_x_size = max(coordinate.x, 0) * 2
+		5: base_z_size = max(coordinate.z, 0) * 2
+		
 	generate_handles()
 	
 
 # Applies the current handle values to the shape attributes
 func apply_handle_attributes():
 	
-	# apply all handles to attributes here
-	pass
+	point_position.x = handles['point_position_x'].x - transform_handle_x.x - transform_offset.x
+	point_position.y = handles['point_position_y'].y - transform_handle_y.y - transform_offset.y
+	point_position.z = handles['point_position_z'].z - transform_handle_z.z - transform_offset.z
+	point_width = (handles['point_width'].x - point_position.x) * 2
+	base_x_size = handles['base_x_size'].x * 2
+	base_z_size = handles['base_z_size'].z * 2
+
+# Removes the transform offset applied to handles for the sake of visual clarity on the screen.
+#func 
 
 # Calibrates the stored properties if they need to change before the origin is updated.
 # Only called during Gizmo movements for origin auto-updating.

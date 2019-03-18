@@ -434,8 +434,7 @@ func generate_geometry(fix_to_origin_setting):
 	render_onyx_mesh()
 	
 	# Re-submit the handle positions based on the built faces, so other handles that aren't the
-	# focus of a handle operation are being updated
-	
+	# focus of a handle operation are being updated\
 	generate_handles()
 	update_gizmo()
 	
@@ -476,7 +475,6 @@ func convert_handles_to_gizmo() -> Array:
 	
 	# convert handle values to an array
 	var handle_array = handles.values()
-#	print("HANDLE ARRAY BEING SUBMITTED - ", handle_array)
 
 	result.append( [handle_array[0], triangle_x] )
 	result.append( [handle_array[1], triangle_x] )
@@ -504,8 +502,6 @@ func convert_handles_to_onyx(handles) -> Dictionary:
 
 # Changes the handle based on the given index and coordinates.
 func update_handle_from_gizmo(index, coordinate):
-	
-	#print("UPDATING HANDLE FROM GIZMO - ", coordinate)
 	
 	match index:
 		0: x_minus_position = min(coordinate.x, 0) * -1

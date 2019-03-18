@@ -338,18 +338,53 @@ func render_onyx_mesh():
 # ////////////////////////////////////////////////////////////
 # GIZMO HANDLES
 
+# The distance away from the translation point each handle is.
+const transform_handle_x = Vector3(0.3, 0, 0)
+const transform_handle_y = Vector3(0, 0.3, 0)
+const transform_handle_z = Vector3(0, 0, 0.3)
+
+# The amount the translation handle set is moved from the original point by.
+const transform_offset = Vector3(0, 0, 0)
+
 # Uses the current settings to refresh the handle list.
 func generate_handles():
 	handles.clear()
 	
-	# build handles
+	var depth_mid = Vector3(0, stair_depth/2, 0)
+	var width_mid =  Vector3(stair_width/2, 0, 0)
+	var length_mid = Vector3(0, 0, ((end_position - start_position).length() / stair_count) / 2)
+	
+	handles["start_position_x"] = start_position + transform_handle_x + transform_offset
+	handles["start_position_y"] = start_position + transform_handle_y + transform_offset
+	handles["start_position_z"] = start_position + transform_handle_z + transform_offset
+	handles["end_position_x"] = end_position + transform_handle_x + transform_offset
+	handles["end_position_y"] = end_position + transform_handle_y + transform_offset
+	handles["end_position_z"] = end_position + transform_handle_z + transform_offset
+	
+	handles["stair_width"] = start_position + depth_mid + width_mid
 	
 
 # Converts the dictionary format of handles to a pair of handles with optional triangle for normal snaps.
 func convert_handles_to_gizmo() -> Array:
 	
-	# convert handles here
 	var result = []
+	
+	# generate collision triangles
+	var triangle_x = [Vector3(0.0, 1.0, 0.0), Vector3(0.0, 1.0, 1.0), Vector3(0.0, 0.0, 1.0)]
+	var triangle_y = [Vector3(1.0, 0.0, 0.0), Vector3(1.0, 0.0, 1.0), Vector3(0.0, 0.0, 1.0)]
+	var triangle_z = [Vector3(0.0, 1.0, 0.0), Vector3(1.0, 1.0, 0.0), Vector3(1.0, 0.0, 0.0)]
+	
+	# convert handle values to an array
+	var handle_array = handles.values()
+
+	result.append( [handle_array[0], triangle_x] )
+	result.append( [handle_array[1], triangle_y] )
+	result.append( [handle_array[2], triangle_z] )
+	result.append( [handle_array[3], triangle_x] )
+	result.append( [handle_array[4], triangle_y] )
+	result.append( [handle_array[5], triangle_z] )
+	
+	result.append( [handle_array[6], triangle_x] )
 	
 	return result
 
@@ -358,6 +393,14 @@ func convert_handles_to_gizmo() -> Array:
 func convert_handles_to_onyx(handles) -> Dictionary:
 	
 	var result = {}
+	result["start_position_x"] = handles[0]
+	result["start_position_y"] = handles[1]
+	result["start_position_z"] = handles[2]
+	result["end_position_x"] = handles[3]
+	result["end_position_y"] = handles[4]
+	result["end_position_z"] = handles[5]
+	
+	handles["stair_width"] = handles[6]
 	
 	return result
 	
@@ -365,16 +408,32 @@ func convert_handles_to_onyx(handles) -> Dictionary:
 # Changes the handle based on the given index and coordinates.
 func update_handle_from_gizmo(index, coordinate):
 	
-	# update properties here
-	
+	match index:
+		# positions
+		0: start_position.x = coordinate.x - transform_handle_x.x - transform_offset.x
+		1: start_position.y = coordinate.y - transform_handle_y.y - transform_offset.y
+		2: start_position.z = coordinate.z - transform_handle_z.z - transform_offset.z
+		3: end_position.x = coordinate.x - transform_handle_x.x - transform_offset.x
+		4: end_position.y = coordinate.y - transform_handle_y.y - transform_offset.y
+		5: end_position.z = coordinate.z - transform_handle_z.z - transform_offset.z
+		
+		# stair properties
+		6: stair_width = (coordinate.x - start_position.x) * 2
+		
 	generate_handles()
 	
 
 # Applies the current handle values to the shape attributes
 func apply_handle_attributes():
 	
-	# apply all handles to attributes here
-	pass
+	start_position.x = handles["start_position_x"].x - transform_handle_x.x - transform_offset.x
+	start_position.y = handles["start_position_y"].y - transform_handle_y.y - transform_offset.y
+	start_position.z = handles["start_position_z"].z - transform_handle_z.z - transform_offset.z
+	end_position.x = handles["end_position_x"].x - transform_handle_x.x - transform_offset.x
+	end_position.y = handles["end_position_y"].y - transform_handle_y.y - transform_offset.y
+	end_position.z = handles["end_position_z"].z - transform_handle_z.z - transform_offset.z
+	
+	stair_width = (handles["stair_width"].x - start_position.x) * 2
 
 # Calibrates the stored properties if they need to change before the origin is updated.
 # Only called during Gizmo movements for origin auto-updating.

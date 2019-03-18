@@ -28,13 +28,13 @@ var plugin
 # The face set script, used for managing geometric data.
 var onyx_mesh = OnyxMesh.new()
 
-# The handle points that will be used to resize the cube (NOT built in the format required by the gizmo)
-var handles = []
+# The handle points that will be used to resize the mesh (NOT built in the format required by the gizmo)
+var handles : Dictionary = {}
 
 # Old handle points that are saved every time a handle has finished moving.
-var old_handles = []
+var old_handles : Dictionary = {}
 
-# The offset of the origin relative to the rest of the shape.
+# The offset of the origin relative to the rest of the mesh.
 var origin_offset = Vector3(0, 0, 0)
 
 # Used to decide whether to update the geometry.  Enables parents to be moved without forcing updates.
@@ -305,7 +305,10 @@ func generate_geometry(fix_to_origin_setting):
 	onyx_mesh = mesh_factory.build_sphere(height, x_width, z_width, segments, rings, position, 0, 0, 1, true, true, smooth_normals)
 	render_onyx_mesh()
 	
-	
+	# Re-submit the handle positions based on the built faces, so other handles that aren't the
+	# focus of a handle operation are being updated\
+	generate_handles()
+	update_gizmo()
 
 # Makes any final tweaks, then prepares and transfers the mesh.
 func render_onyx_mesh():
@@ -319,14 +322,26 @@ func render_onyx_mesh():
 func generate_handles():
 	handles.clear()
 	
-	# build handles
+	handles["height"] = Vector3(0, height, 0)
+	handles["x_width"] = Vector3(x_width / 2, 0, 0)
+	handles["z_width"] = Vector3(0, 0, z_width / 2)
 	
 
 # Converts the dictionary format of handles to a pair of handles with optional triangle for normal snaps.
 func convert_handles_to_gizmo() -> Array:
 	
-	# convert handles here
 	var result = []
+	
+	# generate collision triangles
+	var triangle_x = [Vector3(0.0, 1.0, 0.0), Vector3(0.0, 1.0, 1.0), Vector3(0.0, 0.0, 1.0)]
+	var triangle_y = [Vector3(1.0, 0.0, 0.0), Vector3(1.0, 0.0, 1.0), Vector3(0.0, 0.0, 1.0)]
+	var triangle_z = [Vector3(0.0, 1.0, 0.0), Vector3(1.0, 1.0, 0.0), Vector3(1.0, 0.0, 0.0)]
+	
+	# convert handle values to an array
+	var handle_array = handles.values()
+	result.append( [handle_array[0], triangle_y] )
+	result.append( [handle_array[1], triangle_x] )
+	result.append( [handle_array[2], triangle_z] )
 	
 	return result
 
@@ -335,6 +350,9 @@ func convert_handles_to_gizmo() -> Array:
 func convert_handles_to_onyx(handles) -> Dictionary:
 	
 	var result = {}
+	result["height"] = handles[0]
+	result["x_width"] = handles[1]
+	result["z_width"] = handles[2]
 	
 	return result
 	
@@ -342,7 +360,10 @@ func convert_handles_to_onyx(handles) -> Dictionary:
 # Changes the handle based on the given index and coordinates.
 func update_handle_from_gizmo(index, coordinate):
 	
-	# update properties here
+	match index:
+		0: height = max(coordinate.y, 0) 
+		1: x_width = max(coordinate.x, 0) * 2
+		2: z_width = max(coordinate.z, 0) * 2
 	
 	generate_handles()
 	
@@ -350,8 +371,10 @@ func update_handle_from_gizmo(index, coordinate):
 # Applies the current handle values to the shape attributes
 func apply_handle_attributes():
 	
-	# apply all handles to attributes here
-	pass
+	height = handles["height"].y
+	x_width = handles["x_width"].x * 2
+	z_width = handles["z_width"].z * 2
+	
 
 # Calibrates the stored properties if they need to change before the origin is updated.
 # Only called during Gizmo movements for origin auto-updating.

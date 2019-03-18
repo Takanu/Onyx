@@ -16,7 +16,7 @@ const OnyxStairs = preload("./nodes/block/onyx_stairs.gd")
 const OnyxSprinkle  = preload("./nodes/onyx_sprinkle.gd")
 const OnyxFence  = preload("./nodes/onyx_fence.gd")
 
-const NodeHandlerList = [OnyxCube, OnyxCylinder, OnyxSphere, OnyxWedge, OnyxRoundedRect, OnyxStairs, OnyxSprinkle, OnyxFence]
+const NodeHandlerList = [OnyxCube, OnyxCylinder, OnyxSphere, OnyxWedge, OnyxRoundedRect, OnyxStairs, OnyxRamp, OnyxSprinkle, OnyxFence]
 const NodeStrings = ['OnyxCube', 'OnyxCylinder', 'OnyxSphere', 'OnyxWedge', 'OnyxRoundedRect', 'OnyxStairs', 'OnyxSprinkle', 'OnyxFence']
 
 # Gizmo types
