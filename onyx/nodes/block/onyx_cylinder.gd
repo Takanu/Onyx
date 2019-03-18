@@ -88,10 +88,16 @@ func _exit_tree():
     pass
 	
 func _ready():
+	
 	# Only generate geometry if we have nothing and we're running inside the editor, this likely indicates the node is brand new.
 	if Engine.editor_hint == true:
 		if mesh == null:
 			generate_geometry(true)
+			
+		# if we have no handles already, make some
+		# (used during duplication and other functions)
+		if handles.size() == 0:
+			generate_handles()
 
 	
 func _notification(what):
@@ -286,6 +292,8 @@ func generate_geometry(fix_to_origin_setting):
 	# Prevents geometry generation if the node hasn't loaded yet
 	if is_inside_tree() == false:
 		return
+		
+	print('onyxcylinder - generating geometry')
 	
 	# Ensure the geometry is generated to fit around the current origin point.
 	var height = 0
@@ -328,6 +336,8 @@ func render_onyx_mesh():
 # Uses the current settings to refresh the handle list.
 func generate_handles():
 	handles.clear()
+	
+	print('onyxcylinder - generating handles')
 	
 	var height_mid = (height_max - height_min) / 2
 	
