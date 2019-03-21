@@ -188,22 +188,7 @@ func update_flip_uvs_vertically(new_value):
 	
 func update_material(new_value):
 	material = new_value
-	
-	# Prevents geometry generation if the node hasn't loaded yet, otherwise it will try to set a blank mesh.
-	if is_inside_tree() == false:
-		return
-		
-	# If we don't have an onyx_mesh with any data in it, we need to construct that first to apply a material to it.
-	if onyx_mesh.tris == null:
-		generate_geometry(true)
-	
-	var array_mesh = onyx_mesh.render_surface_geometry(material)
-	var helper = MeshDataTool.new()
-	var mesh = Mesh.new()
-	
-	helper.create_from_surface(array_mesh, 0)
-	helper.commit_to_surface(mesh)
-	set_mesh(mesh)
+	OnyxUtils.update_material(self, new_value)
 	
 
 # ////////////////////////////////////////////////////////////
