@@ -6,6 +6,24 @@ extends Node
 # Shared toolset for Onyx-type nodes, dealing with CSG shape creation.
 
 # ////////////////////////////////////////////////////////////
+# INITIALIZATION
+# Performs 
+static func onyx_ready(node):
+	
+	# Only generate geometry if we have nothing and we're running inside the editor, this likely indicates the node is brand new.
+	if Engine.editor_hint == true:
+		if node.mesh == null:
+			node.generate_geometry(true)
+			
+		# if we have no handles already, make some
+		# (used during duplication and other functions)
+		if node.handles.size() == 0:
+			node.generate_handles()
+		
+		# Ensure the old_handles variable match the current handles we have for undo/redo.
+		node.old_handles = node.handles.duplicate(true)
+
+# ////////////////////////////////////////////////////////////
 # MESH RENDERING
 
 # Updates the main material slot for Onyx shapes.
@@ -66,18 +84,17 @@ static func handle_change(node, index, coord):
 	node.update_handle_from_gizmo(index, coord)
 	node.generate_geometry(false)
 	
-	# FALLBACK HANDLE STUFF
-	# Designed to compensate for when no old_handles data exists, to ensure undos still work.
-	if node.old_handles.size() == 0 || node.old_handles == null:
-		node.old_handles = node.handles.duplicate(true)
-	
 
 
 # Called when a handle has stopped being dragged.
+# NOTE - This should only finish committing information, restore_state will finalize movement and other opeirations.
 static func handle_commit(node, index, coord):
 	
+	#print("OnyxUtils - Committing handle")
+	
 	node.update_handle_from_gizmo(index, coord)
-	node.generate_geometry(true)
+	node.apply_handle_attributes()
+	node.update_origin_position()
 	
 	# store current handle points as the old ones, so they can be used later
 	# as an undo point before the next commit.
@@ -88,24 +105,35 @@ static func handle_commit(node, index, coord):
 # UNDO/REDO STATES
 # Returns a state that can be used to undo or redo a previous change to the shape.
 static func get_gizmo_redo_state(node):
-	return [node.handles.duplicate(true), node.translation]
+	var saved_translation = node.global_transform.origin
+	return [node.handles.duplicate(true), saved_translation]
 
 
 # Returns a state specifically for undo functions in SnapGizmo.
 static func get_gizmo_undo_state(node):
-	return [node.old_handles.duplicate(true), node.translation]
+	var saved_translation = node.global_transform.origin
+	return [node.old_handles.duplicate(true), saved_translation]
 
 
 # Restores the state of the shape to a previous given state.
 static func restore_state(node, state):
 	var new_handles = state[0]
-	var stored_translation = state[1]
+	var stored_location = state[1]
 	
-	print("RESTORING STATE -", state)
+	#print("RESTORING STATE -", state)
 	
 	node.handles = new_handles.duplicate(true)
 	node.old_handles = new_handles.duplicate(true)
 	node.apply_handle_attributes()
+	node.update_origin_position(stored_location)
+	node.balance_handles()
 	node.generate_geometry(true)
 	
-	node.translation = stored_translation
+	
+
+# ////////////////////////////////////////////////////////////
+# CHILD MANAGEMENT
+static func translate_children(node, translation):
+	
+	for child in node.get_children():
+		child.global_translate(translation)

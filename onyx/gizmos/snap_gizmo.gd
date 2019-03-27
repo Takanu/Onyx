@@ -188,12 +188,12 @@ func commit_handle(index, restore, cancel=false):
 		# Now build the redo data
 		var redo_data = get_spatial_node().get_gizmo_redo_state()
 		
-		print('=================================')
-		print("UNDO DATA: ", undo_data)
-		print('=================================')
-		print("REDO DATA: ", redo_data)
-		print('=================================')
-		print('=================================')
+#		print('=================================')
+#		print("UNDO DATA: ", undo_data)
+#		print('=================================')
+#		print("REDO DATA: ", redo_data)
+#		print('=================================')
+#		print('=================================')
 		
 		# Now commit both pieces of data onto the undo/redo stack.
 		var undo_redo = get_plugin().plugin.get_undo_redo()
@@ -201,6 +201,7 @@ func commit_handle(index, restore, cancel=false):
 		undo_redo.add_do_method(get_spatial_node(), "restore_state", redo_data)
 		undo_redo.add_undo_method(get_spatial_node(), "restore_state", undo_data)
 		undo_redo.commit_action()
+		
 		
 	else:
 		var handle = handle_set[handle_current_index]

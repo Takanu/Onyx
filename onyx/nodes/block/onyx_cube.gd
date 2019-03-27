@@ -36,11 +36,8 @@ var handles : Dictionary = {}
 # Old handle points that are saved every time a handle has finished moving.
 var old_handles : Dictionary = {}
 
-# The offset of the origin relative to the rest of the mesh.
-var origin_offset = Vector3(0, 0, 0)
-
 # Used to decide whether to update the geometry.  Enables parents to be moved without forcing updates.
-var local_tracked_pos = Vector3(0, 0, 0)
+var local_tracked_pos = Vector3()
 
 
 # Exported variables representing all usable handles for re-shaping the mesh, in order.
@@ -97,15 +94,8 @@ func _exit_tree():
 	
 func _ready():
 	
-	# Only generate geometry if we have nothing and we're running inside the editor, this likely indicates the node is brand new.
-	if Engine.editor_hint == true:
-		if mesh == null:
-			generate_geometry(true)
-			
-		# if we have no handles already, make some
-		# (used during duplication and other functions)
-		if handles.size() == 0:
-			generate_handles()
+	# Delegate ready functionality for in-editor functions.
+	OnyxUtils.onyx_ready(self)
 
 	
 func _notification(what):
@@ -122,7 +112,13 @@ func _editor_transform_changed():
 	# The shape only needs to be re-generated when the origin is moved or when the shape changes.
 	#print("ONYXCUBE _editor_transform_changed")
 	#generate_geometry(true)
-	pass
+	
+	print("========")
+	print('local translation: ', self.translation)
+	print('to-global translation: ', self.to_global(self.translation) )
+	print('global translation: ', self.global_transform.origin)
+	
+	#pass
 
 				
 # ////////////////////////////////////////////////////////////
@@ -156,7 +152,7 @@ func update_y_plus(new_value):
 	
 func update_y_minus(new_value):
 	#print("ONYXCUBE update_y_minus")
-	if new_value < 0 || origin_mode == OriginPosition.BASE_CORNER || origin_mode == OriginPosition.BASE:
+	if new_value < 0 && (origin_mode == OriginPosition.BASE_CORNER || origin_mode == OriginPosition.BASE) :
 		new_value = 0
 		
 	y_minus_position = new_value
@@ -244,8 +240,7 @@ func update_material(new_value):
 	OnyxUtils.update_material(self, new_value)
 	
 
-# Updates the origin during generate_geometry() as well as the currently defined handles, 
-# to ensure it's anchored where it needs to be.
+# Updates the origin location when the corresponding property is changed.
 func update_origin():
 	
 	# Used to prevent the function from triggering when not inside the tree.
@@ -289,12 +284,61 @@ func update_origin():
 					diff = Vector3(x_plus_position / 2, y_plus_position / 2, z_plus_position / 2)
 	
 	# Get the difference
-	var new_loc = self.translation + diff
-	var old_loc = self.translation
+	var new_loc = self.global_transform.xform(self.translation + diff)
+	var old_loc = self.global_transform.xform(self.translation)
+	var new_translation = new_loc - old_loc
 	#print("MOVING LOCATION: ", old_loc, " -> ", new_loc)
+	#print("TRANSLATION: ", new_translation)
 	
 	# set it
-	self.global_translate(new_loc - old_loc)
+	self.global_translate(new_translation)
+	OnyxUtils.translate_children(self, new_translation * -1)
+	
+
+# Updates the origin position for the currently-active Origin Mode, either building a new one using properties or through a new position.
+# DOES NOT update the origin when the origin property has changed, for use with handle commits.
+func update_origin_position(new_location = null):
+	
+	var new_loc = Vector3()
+	var global_tf = self.global_transform
+	var global_pos = self.global_transform.origin
+	
+	if new_location == null:
+		
+		# Find what the current location should be
+		var diff = Vector3()
+		var mid_x = (x_plus_position - x_minus_position) / 2
+		var mid_y = (y_plus_position - y_minus_position) / 2
+		var mid_z = (z_plus_position - z_minus_position) / 2
+		
+		var diff_x = abs(x_plus_position - -x_minus_position)
+		var diff_y = abs(y_plus_position - -y_minus_position)
+		var diff_z = abs(z_plus_position - -z_minus_position)
+		
+		match origin_mode:
+			OriginPosition.CENTER:
+				diff = Vector3(mid_x, mid_y, mid_z)
+			
+			OriginPosition.BASE:
+				diff = Vector3(mid_x, -y_minus_position, mid_z)
+			
+			OriginPosition.BASE_CORNER:
+				diff = Vector3(-x_minus_position, -y_minus_position, -z_minus_position)
+		
+		new_loc = global_tf.xform(diff)
+	
+	else:
+		new_loc = new_location
+		
+	
+	# Get the difference
+	var old_loc = global_pos
+	var new_translation = new_loc - old_loc
+	
+	# set it
+	self.global_translate(new_translation)
+	OnyxUtils.translate_children(self, new_translation * -1)
+	
 
 # ////////////////////////////////////////////////////////////
 # GEOMETRY GENERATION
@@ -440,16 +484,38 @@ func render_onyx_mesh():
 func generate_handles():
 	handles.clear()
 	
-	var x_mid = (x_plus_position - x_minus_position) / 2
-	var y_mid = (y_plus_position - y_minus_position) / 2
-	var z_mid = (z_plus_position - z_minus_position) / 2
+	var mid_x = (x_plus_position - x_minus_position) / 2
+	var mid_y = (y_plus_position - y_minus_position) / 2
+	var mid_z = (z_plus_position - z_minus_position) / 2
 	
-	handles["x_minus"] = Vector3(-x_minus_position, y_mid, z_mid)
-	handles["x_plus"] = Vector3(x_plus_position, y_mid, z_mid)
-	handles["y_minus"] = Vector3(x_mid, -y_minus_position, z_mid)
-	handles["y_plus"] = Vector3(x_mid, y_plus_position, z_mid)
-	handles["z_minus"] = Vector3(x_mid, y_mid, -z_minus_position)
-	handles["z_plus"] = Vector3(x_mid, y_mid, z_plus_position)
+	var diff_x = abs(x_plus_position - -x_minus_position)
+	var diff_y = abs(y_plus_position - -y_minus_position)
+	var diff_z = abs(z_plus_position - -z_minus_position)
+	
+	match origin_mode:
+		OriginPosition.CENTER:
+			handles["x_minus"] = Vector3(-x_minus_position, mid_y, mid_z)
+			handles["x_plus"] = Vector3(x_plus_position, mid_y, mid_z)
+			handles["y_minus"] = Vector3(mid_x, -y_minus_position, mid_z)
+			handles["y_plus"] = Vector3(mid_x, y_plus_position, mid_z)
+			handles["z_minus"] = Vector3(mid_x, mid_y, -z_minus_position)
+			handles["z_plus"] = Vector3(mid_x, mid_y, z_plus_position)
+			
+		OriginPosition.BASE:
+			handles["x_minus"] = Vector3(-x_minus_position, mid_y, mid_z)
+			handles["x_plus"] = Vector3(x_plus_position, mid_y, mid_z)
+			handles["y_minus"] = Vector3(mid_x, 0, mid_z)
+			handles["y_plus"] = Vector3(mid_x, diff_y, mid_z)
+			handles["z_minus"] = Vector3(mid_x, mid_y, -z_minus_position)
+			handles["z_plus"] = Vector3(mid_x, mid_y, z_plus_position)
+			
+		OriginPosition.BASE_CORNER:
+			handles["x_minus"] = Vector3(0, mid_y, mid_z)
+			handles["x_plus"] = Vector3(diff_x, mid_y, mid_z)
+			handles["y_minus"] = Vector3(mid_x, 0, mid_z)
+			handles["y_plus"] = Vector3(mid_x, diff_y, mid_z)
+			handles["z_minus"] = Vector3(mid_x, mid_y, 0)
+			handles["z_plus"] = Vector3(mid_x, mid_y, diff_z)
 	
 
 # Converts the dictionary format of handles to a pair of handles with optional triangle for normal snaps.
@@ -505,6 +571,7 @@ func update_handle_from_gizmo(index, coordinate):
 
 # Applies the current handle values to the shape attributes
 func apply_handle_attributes():
+	
 	x_minus_position = handles["x_minus"].x * -1
 	x_plus_position = handles["x_plus"].x
 	y_minus_position = handles["y_minus"].y * -1
@@ -517,58 +584,41 @@ func apply_handle_attributes():
 # Only called during Gizmo movements for origin auto-updating.
 func balance_handles():
 	
+	var diff_x = abs(x_plus_position - -x_minus_position)
+	var diff_y = abs(y_plus_position - -y_minus_position)
+	var diff_z = abs(z_plus_position - -z_minus_position)
+	
 	match origin_mode:
 		OriginPosition.CENTER:
-			var diff = abs(x_plus_position - x_minus_position)
-			x_plus_position = diff / 2
-			x_minus_position = (diff / 2) * -1
+			x_plus_position = diff_x / 2
+			x_minus_position = (diff_x / 2)
+					
+			y_plus_position = diff_y / 2
+			y_minus_position = (diff_y / 2)
 			
-			diff = abs(y_plus_position - y_minus_position)
-			y_plus_position = diff / 2
-			y_minus_position = (diff / 2) * -1
-			
-			diff = abs(z_plus_position - z_minus_position)
-			z_plus_position = diff / 2
-			z_minus_position = (diff / 2) * -1
+			z_plus_position = diff_z / 2
+			z_minus_position = (diff_z / 2)
 		
 		OriginPosition.BASE:
-			var diff = abs(x_plus_position - x_minus_position)
-			x_plus_position = diff / 2
-			x_minus_position = (diff / 2) * -1
+			x_plus_position = diff_x / 2
+			x_minus_position = (diff_x / 2)
 			
-			diff = abs(y_plus_position - y_minus_position)
-			y_plus_position = diff
+			y_plus_position = diff_y
 			y_minus_position = 0
 			
-			diff = abs(z_plus_position - z_minus_position)
-			z_plus_position = diff / 2
-			z_minus_position = (diff / 2) * -1
+			z_plus_position = diff_z / 2
+			z_minus_position = (diff_z / 2)
 			
 		OriginPosition.BASE_CORNER:
-			var diff = abs(x_plus_position - x_minus_position)
-			x_plus_position = diff
+			x_plus_position = diff_x
 			x_minus_position = 0
 			
-			diff = abs(y_plus_position - y_minus_position)
-			y_plus_position = diff
+			y_plus_position = diff_y
 			y_minus_position = 0
 			
-			diff = abs(z_plus_position - z_minus_position)
-			z_plus_position = diff
+			z_plus_position = diff_z
 			z_minus_position = 0
 		
-	# Old code just in case the above stuff breaks.
-#	var diff = abs(x_plus_position - x_minus_position)
-#	x_plus_position = diff / 2
-#	x_minus_position = (diff / 2) * -1
-#
-#	diff = abs(y_plus_position - y_minus_position)
-#	y_plus_position = diff / 2
-#	y_minus_position = (diff / 2) * -1
-#
-#	diff = abs(z_plus_position - z_minus_position)
-#	z_plus_position = diff / 2
-#	z_minus_position = (diff / 2) * -1
 
 # ////////////////////////////////////////////////////////////
 # STANDARD HANDLE FUNCTIONS

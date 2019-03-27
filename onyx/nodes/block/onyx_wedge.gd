@@ -90,15 +90,8 @@ func _exit_tree():
 	
 func _ready():
 	
-	# Only generate geometry if we have nothing and we're running inside the editor, this likely indicates the node is brand new.
-	if Engine.editor_hint == true:
-		if mesh == null:
-			generate_geometry(true)
-			
-		# if we have no handles already, make some
-		# (used during duplication and other functions)
-		if handles.size() == 0:
-			generate_handles()
+	# Delegate ready functionality for in-editor functions.
+	OnyxUtils.onyx_ready(self)
 
 	
 func _notification(what):
