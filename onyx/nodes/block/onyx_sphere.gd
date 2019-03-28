@@ -264,6 +264,45 @@ func update_origin():
 	self.global_translate(new_loc - old_loc)
 	
 
+# Updates the origin position for the currently-active Origin Mode, either building a new one using properties or through a new position.
+# DOES NOT update the origin when the origin property has changed, for use with handle commits.
+func update_origin_position(new_location = null):
+	
+	var new_loc = Vector3()
+	var global_tf = self.global_transform
+	var global_pos = self.global_transform.origin
+	
+	var diff = Vector3()
+	
+	if new_location == null:
+		
+		match origin_mode:
+			OriginPosition.CENTER:
+				diff = Vector3(0, 0, 0)
+			
+			OriginPosition.BASE:
+				diff = Vector3(0, 0, 0)
+			
+			OriginPosition.BASE_CORNER:
+				diff = Vector3(0, 0, 0)
+		
+		new_loc = global_tf.xform(diff)
+	
+	else:
+		new_loc = new_location
+		
+	
+	# Get the difference
+	var old_loc = global_pos
+	var new_translation = new_loc - old_loc
+	
+	# set it
+	self.global_translate(new_translation)
+	OnyxUtils.translate_children(self, new_translation * -1)
+
+
+
+
 # ////////////////////////////////////////////////////////////
 # GEOMETRY GENERATION
 
@@ -306,9 +345,22 @@ func render_onyx_mesh():
 func generate_handles():
 	handles.clear()
 	
-	handles["height"] = Vector3(0, height, 0)
-	handles["x_width"] = Vector3(x_width / 2, 0, 0)
-	handles["z_width"] = Vector3(0, 0, z_width / 2)
+	match origin_mode:
+		OriginPosition.CENTER:
+			handles["height"] = Vector3(0, height / 2, 0)
+			handles["x_width"] = Vector3(x_width / 2, 0, 0)
+			handles["z_width"] = Vector3(0, 0, z_width / 2)
+			
+		OriginPosition.BASE:
+			handles["height"] = Vector3(0, height, 0)
+			handles["x_width"] = Vector3(x_width / 2, height / 2, 0)
+			handles["z_width"] = Vector3(0, height / 2, z_width / 2)
+			
+		OriginPosition.BASE_CORNER:
+			handles["height"] = Vector3(x_width / 2, height, z_width / 2)
+			handles["x_width"] = Vector3(x_width, height / 2, z_width / 2)
+			handles["z_width"] = Vector3(x_width / 2, height / 2, z_width)
+	
 	
 
 # Converts the dictionary format of handles to a pair of handles with optional triangle for normal snaps.
@@ -344,10 +396,23 @@ func convert_handles_to_onyx(handles) -> Dictionary:
 # Changes the handle based on the given index and coordinates.
 func update_handle_from_gizmo(index, coordinate):
 	
-	match index:
-		0: height = max(coordinate.y, 0) 
-		1: x_width = max(coordinate.x, 0) * 2
-		2: z_width = max(coordinate.z, 0) * 2
+	if origin_mode == OriginPosition.CENTER:
+		match index:
+			0: height = max(coordinate.y, 0) * 2
+			1: x_width = max(coordinate.x, 0) * 2
+			2: z_width = max(coordinate.z, 0) * 2
+	
+	if origin_mode == OriginPosition.BASE:
+		match index:
+			0: height = max(coordinate.y, 0) 
+			1: x_width = max(coordinate.x, 0) * 2
+			2: z_width = max(coordinate.z, 0) * 2
+	
+	if origin_mode == OriginPosition.BASE_CORNER:
+		match index:
+			0: height = max(coordinate.y, 0) 
+			1: x_width = max(coordinate.x, 0)
+			2: z_width = max(coordinate.z, 0)
 	
 	generate_handles()
 	
@@ -355,16 +420,29 @@ func update_handle_from_gizmo(index, coordinate):
 # Applies the current handle values to the shape attributes
 func apply_handle_attributes():
 	
-	height = handles["height"].y
-	x_width = handles["x_width"].x * 2
-	z_width = handles["z_width"].z * 2
+	if origin_mode == OriginPosition.CENTER:
+		height = handles["height"].y * 2
+		x_width = handles["x_width"].x * 2
+		z_width = handles["z_width"].z * 2
+	
+	if origin_mode == OriginPosition.BASE:
+		height = handles["height"].y
+		x_width = handles["x_width"].x * 2
+		z_width = handles["z_width"].z * 2
+	
+	if origin_mode == OriginPosition.BASE_CORNER:
+		height = handles["height"].y
+		x_width = handles["x_width"].x
+		z_width = handles["z_width"].z
+	
+	
 	
 
 # Calibrates the stored properties if they need to change before the origin is updated.
 # Only called during Gizmo movements for origin auto-updating.
 func balance_handles():
 	
-	# balance handles here
+	# There's no duality between handles for this type, no balancing needed.
 	pass
 
 # ////////////////////////////////////////////////////////////

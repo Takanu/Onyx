@@ -274,7 +274,6 @@ func update_origin_position(new_location = null):
 	
 	var diff = Vector3()
 	var mid_height = height_max - height_min
-	print(mid_height)
 	
 	if new_location == null:
 		

@@ -499,30 +499,6 @@ func generate_handles():
 	handles["z_minus"] = Vector3(mid_x, mid_y, -z_minus_position)
 	handles["z_plus"] = Vector3(mid_x, mid_y, z_plus_position)
 	
-#	match origin_mode:
-#		OriginPosition.CENTER:
-#			handles["x_minus"] = Vector3(-x_minus_position, mid_y, mid_z)
-#			handles["x_plus"] = Vector3(x_plus_position, mid_y, mid_z)
-#			handles["y_minus"] = Vector3(mid_x, -y_minus_position, mid_z)
-#			handles["y_plus"] = Vector3(mid_x, y_plus_position, mid_z)
-#			handles["z_minus"] = Vector3(mid_x, mid_y, -z_minus_position)
-#			handles["z_plus"] = Vector3(mid_x, mid_y, z_plus_position)
-#
-#		OriginPosition.BASE:
-#			handles["x_minus"] = Vector3(-x_minus_position, mid_y, mid_z)
-#			handles["x_plus"] = Vector3(x_plus_position, mid_y, mid_z)
-#			handles["y_minus"] = Vector3(mid_x, 0, mid_z)
-#			handles["y_plus"] = Vector3(mid_x, diff_y, mid_z)
-#			handles["z_minus"] = Vector3(mid_x, mid_y, -z_minus_position)
-#			handles["z_plus"] = Vector3(mid_x, mid_y, z_plus_position)
-#
-#		OriginPosition.BASE_CORNER:
-#			handles["x_minus"] = Vector3(0, mid_y, mid_z)
-#			handles["x_plus"] = Vector3(diff_x, mid_y, mid_z)
-#			handles["y_minus"] = Vector3(mid_x, 0, mid_z)
-#			handles["y_plus"] = Vector3(mid_x, diff_y, mid_z)
-#			handles["z_minus"] = Vector3(mid_x, mid_y, 0)
-#			handles["z_plus"] = Vector3(mid_x, mid_y, diff_z)
 	
 
 # Converts the dictionary format of handles to a pair of handles with optional triangle for normal snaps.
@@ -566,12 +542,12 @@ func convert_handles_to_onyx(handles) -> Dictionary:
 func update_handle_from_gizmo(index, coordinate):
 	
 	match index:
-		0: x_minus_position = min(coordinate.x, 0) * -1
-		1: x_plus_position = max(coordinate.x, 0)
-		2: y_minus_position = min(coordinate.y, 0) * -1
-		3: y_plus_position = max(coordinate.y, 0)
-		4: z_minus_position = min(coordinate.z, 0) * -1
-		5: z_plus_position = max(coordinate.z, 0)
+		0: x_minus_position = min(coordinate.x, x_plus_position) * -1
+		1: x_plus_position = max(coordinate.x, -x_minus_position)
+		2: y_minus_position = min(coordinate.y, y_plus_position) * -1
+		3: y_plus_position = max(coordinate.y, -y_minus_position)
+		4: z_minus_position = min(coordinate.z, z_plus_position) * -1
+		5: z_plus_position = max(coordinate.z, -z_minus_position)
 		
 	generate_handles()
 	
