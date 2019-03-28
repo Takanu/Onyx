@@ -248,18 +248,60 @@ func update_origin():
 			match origin_mode:
 				
 				OriginPosition.BASE:
-					diff = Vector3(x_width, 0, x_width)
+					diff = Vector3(x_width, 0, z_width)
 				OriginPosition.CENTER:
-					diff = Vector3(x_width, height_max / 2, x_width)
+					diff = Vector3(x_width, height_max / 2, z_width)
 	
 	# Get the difference
-	var new_loc = self.translation + diff
-	var old_loc = self.translation
+	var new_loc = self.global_transform.xform(self.translation + diff)
+	var old_loc = self.global_transform.xform(self.translation)
+	var new_translation = new_loc - old_loc
 #	print("MOVING LOCATION: ", old_loc, " -> ", new_loc)
 	
 	# set it
-	self.global_translate(new_loc - old_loc)
+	self.global_translate(new_translation)
+	OnyxUtils.translate_children(self, new_translation * -1)
 	
+	
+
+# Updates the origin position for the currently-active Origin Mode, either building a new one using properties or through a new position.
+# DOES NOT update the origin when the origin property has changed, for use with handle commits.
+func update_origin_position(new_location = null):
+	
+	var new_loc = Vector3()
+	var global_tf = self.global_transform
+	var global_pos = self.global_transform.origin
+	
+	var diff = Vector3()
+	var mid_height = height_max - height_min
+	print(mid_height)
+	
+	if new_location == null:
+		
+		match origin_mode:
+			OriginPosition.CENTER:
+				diff = Vector3(0, mid_height / 2, 0)
+			
+			OriginPosition.BASE:
+				diff = Vector3(0, -height_min, 0)
+			
+			OriginPosition.BASE_CORNER:
+				diff = Vector3(0, -height_min, 0)
+		
+		new_loc = global_tf.xform(diff)
+	
+	else:
+		new_loc = new_location
+		
+	
+	# Get the difference
+	var old_loc = global_pos
+	var new_translation = new_loc - old_loc
+	
+	# set it
+	self.global_translate(new_translation)
+	OnyxUtils.translate_children(self, new_translation * -1)
+
 
 # ////////////////////////////////////////////////////////////
 # GEOMETRY GENERATION
@@ -285,7 +327,7 @@ func generate_geometry(fix_to_origin_setting):
 			position = Vector3(0, -height_min, 0)
 		OriginPosition.BASE_CORNER:
 			height = height_max - -height_min
-			position = Vector3(x_width, 0, z_width)
+			position = Vector3(x_width, -height_min, z_width)
 			
 	
 #	print("mesh height: ", height)
@@ -319,10 +361,24 @@ func generate_handles():
 	
 	var height_mid = (height_max - height_min) / 2
 	
-	handles["height_max"] = Vector3(0, height_max, 0)
-	handles["height_min"] = Vector3(0, -height_min, 0)
-	handles["x_width"] = Vector3(x_width, height_mid, 0)
-	handles["z_width"] = Vector3(0, height_mid, z_width)
+	match origin_mode:
+		OriginPosition.CENTER:
+			handles["height_max"] = Vector3(0, height_max, 0)
+			handles["height_min"] = Vector3(0, -height_min, 0)
+			handles["x_width"] = Vector3(x_width, 0, 0)
+			handles["z_width"] = Vector3(0, 0, z_width)
+			
+		OriginPosition.BASE:
+			handles["height_max"] = Vector3(0, height_max, 0)
+			handles["height_min"] = Vector3(0, -height_min, 0)
+			handles["x_width"] = Vector3(x_width, height_mid, 0)
+			handles["z_width"] = Vector3(0, height_mid, z_width)
+			
+		OriginPosition.BASE_CORNER:
+			handles["height_max"] = Vector3(x_width, height_max, z_width)
+			handles["height_min"] = Vector3(x_width, -height_min, z_width)
+			handles["x_width"] = Vector3(x_width * 2, height_mid, z_width)
+			handles["z_width"] = Vector3(x_width, height_mid, z_width * 2)
 	
 
 # Converts the dictionary format of handles to a pair of handles with optional triangle for normal snaps.
@@ -363,21 +419,36 @@ func convert_handles_to_onyx(handles) -> Dictionary:
 func update_handle_from_gizmo(index, coordinate):
 	
 	match index:
-		0: height_max = max(coordinate.y, 0)
-		1: height_min = min(coordinate.y, 0) * -1
+		0: height_max = max(coordinate.y, -height_min)
+		1: height_min = min(coordinate.y, height_max) * -1
 		2: x_width = max(coordinate.x, 0)
 		3: z_width = max(coordinate.z, 0)
 		
 	# Keep width proportional with gizmos if true
 	if index == 2  || index == 3:
+		var final_x = coordinate.x
+		var final_z = coordinate.z
+		
+		if origin_mode == OriginPosition.BASE_CORNER:
+			final_x = coordinate.x / 2
+			final_z = coordinate.z / 2
+		
+		# If the width is proportional, balance it
 		if keep_width_proportional == true:
-			match index:
-				2:
-					x_width = max(coordinate.x, 0)
-					z_width = max(coordinate.x, 0)
-				3:
-					x_width = max(coordinate.z, 0)
-					z_width = max(coordinate.z, 0)
+			if index == 2:
+				x_width = max(final_x, 0)
+				z_width = max(final_x, 0)
+			else:
+				x_width = max(final_z, 0)
+				z_width = max(final_z, 0)
+				
+		# Otherwise directly assign it.
+		else:
+			if index == 2:
+				x_width = max(final_x, 0)
+			else:
+				z_width = max(final_z, 0)
+
 	
 	generate_handles()
 	
@@ -385,18 +456,39 @@ func update_handle_from_gizmo(index, coordinate):
 # Applies the current handle values to the shape attributes
 func apply_handle_attributes():
 	
-	height_max = handles["height_max"].y
-	height_min = handles["height_min"].y * -1
-	x_width = handles["x_width"].x
-	z_width = handles["z_width"].z
+	# If the base corner is the current origin, we need to deal with widths differently.
+	if origin_mode == OriginPosition.BASE_CORNER:
+		height_max = handles["height_max"].y
+		height_min = handles["height_min"].y * -1
+		x_width = handles["x_width"].x / 2
+		z_width = handles["z_width"].z / 2
+		
+	else:
+		height_max = handles["height_max"].y
+		height_min = handles["height_min"].y * -1
+		x_width = handles["x_width"].x
+		z_width = handles["z_width"].z
 	
 
 # Calibrates the stored properties if they need to change before the origin is updated.
 # Only called during Gizmo movements for origin auto-updating.
 func balance_handles():
+
+	var height_diff = height_max + height_min
 	
 	# balance handles here
-	pass
+	match origin_mode:
+		OriginPosition.CENTER:
+			height_max = height_diff / 2
+			height_min = height_diff / 2
+			
+		OriginPosition.BASE:
+			height_max = height_diff
+			height_min = 0
+			
+		OriginPosition.BASE_CORNER:
+			height_max = height_diff
+			height_min = 0
 
 # ////////////////////////////////////////////////////////////
 # STANDARD HANDLE FUNCTIONS
