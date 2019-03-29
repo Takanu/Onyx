@@ -385,13 +385,13 @@ func build_rounded_rect(mesh: OnyxMesh, min_point, max_point, axis: String, corn
 		var start_cap_uvs = []
 		var end_cap_uvs = []
 		
-		# 1 - Proportional Overlap
+		# 0 - Proportional Overlap
 		if unwrap_mode == 0:
 			start_cap_uvs = VectorUtils.vector3_to_vector2_array(start_cap, 'X', 'Z')
 			end_cap_uvs = VectorUtils.vector3_to_vector2_array(end_cap, 'X', 'Z')
 		
 		
-		# 0 - Clamped Overlap
+		# 1 - Clamped Overlap
 		if unwrap_mode == 1:
 			var diff = max_point - min_point
 			var clamped_vs = []
@@ -455,16 +455,16 @@ func build_rounded_rect(mesh: OnyxMesh, min_point, max_point, axis: String, corn
 			# UVS
 			var uvs = []
 			
-			# 0 - Clamped Overlap
+			# 0 - Proportional Overlap
 			if unwrap_mode == 0:
-				uvs = [Vector2(0.0, 0.0), Vector2(1.0, 0.0), Vector2(1.0, 1.0), Vector2(0.0, 1.0)]
-			
-			# 1 - Proportional Overlap
-			elif unwrap_mode == 1:
 				var height = (t_1 - b_1).length()
 				var new_width = (t_2 - t_1).length()
 				uvs = [Vector2(total_edge_length, 0.0), Vector2(total_edge_length + new_width, 0.0), 
 				Vector2(total_edge_length + new_width, height), Vector2(total_edge_length, height)]
+			
+			# 1 - Clamped Overlap
+			elif unwrap_mode == 1:
+				uvs = [Vector2(0.0, 0.0), Vector2(1.0, 0.0), Vector2(1.0, 1.0), Vector2(0.0, 1.0)]
 			
 			var vertex_set = [b_1, b_2, t_2, t_1]
 			mesh.add_ngon(vertex_set, [], [], uvs, normals)

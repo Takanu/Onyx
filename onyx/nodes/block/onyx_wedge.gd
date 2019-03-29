@@ -246,6 +246,51 @@ func update_origin():
 	self.global_translate(new_loc - old_loc)
 	
 
+
+# Updates the origin position for the currently-active Origin Mode, either building a new one using properties or through a new position.
+# DOES NOT update the origin when the origin property has changed, for use with handle commits.
+func update_origin_position(new_location = null):
+	
+	var new_loc = Vector3()
+	var global_tf = self.global_transform
+	var global_pos = self.global_transform.origin
+	
+	var diff = Vector3()
+	
+	var max_x = 0
+	if base_x_size < point_width:
+		max_x = point_width
+	else:
+		max_x = base_x_size
+	
+	if new_location == null:
+		
+		match origin_mode:
+			OriginPosition.CENTER:
+				diff = Vector3(0, 0, 0) 
+			
+			OriginPosition.BASE:
+				diff = Vector3(0, 0, 0) 
+			
+			OriginPosition.BASE_CORNER:
+				diff = Vector3(0, 0, 0)
+		
+		new_loc = global_tf.xform(diff)
+	
+	else:
+		new_loc = new_location
+		
+	
+	# Get the difference
+	var old_loc = global_pos
+	var new_translation = new_loc - old_loc
+	
+	# set it
+	self.global_translate(new_translation)
+	OnyxUtils.translate_children(self, new_translation * -1)
+
+
+
 # ////////////////////////////////////////////////////////////
 # GEOMETRY GENERATION
 
@@ -357,12 +402,44 @@ const transform_offset = Vector3(0, 0.3, 0)
 func generate_handles():
 	handles.clear()
 	
-	handles["point_position_x"] = point_position + transform_handle_x + transform_offset
-	handles["point_position_y"] = point_position + transform_handle_y + transform_offset
-	handles["point_position_z"] = point_position + transform_handle_z + transform_offset
-	handles['point_width'] = Vector3(point_position.x + point_width / 2, point_position.y, point_position.z)
-	handles['base_x_size'] = Vector3(base_x_size / 2, 0, 0)
-	handles['base_z_size'] = Vector3(0, 0, base_z_size / 2)
+	var max_x = 0
+	if base_x_size < point_width:
+		max_x = point_width
+	else:
+		max_x = base_x_size
+	
+	var point_pos_x = point_position + transform_handle_x + transform_offset
+	var point_pos_y = point_position + transform_handle_y + transform_offset
+	var point_pos_z = point_position + transform_handle_z + transform_offset
+	
+	var half_height = Vector3(0, point_position.y/2, 0)
+	var full_height = Vector3(0, point_position.y, 0)
+	var half_base = Vector3(max_x / 2, 0, base_z_size / 2)
+	
+	match origin_mode:
+		OriginPosition.CENTER:
+			handles["point_position_x"] = point_pos_x - half_height
+			handles["point_position_y"] = point_pos_y - half_height
+			handles["point_position_z"] = point_pos_z - half_height
+			handles['point_width'] = Vector3(point_position.x + point_width / 2, point_position.y / 2, point_position.z)
+			handles['base_x_size'] = Vector3(base_x_size / 2, 0, 0) - half_height
+			handles['base_z_size'] = Vector3(0, 0, base_z_size / 2) - half_height
+			
+		OriginPosition.BASE:
+			handles["point_position_x"] = point_pos_x
+			handles["point_position_y"] = point_pos_y
+			handles["point_position_z"] = point_pos_z
+			handles['point_width'] = Vector3(point_position.x + point_width / 2, point_position.y, point_position.z)
+			handles['base_x_size'] = Vector3(base_x_size / 2, 0, 0)
+			handles['base_z_size'] = Vector3(0, 0, base_z_size / 2)
+			
+		OriginPosition.BASE_CORNER:
+			handles["point_position_x"] = point_pos_x + half_base
+			handles["point_position_y"] = point_pos_y + half_base
+			handles["point_position_z"] = point_pos_z + half_base
+			handles['point_width'] = Vector3(point_position.x + point_width / 2, point_position.y, point_position.z) + half_base
+			handles['base_x_size'] = Vector3(base_x_size / 2, 0, 0) + half_base
+			handles['base_z_size'] = Vector3(0, 0, base_z_size / 2) + half_base
 	
 
 # Converts the dictionary format of handles to a pair of handles with optional triangle for normal snaps.
@@ -403,28 +480,98 @@ func convert_handles_to_onyx(handles) -> Dictionary:
 
 # Changes the handle based on the given index and coordinates.
 func update_handle_from_gizmo(index, coordinate):
+
+	var max_x = 0
+	if base_x_size < point_width:
+		max_x = point_width
+	else:
+		max_x = base_x_size
 	
-	match index:
-		0: point_position.x = coordinate.x - transform_handle_x.x - transform_offset.x
-		1: point_position.y = coordinate.y - transform_handle_y.y - transform_offset.y
-		2: point_position.z = coordinate.z - transform_handle_z.z - transform_offset.z
-		3: point_width = ( max(coordinate.x, 0) - point_position.x) * 2
-		4: base_x_size = max(coordinate.x, 0) * 2
-		5: base_z_size = max(coordinate.z, 0) * 2
-		
+	var point_base_diff = point_width - base_x_size
+
+	if origin_mode == OriginPosition.CENTER:
+		match index:
+			0: point_position.x = coordinate.x - transform_handle_x.x - transform_offset.x
+			1: point_position.y = (coordinate.y * 2) - transform_handle_y.y - (transform_offset.y * 2)
+			2: point_position.z = coordinate.z - transform_handle_z.z - transform_offset.z
+			3: point_width = ( max(coordinate.x, 0) - point_position.x) * 2
+			4: base_x_size = max(coordinate.x, 0) * 2
+			5: base_z_size = max(coordinate.z, 0) * 2
+	
+	if origin_mode == OriginPosition.BASE:
+		match index:
+			0: point_position.x = coordinate.x - transform_handle_x.x - transform_offset.x
+			1: point_position.y = coordinate.y - transform_handle_y.y - transform_offset.y
+			2: point_position.z = coordinate.z - transform_handle_z.z - transform_offset.z
+			3: point_width = ( max(coordinate.x, 0) - point_position.x) * 2
+			4: base_x_size = max(coordinate.x, 0) * 2
+			5: base_z_size = max(coordinate.z, 0) * 2
+	
+	if origin_mode == OriginPosition.BASE_CORNER:
+		match index:
+			0: point_position.x = coordinate.x - transform_handle_x.x - transform_offset.x - (max_x / 2)
+			1: point_position.y = coordinate.y - transform_handle_y.y - transform_offset.y
+			2: point_position.z = coordinate.z - transform_handle_z.z - transform_offset.z - (base_z_size / 2)
+			
+			3: 
+				if point_width > base_x_size:
+					point_width = ( max(coordinate.x, 0) - point_position.x)
+				else:
+					point_width = ( max(coordinate.x, 0) - point_position.x) + (point_base_diff / 2)
+			
+			4: 
+				if base_x_size > point_width:
+					base_x_size = max(coordinate.x, 0)
+				else:
+					base_x_size = max(coordinate.x, 0) - (point_base_diff / 2)
+					
+			5: base_z_size = max(coordinate.z, 0)
+	
 	generate_handles()
 	
 
 # Applies the current handle values to the shape attributes
 func apply_handle_attributes():
 	
-	point_position.x = handles['point_position_x'].x - transform_handle_x.x - transform_offset.x
-	point_position.y = handles['point_position_y'].y - transform_handle_y.y - transform_offset.y
-	point_position.z = handles['point_position_z'].z - transform_handle_z.z - transform_offset.z
-	point_width = (handles['point_width'].x - point_position.x) * 2
-	base_x_size = handles['base_x_size'].x * 2
-	base_z_size = handles['base_z_size'].z * 2
+	var max_x = 0
+	if base_x_size < point_width:
+		max_x = point_width
+	else:
+		max_x = base_x_size
 
+	var half_height = Vector3(0, point_position.y/2, 0)
+	var full_height = Vector3(0, point_position.y, 0)
+	var half_base = Vector3(max_x / 2, 0, base_z_size / 2)
+	var point_base_diff = point_width - base_x_size
+
+	if origin_mode == OriginPosition.CENTER:
+		point_position.x = handles['point_position_x'].x - transform_handle_x.x - transform_offset.x
+		point_position.y = (handles['point_position_y'].y - transform_handle_y.y - transform_offset.y) * 2
+		point_position.z = handles['point_position_z'].z - transform_handle_z.z - transform_offset.z
+		point_width = (handles['point_width'].x - point_position.x) * 2
+		base_x_size = handles['base_x_size'].x * 2
+		base_z_size = handles['base_z_size'].z * 2
+	
+	if origin_mode == OriginPosition.BASE:
+		point_position.x = handles['point_position_x'].x - transform_handle_x.x - transform_offset.x
+		point_position.y = handles['point_position_y'].y - transform_handle_y.y - transform_offset.y
+		point_position.z = handles['point_position_z'].z - transform_handle_z.z - transform_offset.z
+		point_width = (handles['point_width'].x - point_position.x) * 2
+		base_x_size = handles['base_x_size'].x * 2
+		base_z_size = handles['base_z_size'].z * 2
+	
+	if origin_mode == OriginPosition.BASE_CORNER:
+		point_position.x = handles['point_position_x'].x - transform_handle_x.x - transform_offset.x - half_base.x
+		point_position.y = handles['point_position_y'].y - transform_handle_y.y - transform_offset.y
+		point_position.z = handles['point_position_z'].z - transform_handle_z.z - transform_offset.z - half_base.z
+		
+		if point_base_diff > 0:
+			point_width = handles['point_width'].x - point_position.x
+			base_x_size = handles['base_x_size'].x - (point_base_diff / 2)
+		else:
+			point_width = handles['point_width'].x - point_position.x + (point_base_diff / 2)
+			base_x_size = handles['base_x_size'].x
+		
 # Removes the transform offset applied to handles for the sake of visual clarity on the screen.
 #func 
 

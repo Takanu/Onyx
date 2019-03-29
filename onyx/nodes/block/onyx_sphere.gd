@@ -276,6 +276,7 @@ func update_origin_position(new_location = null):
 	
 	if new_location == null:
 		
+		# redundant, keeping it here for structural reasons.
 		match origin_mode:
 			OriginPosition.CENTER:
 				diff = Vector3(0, 0, 0)
