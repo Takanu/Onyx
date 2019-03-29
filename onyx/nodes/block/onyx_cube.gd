@@ -206,10 +206,11 @@ func update_positions(new_value):
 	update_origin()
 	balance_handles()
 	generate_geometry(true)
-	
+
+
+# Changes the origin position relative to the shape and regenerates geometry and handles.
 func update_origin_mode(new_value):
-	#print("ONYXCUBE set_origin_mode")
-	
+
 	if previous_origin_mode == new_value:
 		return
 	
@@ -217,8 +218,12 @@ func update_origin_mode(new_value):
 	update_origin()
 	balance_handles()
 	generate_geometry(true)
-	previous_origin_mode = origin_mode
 	
+	# ensure the origin mode toggle is preserved, and ensure the adjusted handles are saved.
+	previous_origin_mode = origin_mode
+	old_handles = handles.duplicate()
+
+
 func update_unwrap_method(new_value):
 	unwrap_method = new_value
 	generate_geometry(true)

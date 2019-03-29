@@ -178,7 +178,7 @@ func get_handle_value(index):
 func commit_handle(index, restore, cancel=false):
 	if not cancel:
 		
-		print("COMMITTING NEW UNDO DATA: ", restore)
+#		print("COMMITTING NEW UNDO DATA: ", restore)
 		
 		# Commit the undo data first so we have it for later
 		var new_data = handle_set[index][0]

@@ -152,10 +152,11 @@ func update_positions(new_value):
 	update_origin()
 	balance_handles()
 	generate_geometry(true)
-	
+
+
 # Changes the origin position relative to the shape and regenerates geometry and handles.
 func update_origin_mode(new_value):
-	
+
 	if previous_origin_mode == new_value:
 		return
 	
@@ -163,8 +164,10 @@ func update_origin_mode(new_value):
 	update_origin()
 	balance_handles()
 	generate_geometry(true)
-	previous_origin_mode = origin_mode
 	
+	# ensure the origin mode toggle is preserved, and ensure the adjusted handles are saved.
+	previous_origin_mode = origin_mode
+	old_handles = handles.duplicate()
 
 func update_unwrap_method(new_value):
 	unwrap_method = new_value
@@ -492,7 +495,7 @@ func update_handle_from_gizmo(index, coordinate):
 	if origin_mode == OriginPosition.CENTER:
 		match index:
 			0: point_position.x = coordinate.x - transform_handle_x.x - transform_offset.x
-			1: point_position.y = (coordinate.y * 2) - transform_handle_y.y - (transform_offset.y * 2)
+			1: point_position.y = (coordinate.y * 2) - transform_handle_y.y - (transform_offset.y * 3)
 			2: point_position.z = coordinate.z - transform_handle_z.z - transform_offset.z
 			3: point_width = ( max(coordinate.x, 0) - point_position.x) * 2
 			4: base_x_size = max(coordinate.x, 0) * 2

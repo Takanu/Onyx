@@ -22,6 +22,8 @@ static func onyx_ready(node):
 		
 		# Ensure the old_handles variable match the current handles we have for undo/redo.
 		node.old_handles = node.handles.duplicate(true)
+		
+
 
 # ////////////////////////////////////////////////////////////
 # MESH RENDERING
@@ -94,7 +96,9 @@ static func handle_commit(node, index, coord):
 	
 	node.update_handle_from_gizmo(index, coord)
 	node.apply_handle_attributes()
-	node.update_origin_position()
+	
+	if node.has_method('update_origin_position') == true:
+		node.update_origin_position()
 	
 	# store current handle points as the old ones, so they can be used later
 	# as an undo point before the next commit.
@@ -107,6 +111,10 @@ static func handle_commit(node, index, coord):
 static func get_gizmo_redo_state(node):
 	var saved_translation = node.global_transform.origin
 	return [node.handles.duplicate(true), saved_translation]
+	
+	# If it has this method, it will have an origin setting.  This must then be preserved.
+	if node.has_method('update_origin_position') == true:
+		node.update_origin_position()
 
 
 # Returns a state specifically for undo functions in SnapGizmo.
@@ -125,8 +133,11 @@ static func restore_state(node, state):
 	node.handles = new_handles.duplicate(true)
 	node.old_handles = new_handles.duplicate(true)
 	node.apply_handle_attributes()
-	node.update_origin_position(stored_location)
-	node.balance_handles()
+	
+	if node.has_method('update_origin_position') == true:
+		node.update_origin_position(stored_location)
+	if node.has_method('balance_handles') == true:
+		node.balance_handles()
 	node.generate_geometry(true)
 	
 	

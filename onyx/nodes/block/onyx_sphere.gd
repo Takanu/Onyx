@@ -169,12 +169,11 @@ func update_positions(new_value):
 	update_origin()
 	balance_handles()
 	generate_geometry(true)
-	
+
+
 # Changes the origin position relative to the shape and regenerates geometry and handles.
 func update_origin_mode(new_value):
-	
-# 	print("updating origin...")
-	
+
 	if previous_origin_mode == new_value:
 		return
 	
@@ -182,8 +181,11 @@ func update_origin_mode(new_value):
 	update_origin()
 	balance_handles()
 	generate_geometry(true)
-	previous_origin_mode = origin_mode
 	
+	# ensure the origin mode toggle is preserved, and ensure the adjusted handles are saved.
+	previous_origin_mode = origin_mode
+	old_handles = handles.duplicate()
+
 
 func update_unwrap_method(new_value):
 	unwrap_method = new_value
@@ -397,23 +399,50 @@ func convert_handles_to_onyx(handles) -> Dictionary:
 # Changes the handle based on the given index and coordinates.
 func update_handle_from_gizmo(index, coordinate):
 	
+	var target_val = 0.0
+	match index:
+			0: target_val = max(coordinate.y, 0)
+			1: target_val = max(coordinate.x, 0)
+			2: target_val = max(coordinate.z, 0)
+	
+	# Multiply the target depending on where the origin is (to adjust for different handle scales).
 	if origin_mode == OriginPosition.CENTER:
-		match index:
-			0: height = max(coordinate.y, 0) * 2
-			1: x_width = max(coordinate.x, 0) * 2
-			2: z_width = max(coordinate.z, 0) * 2
+		target_val = target_val * 2
+	elif origin_mode == OriginPosition.BASE && index != 0:
+		target_val = target_val * 2
 	
-	if origin_mode == OriginPosition.BASE:
-		match index:
-			0: height = max(coordinate.y, 0) 
-			1: x_width = max(coordinate.x, 0) * 2
-			2: z_width = max(coordinate.z, 0) * 2
+	# If proportional shape toggle is on, apply to all values
+	if keep_shape_proportional == true:
+		height = target_val
+		x_width = target_val
+		z_width = target_val
 	
-	if origin_mode == OriginPosition.BASE_CORNER:
+	# Otherwise apply selectively.
+	else:
 		match index:
-			0: height = max(coordinate.y, 0) 
-			1: x_width = max(coordinate.x, 0)
-			2: z_width = max(coordinate.z, 0)
+			0: height = target_val
+			1: x_width = target_val
+			2: z_width = target_val
+	
+	
+	# Old handle adjustments, for reference.
+#	if origin_mode == OriginPosition.CENTER:
+#		match index:
+#			0: height = max(coordinate.y, 0) * 2
+#			1: x_width = max(coordinate.x, 0) * 2
+#			2: z_width = max(coordinate.z, 0) * 2
+#
+#	if origin_mode == OriginPosition.BASE:
+#		match index:
+#			0: height = max(coordinate.y, 0) 
+#			1: x_width = max(coordinate.x, 0) * 2
+#			2: z_width = max(coordinate.z, 0) * 2
+#
+#	if origin_mode == OriginPosition.BASE_CORNER:
+#		match index:
+#			0: height = max(coordinate.y, 0) 
+#			1: x_width = max(coordinate.x, 0)
+#			2: z_width = max(coordinate.z, 0)
 	
 	generate_handles()
 	

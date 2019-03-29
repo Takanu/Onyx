@@ -172,9 +172,7 @@ func update_positions(new_value):
 	
 # Changes the origin position relative to the shape and regenerates geometry and handles.
 func update_origin_mode(new_value):
-#	print("****************")
-#	print("ONYXCUBE set_origin_mode")
-	
+
 	if previous_origin_mode == new_value:
 		return
 	
@@ -182,8 +180,10 @@ func update_origin_mode(new_value):
 	update_origin()
 	balance_handles()
 	generate_geometry(true)
-	previous_origin_mode = origin_mode
 	
+	# ensure the origin mode toggle is preserved, and ensure the adjusted handles are saved.
+	previous_origin_mode = origin_mode
+	old_handles = handles.duplicate()
 
 func update_unwrap_method(new_value):
 	unwrap_method = new_value
@@ -311,8 +311,6 @@ func generate_geometry(fix_to_origin_setting):
 	# Prevents geometry generation if the node hasn't loaded yet
 	if is_inside_tree() == false:
 		return
-		
-	print('onyxcylinder - generating geometry')
 	
 	# Ensure the geometry is generated to fit around the current origin point.
 	var height = 0
@@ -355,8 +353,6 @@ func render_onyx_mesh():
 # Uses the current settings to refresh the handle list.
 func generate_handles():
 	handles.clear()
-	
-	print('onyxcylinder - generating handles')
 	
 	var height_mid = (height_max - height_min) / 2
 	
