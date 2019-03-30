@@ -30,6 +30,8 @@ static func onyx_ready(node):
 
 # Updates the main material slot for Onyx shapes.
 static func update_material(node, new_value):
+
+	print("updating mat - ", node, new_value)
 	
 	# Prevents geometry generation if the node hasn't loaded yet, otherwise it will try to set a blank mesh.
 	if node.is_inside_tree() == false:
@@ -38,6 +40,7 @@ static func update_material(node, new_value):
 	# If we don't have an onyx_mesh with any data in it, we need to construct that first to apply a material to it.
 	# This shouldn't be cleared during the duplication process, but it does.  Hmm...
 	if node.onyx_mesh.tris.size() == 0:
+		print("regenerating mesh from mat update - ", node, new_value)
 		node.generate_geometry(true)
 	
 	var array_mesh = node.onyx_mesh.render_surface_geometry(node.material)

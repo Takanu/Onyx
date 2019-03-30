@@ -77,8 +77,7 @@ export(Material) var material = null setget update_material
 
 # Global initialisation
 func _enter_tree():
-	#print("ONYXCUBE _enter_tree")
-		
+	
 	# If this is being run in the editor, sort out the gizmo.
 	if Engine.editor_hint == true:
 		
@@ -108,17 +107,7 @@ func _notification(what):
 			call_deferred("_editor_transform_changed")
 		
 func _editor_transform_changed():
-	
-	# The shape only needs to be re-generated when the origin is moved or when the shape changes.
-	#print("ONYXCUBE _editor_transform_changed")
-	#generate_geometry(true)
-	
-	print("========")
-	print('local translation: ', self.translation)
-	print('to-global translation: ', self.to_global(self.translation) )
-	print('global translation: ', self.global_transform.origin)
-	
-	#pass
+	pass
 
 				
 # ////////////////////////////////////////////////////////////
@@ -201,7 +190,7 @@ func update_subdivisions(new_value):
 	
 # Used to recalibrate both the origin point location and the position handles.
 func update_positions(new_value):
-	#print("ONYXCUBE update_positions")
+	
 	update_origin_setting = true
 	update_origin()
 	balance_handles()
@@ -222,7 +211,6 @@ func update_origin_mode(new_value):
 	# ensure the origin mode toggle is preserved, and ensure the adjusted handles are saved.
 	previous_origin_mode = origin_mode
 	old_handles = handles.duplicate()
-
 
 func update_unwrap_method(new_value):
 	unwrap_method = new_value

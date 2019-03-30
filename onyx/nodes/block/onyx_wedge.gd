@@ -68,10 +68,6 @@ export(Material) var material = null setget update_material
 
 # Global initialisation
 func _enter_tree():
-	#print("ONYXCUBE _enter_tree")
-		
-	# Load and generate geometry
-	#generate_geometry(true) 
 		
 	# If this is being run in the editor, sort out the gizmo.
 	if Engine.editor_hint == true:
@@ -299,6 +295,10 @@ func update_origin_position(new_location = null):
 
 # Using the set handle points, geometry is generated and drawn.  The handles owned by the gizmo are also updated.
 func generate_geometry(fix_to_origin_setting):
+
+	# Prevents geometry generation if the node hasn't loaded yet
+	if is_inside_tree() == false:
+		return
 	
 	# Ensure the geometry is generated to fit around the current origin point.
 	var position = Vector3(0, 0, 0)

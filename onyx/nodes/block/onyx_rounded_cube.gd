@@ -404,9 +404,6 @@ func generate_geometry(fix_to_origin_setting):
 	if is_inside_tree() == false:
 		return
 	
-	#print("ONYXCUBE generate_geometry")
-	#print("Regenerating geometry")
-	
 	var maxPoint = Vector3(x_plus_position, y_plus_position, z_plus_position)
 	var minPoint = Vector3(-x_minus_position, -y_minus_position, -z_minus_position)
 	
