@@ -5,6 +5,14 @@ The first set of tools included are a series of versatile Constructive Solid Geo
 
 Other toolsets will be included in the future that all work together seamlessly, expanding the possibilities of 3D level design in Godot.
 
+## Installation Instructions
+- Create a folder called 'addons' in the main folder of your project.
+- Drag 'onyx' into the addons folder.
+- View all your currently available plugins by going to Project > Project Settings > Plugins.
+- Activate Onyx by clicking on the Status dropdown and changing it to 'Active'.
+
+Once done, all the extra nodes this plugin provides will be available for you to add in your scenes.
+
 
 ## Current Tools Included
 
@@ -17,6 +25,7 @@ Other toolsets will be included in the future that all work together seamlessly,
 - OnyxWedge
 - OnyxRamp
 - OnyxStairs
+
 
 ## Future Toolsets
 
