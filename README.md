@@ -29,14 +29,18 @@ Once done, all the extra nodes this plugin provides will be available for you to
 
 ## Future Toolsets
 
-### Blueprint Set
-Mark out, annotate and plan 3D spaces.
+### Flux Set
+Node and mesh distribution tools - scattering objects randomly or orderly across an area, build fences and geometric structures with array tools and easily pin down out-of-bound colliders with a few clicks.
 
-### Flex Set
-Develop complex mesh and spatial assets that can be reused, stretched and re-sized intelligently.
+### Atlas Set
+Advanced CSG primitive building tools using custom polygons and spline networks.  Build bespoke foundations, road networks, building shells, prototype assets and more.
+
+### Blueprint Set
+Mark out, annotate and plan 3D spaces with text and wireframe tools.
+
+### 'Spatial' Set
+Develop compound mesh and spatial assets that can be reused, stretched and re-sized intelligently across your scenes.
 
 ### Adaptive Mesh Set
-Transform pre-existing blocks with insets, stencils, arrays and more.
+Transform pre-existing Onyx and Atlas nodes with insets, stencils and inset arrays.
 
-### Path Set
-Complex array and pathing tools for barriers, roads and other structures.
