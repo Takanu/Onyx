@@ -3,7 +3,7 @@ extends CSGMesh
 
 # ////////////////////////////////////////////////////////////
 # DEPENDENCIES
-var OnyxUtils = load("res://addons/onyx/nodes/block/onyx_utils.gd")
+var OnyxUtils = load("res://addons/onyx/nodes/onyx/onyx_utils.gd")
 var VectorUtils = load("res://addons/onyx/utilities/vector_utils.gd")
 
 # ////////////////////////////////////////////////////////////
@@ -27,10 +27,10 @@ var plugin
 var onyx_mesh = OnyxMesh.new()
 
 # The handle points that will be used to resize the mesh (NOT built in the format required by the gizmo)
-var handles = {}
+var handles : Dictionary = {}
 
 # Old handle points that are saved every time a handle has finished moving.
-var old_handles = {}
+var old_handles : Dictionary = {}
 
 # The offset of the origin relative to the rest of the mesh.
 var origin_offset = Vector3(0, 0, 0)
@@ -38,29 +38,25 @@ var origin_offset = Vector3(0, 0, 0)
 # Used to decide whether to update the geometry.  Enables parents to be moved without forcing updates.
 var local_tracked_pos = Vector3(0, 0, 0)
 
-# ////////////////////////////////////////////////////////////
-# EXPORTS
 
 # Exported variables representing all usable handles for re-shaping the mesh, in order.
 # Must be exported to be saved in a scene?  smh.
-export(Vector3) var start_position = Vector3(0.0, 0.0, 0.0) setget update_start_position
-export(Vector3) var end_position = Vector3(0.0, 1.0, 2.0) setget update_end_position
+export(Vector3) var start_position = Vector3(0, 0, 0) setget update_start_position
+export(Vector3) var start_rotation = Vector3(0, 0, 0) setget update_start_rotation
+export(Vector3) var end_position = Vector3(0, 1, 2) setget update_end_position
+export(Vector3) var end_rotation = Vector3(0, 0, 0) setget update_end_rotation
 
-export(float) var stair_width = 2 setget update_stair_width
-export(float) var stair_depth = 0.4 setget update_stair_depth
-export(int) var stair_count = 4 setget update_stair_count
+export(float) var ramp_width = 2 setget update_ramp_width
+export(float) var ramp_depth = 0.5 setget update_ramp_depth
+export(bool) var maintain_width = true setget update_maintain_width
+export(int) var horizontal_iterations = 0 setget update_horizontal_iterations
+export(int) var vertical_iterations = 0 setget update_vertical_iterations
 
-export(Vector2) var stair_length_percentage = Vector2(1, 1) setget update_stair_length_percentage
-
-
-
-# BEVELS
-#export(float) var bevel_size = 0.2 setget update_bevel_size
-#enum BevelTarget {Y_AXIS, X_AXIS, Z_AXIS}
-#export(BevelTarget) var bevel_target = BevelTarget.Y_AXIS setget update_bevel_target
+enum RampFillType {NONE, MINUS_Y, PLUS_Y}
+export(RampFillType) var ramp_fill_type = RampFillType.NONE setget update_ramp_fill_type
 
 # UVS
-enum UnwrapMethod {PROPORTIONAL_OVERLAP, CLAMPED_OVERLAP}
+enum UnwrapMethod {PROPORTIONAL_OVERLAP, DIRECT_OVERLAP}
 export(UnwrapMethod) var unwrap_method = UnwrapMethod.PROPORTIONAL_OVERLAP setget update_unwrap_method
 
 export(Vector2) var uv_scale = Vector2(1.0, 1.0) setget update_uv_scale
@@ -102,7 +98,6 @@ func _ready():
 
 	
 func _notification(what):
-	
 	if what == Spatial.NOTIFICATION_TRANSFORM_CHANGED:
 		
 		# check that transform changes are local only
@@ -111,53 +106,61 @@ func _notification(what):
 			call_deferred("_editor_transform_changed")
 		
 func _editor_transform_changed():
-	
-	# The shape only needs to be re-generated when the origin is moved or when the shape changes.
-	#print("ONYXCUBE _editor_transform_changed")
-	#generate_geometry(true)
 	pass
 
 				
 # ////////////////////////////////////////////////////////////
 # PROPERTY UPDATERS
-	
+
+# Used when a handle variable changes in the properties panel.
 func update_start_position(new_value):
 	start_position = new_value
 	generate_geometry(true)
 	
+func update_start_rotation(new_value):
+	start_rotation = new_value
+	generate_geometry(true)
 	
 func update_end_position(new_value):
 	end_position = new_value
 	generate_geometry(true)
 	
-func update_stair_width(new_value):
+func update_end_rotation(new_value):
+	end_rotation = new_value
+	generate_geometry(true)
+	
+func update_ramp_width(new_value):
 	if new_value < 0:
 		new_value = 0
 		
-	stair_width = new_value
+	ramp_width = new_value
 	generate_geometry(true)
 	
-func update_stair_depth(new_value):
+func update_ramp_depth(new_value):
 	if new_value < 0:
 		new_value = 0
 		
-	stair_depth = new_value
+	ramp_depth = new_value
 	generate_geometry(true)
 	
-func update_stair_length_percentage(new_value):
-	if new_value.x < 0:
-		new_value.x = 0
-	if new_value.y < 0:
-		new_value.y = 0
-		
-	stair_length_percentage = new_value
+func update_maintain_width(new_value):
+	maintain_width = new_value
 	generate_geometry(true)
 	
-func update_stair_count(new_value):
-	if new_value < 1:
-		new_value = 1
-		
-	stair_count = new_value
+func update_horizontal_iterations(new_value):
+	if new_value < 0:
+		new_value = 0
+	horizontal_iterations = new_value
+	generate_geometry(true)
+	
+func update_vertical_iterations(new_value):
+	if new_value < 0:
+		new_value = 0
+	vertical_iterations = new_value
+	generate_geometry(true)
+
+func update_ramp_fill_type(new_value):
+	ramp_fill_type = new_value
 	generate_geometry(true)
 	
 func update_unwrap_method(new_value):
@@ -175,7 +178,7 @@ func update_flip_uvs_horizontally(new_value):
 func update_flip_uvs_vertically(new_value):
 	flip_uvs_vertically = new_value
 	generate_geometry(true)
-
+	
 func update_material(new_value):
 	material = new_value
 	OnyxUtils.update_material(self, new_value)
@@ -191,9 +194,14 @@ func generate_geometry(fix_to_origin_setting):
 	if is_inside_tree() == false:
 		return
 	
-	print(self, " - Generating geometry")
-
-	# This shape is too custom to delegate, so it's being done here
+	# Get some basic transform data.
+	var position = Vector3(0, 0, 0)
+	var start_tf = Transform(Basis(start_rotation), start_position)
+	var end_tf = Transform(Basis(end_rotation), end_position)
+	
+	
+	# GENERATION START
+	
 	#   X---------X  e1 e2
 	#	|         |  e3 e4
 	#	|         |
@@ -201,118 +209,189 @@ func generate_geometry(fix_to_origin_setting):
 	#   X---------X  s1 s2
 	#   X---------X  s3 s4
 	
-	# Build a transform
-	var z_axis = (end_position - start_position)
-	z_axis = Vector3(z_axis.x, 0, z_axis.z).normalized()
-	var y_axis = Vector3(0, 1, 0)
-	var x_axis = z_axis.cross(y_axis)
-	
-	var mesh_pos = Vector3()
-	var start_tf = Transform(x_axis, y_axis, z_axis, start_position)
-	#var end_tf = Transform(x_axis, y_axis, z_axis, end_position)
-	
 	onyx_mesh.clear()
 	
-	# Setup variables
-	var path_diff = end_position - start_position
-	var length_diff = path_diff.length()
-	var diff_inc = path_diff / stair_count
-	
 	# get main 4 vectors
-	var v1 = Vector3(-stair_width/2, stair_depth/2, 0)
-	var v2 = Vector3(stair_width/2, stair_depth/2, 0)
-	var v3 = Vector3(-stair_width/2, -stair_depth/2, 0)
-	var v4 = Vector3(stair_width/2, -stair_depth/2, 0)
+	var v1 = Vector3(-ramp_width/2, ramp_depth/2, 0)
+	var v2 = Vector3(ramp_width/2, ramp_depth/2, 0)
+	var v3 = Vector3(-ramp_width/2, -ramp_depth/2, 0)
+	var v4 = Vector3(ramp_width/2, -ramp_depth/2, 0)
 	
-	var length_percentage_minus = Vector3(0, 0, diff_inc.z/2 * -stair_length_percentage.x)
-	var length_percentage_plus = Vector3(0, 0, diff_inc.z/2 * stair_length_percentage.y)
+	# Get our top and bottom iteration lists.
+	var top_verts = VectorUtils.subdivide_edge(v1, v2, vertical_iterations)
+	var bottom_verts = VectorUtils.subdivide_edge(v3, v4, vertical_iterations)
 	
-	var s1 = v1 + length_percentage_plus
-	var s2 = v2 + length_percentage_plus
-	var s3 = v3 + length_percentage_plus
-	var s4 = v4 + length_percentage_plus
+	# Transform each set to the start and finish
+	var top_start_verts = VectorUtils.transform_vector3_array(top_verts, start_tf)
+	var bottom_start_verts = VectorUtils.transform_vector3_array(bottom_verts, start_tf)
+	var top_end_verts = VectorUtils.transform_vector3_array(top_verts, end_tf)
+	var bottom_end_verts = VectorUtils.transform_vector3_array(bottom_verts, end_tf)
+#
+	# ramp fill type conditionals
+	if ramp_fill_type == 1:
+		for i in top_verts.size():
+			bottom_end_verts[i].y = bottom_start_verts[i].y
+
+	elif ramp_fill_type == 2:
+		for i in top_verts.size():
+			top_start_verts[i].y = top_end_verts[i].y
+	
+	# Metrics for use in unwrapping operations
+	var width = (top_start_verts[1] - top_start_verts[0]).length()
+	var height = (top_start_verts[0] - bottom_start_verts[0]).length()
+	var total_width = width * top_verts.size() - 1
+	var cumulative_width = total_width
+	
+	for i in range( top_verts.size() - 1 ):
+		var s1 = top_start_verts[i]
+		var s2 = top_start_verts[i + 1]
+		var s3 = bottom_start_verts[i]
+		var s4 = bottom_start_verts[i + 1]
 		
-	var e1 = v1 + length_percentage_minus
-	var e2 = v2 + length_percentage_minus
-	var e3 = v3 + length_percentage_minus
-	var e4 = v4 + length_percentage_minus
-	
-	# setup uv arrays
-	var x_minus_uv = [];  var x_plus_uv = []
-	var y_minus_uv = [];  var y_plus_uv = []
-	var z_minus_uv = [];  var z_plus_uv = []
-	
-	# UNWRAP 0 : 1:1 Overlap
-	if unwrap_method == UnwrapMethod.CLAMPED_OVERLAP:
-		var wrap = [Vector2(0.0, 1.0), Vector2(0.0, 0.0), Vector2(1.0, 0.0), Vector2(1.0, 1.0)]
-		x_minus_uv = wrap;  x_plus_uv = wrap;
-		y_minus_uv = wrap;  y_plus_uv = wrap;
-		z_minus_uv = wrap;  z_plus_uv = wrap;
-	
-	elif unwrap_method == UnwrapMethod.PROPORTIONAL_OVERLAP:
-		x_minus_uv = [Vector2(e3.z, -e3.y), Vector2(e1.z, -e1.y), Vector2(s1.z, -s1.y), Vector2(s3.z, -s3.y)]
-		x_plus_uv = [Vector2(s4.z, -s4.y), Vector2(s2.z, -s2.y), Vector2(e2.z, -e2.y), Vector2(e4.z, -e4.y)]
+		var e1 = top_end_verts[i]
+		var e2 = top_end_verts[i + 1]
+		var e3 = bottom_end_verts[i]
+		var e4 = bottom_end_verts[i + 1]
 		
-		y_minus_uv = [Vector2(s4.x, -s4.z), Vector2(e4.x, -e4.z), Vector2(e3.x, -e3.z), Vector2(s3.x, -s3.z)]
-		y_plus_uv = [Vector2(-s1.x, -s1.z), Vector2(-e1.x, -e1.z), Vector2(-e2.x, -e2.z), Vector2(-s2.x, -s2.z)]
+		# UVS
+		var front_uvs = []
+		var back_uvs = []
 		
-		z_minus_uv = [Vector2(-s3.x, -s3.y), Vector2(-s1.x, -s1.y), Vector2(-s2.x, -s2.y), Vector2(-s4.x, -s4.y)]
-		z_plus_uv = [Vector2(-e4.x, -e4.y), Vector2(-e2.x, -e2.y), Vector2(-e1.x, -e1.y), Vector2(-e3.x, -e3.y)]
+		if unwrap_method == UnwrapMethod.DIRECT_OVERLAP:
+			front_uvs = [Vector2(1.0, 1.0), Vector2(0.0, 1.0), Vector2(0.0, 0.0), Vector2(1.0, 0.0)]
+			back_uvs = [Vector2(1.0, 1.0), Vector2(0.0, 1.0), Vector2(0.0, 0.0), Vector2(1.0, 0.0)]
+		
+		elif unwrap_method == UnwrapMethod.PROPORTIONAL_OVERLAP:
+			var uv_1 = Vector2(cumulative_width, height)
+			var uv_2 = Vector2(cumulative_width - width, height)
+			var uv_3 = Vector2(cumulative_width - width, 0)
+			var uv_4 = Vector2(cumulative_width, 0)
+			
+			front_uvs = [uv_1, uv_2, uv_3, uv_4]
+			back_uvs = [uv_2, uv_1, uv_4, uv_3]
+			cumulative_width -= width
+			
+		onyx_mesh.add_ngon([s3, s4, s2, s1], [], [], front_uvs, [])
+		onyx_mesh.add_ngon([e4, e3, e1, e2], [], [], back_uvs, [])
+		
+
+	# calculate horizontal_iterations
+	var bumped_h_iterations = horizontal_iterations + 1
+	var increment = 1.0/float(bumped_h_iterations)
+	var current_percentage = 0
+	var position_diff = end_position - start_position
+	var rotation_diff = end_rotation - start_rotation
 	
-	var path_i = start_position + (diff_inc / 2)
+	cumulative_width = total_width
+	var cumulative_length = 0
+	
 	var i = 0
+	while i < bumped_h_iterations:
+		current_percentage = float(i) / bumped_h_iterations
+		
+		# transform the starts and ends by the interpolation between the start and end transformation
+		var start_percentage = float(i) / bumped_h_iterations
+		var end_percentage = float(i + 1) / bumped_h_iterations
+		
+		var s_pos = start_position + (position_diff * current_percentage)
+		var e_pos = start_position + (position_diff * (current_percentage + increment) )
+		var s_rot = start_rotation + (rotation_diff * current_percentage)
+		var e_rot = start_rotation + (rotation_diff * (current_percentage + increment) )
+		
+		var s_tf = Transform(Basis(s_rot), s_pos)
+		var e_tf = Transform(Basis(e_rot), e_pos)
+		
+		# Transform the vertex sets
+		var m1_top = VectorUtils.transform_vector3_array(top_verts, s_tf)
+		var m1_bottom = VectorUtils.transform_vector3_array(bottom_verts, s_tf)
+		var m2_top = VectorUtils.transform_vector3_array(top_verts, e_tf)
+		var m2_bottom = VectorUtils.transform_vector3_array(bottom_verts, e_tf)
+		
+		var start_uv_z = 0
+		var end_uv_z = 1
+		var quad_width = (m1_top[1] - m1_top[0]).length()
+		var quad_length = (m2_top[0] - m1_top[0]).length()
+		
+		# Iterate through the arrays to build the faces
+		for i in range(m1_top.size() - 1):
+			var s1 = m1_top[i]
+			var s2 = m1_top[i + 1]
+			var s3 = m1_bottom[i]
+			var s4 = m1_bottom[i + 1]
+		
+			var e1 = m2_top[i]
+			var e2 = m2_top[i + 1]
+			var e3 = m2_bottom[i]
+			var e4 = m2_bottom[i + 1]
+			
+			# UVS
+			var top_uvs = []
+			var bottom_uvs = []
+			
+			# 0 - DIRECT OVERLAP
+			if unwrap_method == UnwrapMethod.DIRECT_OVERLAP:
+				top_uvs = [Vector2(1.0, end_uv_z), Vector2(0.0, end_uv_z), Vector2(0.0, start_uv_z), Vector2(1.0, start_uv_z)]
+				bottom_uvs = top_uvs
+		
+			# 1 - PROPORTIONAL OVERLAP
+			elif unwrap_method == UnwrapMethod.PROPORTIONAL_OVERLAP:
+				var uv_1 = Vector2(cumulative_width, cumulative_length)
+				var uv_2 = Vector2(cumulative_width - quad_width, cumulative_length)
+				var uv_3 = Vector2(cumulative_width - quad_width, cumulative_length - quad_length)
+				var uv_4 = Vector2(cumulative_width, cumulative_length - quad_length)
+			
+				top_uvs = [uv_1, uv_2, uv_3, uv_4]
+				bottom_uvs = [uv_4, uv_3, uv_2, uv_1]
+				cumulative_width -= quad_width
+				
+					
+			onyx_mesh.add_ngon([s1, s2, e2, e1], [], [], top_uvs, [])
+			onyx_mesh.add_ngon([e3, e4, s4, s3], [], [], bottom_uvs, [])
+			
+			var iteration_uvs = []
+			
+		
+		# Build the sides.
+		var right_cap_id = m1_top.size() - 1
+		var right_cap = [m1_bottom[right_cap_id], m2_bottom[right_cap_id], m2_top[right_cap_id], m1_top[right_cap_id]]
+		var left_cap = [m2_bottom[0], m1_bottom[0], m1_top[0], m2_top[0]]
+		
+		var right_uvs = []
+		var left_uvs = []
+		
+		# 0 - DIRECT OVERLAP
+		if unwrap_method == UnwrapMethod.DIRECT_OVERLAP:
+			right_uvs = [Vector2(1.0, end_uv_z), Vector2(0.0, end_uv_z), Vector2(0.0, start_uv_z), Vector2(1.0, start_uv_z)]
+			left_uvs = [Vector2(1.0, end_uv_z), Vector2(0.0, end_uv_z), Vector2(0.0, start_uv_z), Vector2(1.0, start_uv_z)]
 	
-	# iterate through path
-	while i < stair_count:
-		var step_start = path_i
-		var step_tf = Transform(Basis(), step_start)
+		# 1 - PROPORTIONAL OVERLAP
+		elif unwrap_method == UnwrapMethod.PROPORTIONAL_OVERLAP:
+			var quad_height = (m1_top[0] - m1_bottom[0]).length()
+				
+			var uv_1 = Vector2(cumulative_length, 0)
+			var uv_2 = Vector2(cumulative_length - quad_length, 0)
+			var uv_3 = Vector2(cumulative_length - quad_length, quad_height)
+			var uv_4 = Vector2(cumulative_length, quad_height)
+			
+			right_uvs = [uv_4, uv_3, uv_2, uv_1]
+			left_uvs = [uv_3, uv_4, uv_1, uv_2]
+			
 		
-		# transform them for the start and finish
-		var ms_1 = step_tf.xform(s1)
-		var ms_2 = step_tf.xform(s2)
-		var ms_3 = step_tf.xform(s3)
-		var ms_4 = step_tf.xform(s4)
-		
-		var me_1 = step_tf.xform(e1)
-		var me_2 = step_tf.xform(e2)
-		var me_3 = step_tf.xform(e3)
-		var me_4 = step_tf.xform(e4)
-		
-		var flat_distance = Vector3(diff_inc.x, 0, diff_inc.z) / 2
-		
-		# build the step vertices
-		var x_minus = [me_3, me_1, ms_1, ms_3]
-		var x_plus = [ms_4, ms_2, me_2, me_4]
-		
-		var y_minus = [ms_4, me_4, me_3, ms_3]
-		var y_plus = [ms_1, me_1, me_2, ms_2]
-		
-		var z_minus = [ms_3, ms_1, ms_2, ms_4]
-		var z_plus = [me_4, me_2, me_1, me_3]
-		
-		
-		# add it to the mesh
-		onyx_mesh.add_ngon(x_minus, [], [], x_minus_uv, [])
-		onyx_mesh.add_ngon(x_plus, [], [], x_plus_uv, [])
-		onyx_mesh.add_ngon(y_minus, [], [], y_minus_uv, [])
-		onyx_mesh.add_ngon(y_plus, [], [], y_plus_uv, [])
-		onyx_mesh.add_ngon(z_minus, [], [], z_minus_uv, [])
-		onyx_mesh.add_ngon(z_plus, [], [], z_plus_uv, [])
+		onyx_mesh.add_ngon(right_cap, [], [], right_uvs, [])
+		onyx_mesh.add_ngon(left_cap, [], [], left_uvs, [])
+			
 		
 		i += 1
-		path_i += diff_inc
+		cumulative_length -= quad_length
+		cumulative_width = total_width
 	
-	
-	# Generate the geometry
 	render_onyx_mesh()
 	
 	# Re-submit the handle positions based on the built faces, so other handles that aren't the
-	# focus of a handle operation are being updated
-	
+	# focus of a handle operation are being updated\
 	generate_handles()
 	update_gizmo()
 	
-
 
 # Makes any final tweaks, then prepares and transfers the mesh.
 func render_onyx_mesh():
@@ -323,9 +402,9 @@ func render_onyx_mesh():
 # GIZMO HANDLES
 
 # The distance away from the translation point each handle is.
-const transform_handle_x = Vector3(0.3, 0, 0)
-const transform_handle_y = Vector3(0, 0.3, 0)
-const transform_handle_z = Vector3(0, 0, 0.3)
+const transform_handle_x = Vector3(0.5, 0, 0)
+const transform_handle_y = Vector3(0, 0.5, 0)
+const transform_handle_z = Vector3(0, 0, 0.5)
 
 # The amount the translation handle set is moved from the original point by.
 const transform_offset = Vector3(0, 0, 0)
@@ -334,9 +413,8 @@ const transform_offset = Vector3(0, 0, 0)
 func generate_handles():
 	handles.clear()
 	
-	var depth_mid = Vector3(0, stair_depth/2, 0)
-	var width_mid =  Vector3(stair_width/2, 0, 0)
-	var length_mid = Vector3(0, 0, ((end_position - start_position).length() / stair_count) / 2)
+	var depth_mid = Vector3(0, ramp_depth/2, 0)
+	var width_mid =  Vector3(ramp_width/2, 0, 0)
 	
 	handles["start_position_x"] = start_position + transform_handle_x + transform_offset
 	handles["start_position_y"] = start_position + transform_handle_y + transform_offset
@@ -345,7 +423,7 @@ func generate_handles():
 	handles["end_position_y"] = end_position + transform_handle_y + transform_offset
 	handles["end_position_z"] = end_position + transform_handle_z + transform_offset
 	
-	handles["stair_width"] = start_position + depth_mid + width_mid
+	handles["ramp_width"] = start_position + depth_mid + width_mid
 	
 
 # Converts the dictionary format of handles to a pair of handles with optional triangle for normal snaps.
@@ -384,7 +462,7 @@ func convert_handles_to_onyx(handles) -> Dictionary:
 	result["end_position_y"] = handles[4]
 	result["end_position_z"] = handles[5]
 	
-	handles["stair_width"] = handles[6]
+	handles["ramp_width"] = handles[6]
 	
 	return result
 	
@@ -402,7 +480,7 @@ func update_handle_from_gizmo(index, coordinate):
 		5: end_position.z = coordinate.z - transform_handle_z.z - transform_offset.z
 		
 		# stair properties
-		6: stair_width = (coordinate.x - start_position.x) * 2
+		6: ramp_width = (coordinate.x - start_position.x) * 2
 		
 	generate_handles()
 	
@@ -417,7 +495,7 @@ func apply_handle_attributes():
 	end_position.y = handles["end_position_y"].y - transform_handle_y.y - transform_offset.y
 	end_position.z = handles["end_position_z"].z - transform_handle_z.z - transform_offset.z
 	
-	stair_width = (handles["stair_width"].x - start_position.x) * 2
+	ramp_width = (handles["ramp_width"].x - start_position.x) * 2
 
 # Calibrates the stored properties if they need to change before the origin is updated.
 # Only called during Gizmo movements for origin auto-updating.

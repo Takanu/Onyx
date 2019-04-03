@@ -324,7 +324,7 @@ func build_rounded_rect(mesh: OnyxMesh, min_point, max_point, axis: String, corn
 	# ROUNDED CORNERS
 	# build the initial list of corners, positive rotation.
 	var circle_points = []
-	var angle_step = (PI / 2) / corner_iterations
+	var angle_step = (PI / 2) / float(corner_iterations)
 	
 	var current_angle = 0.0
 	var end_angle = (PI / 2)
@@ -334,12 +334,24 @@ func build_rounded_rect(mesh: OnyxMesh, min_point, max_point, axis: String, corn
 		var point_set = []
 		current_angle = (PI / 2) * i
 		end_angle = (PI / 2) * (i + 1)
-	
-		while current_angle <= end_angle:
-			var x = corner_size * cos(current_angle)
-			var y = corner_size * sin(current_angle)
+		
+		var x = corner_size * cos(current_angle)
+		var y = corner_size * sin(current_angle)
+		point_set.append(Vector2(x, y))
+		
+		current_angle += angle_step
+		
+		# adds a lil minus to try and compensate for bit precision issues.
+		while current_angle < end_angle - 0.00001:
+			x = corner_size * cos(current_angle)
+			y = corner_size * sin(current_angle)
 			point_set.append(Vector2(x, y))
+			
 			current_angle += angle_step
+		
+		x = corner_size * cos(end_angle)
+		y = corner_size * sin(end_angle)
+		point_set.append(Vector2(x, y))
 		
 		circle_points.append(point_set)
 		i += 1
@@ -375,7 +387,7 @@ func build_rounded_rect(mesh: OnyxMesh, min_point, max_point, axis: String, corn
 		corners_x = VectorUtils.transform_vector3_array(corners_x, tf_x)
 		
 		# Stack all the vertices into a single array
-		var start_cap = VectorUtils.combine_arrays([corners_top, corners_y, corners_bottom, corners_x])\
+		var start_cap = VectorUtils.combine_arrays([corners_top, corners_y, corners_bottom, corners_x])
 		
 		# Project and duplicate
 		var tf_end_cap = Transform(Basis(), Vector3(max_point.x - min_point.x, 0, 0)) 
@@ -388,7 +400,7 @@ func build_rounded_rect(mesh: OnyxMesh, min_point, max_point, axis: String, corn
 		# 0 - Proportional Overlap
 		if unwrap_mode == 0:
 			start_cap_uvs = VectorUtils.vector3_to_vector2_array(start_cap, 'X', 'Z')
-			end_cap_uvs = VectorUtils.vector3_to_vector2_array(end_cap, 'X', 'Z')
+			end_cap_uvs = start_cap_uvs.duplicate()
 		
 		
 		# 1 - Clamped Overlap

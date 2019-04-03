@@ -3,7 +3,7 @@ extends CSGMesh
 
 # ////////////////////////////////////////////////////////////
 # DEPENDENCIES
-var OnyxUtils = load("res://addons/onyx/nodes/block/onyx_utils.gd")
+var OnyxUtils = load("res://addons/onyx/nodes/onyx/onyx_utils.gd")
 var VectorUtils = load("res://addons/onyx/utilities/vector_utils.gd")
 
 # ////////////////////////////////////////////////////////////
@@ -396,9 +396,9 @@ func render_onyx_mesh():
 # ////////////////////////////////////////////////////////////
 # GIZMO HANDLES
 
-const transform_handle_x = Vector3(0.3, 0, 0)
-const transform_handle_y = Vector3(0, 0.3, 0)
-const transform_handle_z = Vector3(0, 0, 0.3)
+const transform_handle_x = Vector3(0.5, 0, 0)
+const transform_handle_y = Vector3(0, 0.5, 0)
+const transform_handle_z = Vector3(0, 0, 0.5)
 const transform_offset = Vector3(0, 0.3, 0)
 
 # Uses the current settings to refresh the handle list.

@@ -1,6 +1,5 @@
-
+extends Spatial
 tool
-extends "res://addons/onyx/nodes/onyx_node.gd"
 
 # ////////////////////////////////////////////////////////////
 # TOOL ENUMS

@@ -3,8 +3,9 @@ extends CSGMesh
 
 # ////////////////////////////////////////////////////////////
 # DEPENDENCIES
-var OnyxUtils = load("res://addons/onyx/nodes/block/onyx_utils.gd")
+var OnyxUtils = load("res://addons/onyx/nodes/onyx/onyx_utils.gd")
 var VectorUtils = load("res://addons/onyx/utilities/vector_utils.gd")
+
 
 # ////////////////////////////////////////////////////////////
 # TOOL ENUMS
@@ -19,6 +20,7 @@ var previous_origin_mode = OriginPosition.BASE
 # used to force an origin update when using the sliders to adjust positions.
 export(bool) var update_origin_setting = true setget update_positions
 
+
 # ////////////////////////////////////////////////////////////
 # PROPERTIES
 
@@ -28,25 +30,15 @@ var plugin
 # The face set script, used for managing geometric data.
 var onyx_mesh = OnyxMesh.new()
 
-# The gizmo to be used with the node.
-var onyx_gizmo
-
-# Materials assigned to gizmos.
-var gizmo_mat = load("res://addons/onyx/materials/gizmo_t1.tres")
-
 # The handle points that will be used to resize the mesh (NOT built in the format required by the gizmo)
-var handles = {}
+var handles : Dictionary = {}
 
 # Old handle points that are saved every time a handle has finished moving.
-var old_handles = {}
-
-# The offset of the origin relative to the rest of the mesh.
-var origin_offset = Vector3(0, 0, 0)
+var old_handles : Dictionary = {}
 
 # Used to decide whether to update the geometry.  Enables parents to be moved without forcing updates.
-var local_tracked_pos = Vector3(0, 0, 0)
+var local_tracked_pos = Vector3()
 
-var color = Vector3(1, 1, 1)
 
 # Exported variables representing all usable handles for re-shaping the mesh, in order.
 # Must be exported to be saved in a scene?  smh.
@@ -59,19 +51,8 @@ export(float) var y_minus_position = 0.0 setget update_y_minus
 export(float) var z_plus_position = 0.5 setget update_z_plus
 export(float) var z_minus_position = 0.5 setget update_z_minus
 
-export(float) var corner_size = 0.2 setget update_corner_size
-export(int) var corner_iterations = 4 setget update_corner_iterations
-
-# TODO - Reintroduce later once the an extrusion bevel geometry function is written
-enum CornerAxis {X, Y, Z}
-#export(CornerAxis) var corner_axis = CornerAxis.X setget update_corner_axis
-var corner_axis = CornerAxis.X setget update_corner_axis
-
-
-# SUBDIVISION
 # Used to subdivide the mesh to prevent CSG boolean glitches.
-# Removed for now, may add back in a future version
-#export(Vector3) var subdivisions = Vector3(0, 0, 0)
+export(Vector3) var subdivisions = Vector3(1, 1, 1)
 
 # BEVELS
 #export(float) var bevel_size = 0.2 setget update_bevel_size
@@ -87,7 +68,6 @@ export(bool) var flip_uvs_horizontally = false setget update_flip_uvs_horizontal
 export(bool) var flip_uvs_vertically = false setget update_flip_uvs_vertically
 
 # MATERIALS
-export(bool) var smooth_normals = true setget update_smooth_normals
 export(Material) var material = null setget update_material
 
 
@@ -97,9 +77,7 @@ export(Material) var material = null setget update_material
 
 # Global initialisation
 func _enter_tree():
-	#print("ONYXCUBE _enter_tree")
-		
-		
+	
 	# If this is being run in the editor, sort out the gizmo.
 	if Engine.editor_hint == true:
 		
@@ -109,8 +87,6 @@ func _enter_tree():
 		set_notify_local_transform(true)
 		set_notify_transform(true)
 		set_ignore_transform_notification(false)
-		
-		
 
 func _exit_tree():
     pass
@@ -131,10 +107,6 @@ func _notification(what):
 			call_deferred("_editor_transform_changed")
 		
 func _editor_transform_changed():
-	
-	# The shape only needs to be re-generated when the origin is moved or when the shape changes.
-	#print("ONYXCUBE _editor_transform_changed")
-	#generate_geometry(true)
 	pass
 
 				
@@ -143,6 +115,7 @@ func _editor_transform_changed():
 	
 # Used when a handle variable changes in the properties panel.
 func update_x_plus(new_value):
+	#print("ONYXCUBE update_x_plus")
 	if new_value < 0:
 		new_value = 0
 		
@@ -151,13 +124,15 @@ func update_x_plus(new_value):
 	
 	
 func update_x_minus(new_value):
-	if new_value > 0 || origin_mode == OriginPosition.BASE_CORNER:
+	#print("ONYXCUBE update_x_minus")
+	if new_value < 0 || origin_mode == OriginPosition.BASE_CORNER:
 		new_value = 0
 		
 	x_minus_position = new_value
 	generate_geometry(true)
 	
 func update_y_plus(new_value):
+	#print("ONYXCUBE update_y_plus")
 	if new_value < 0:
 		new_value = 0
 		
@@ -165,13 +140,15 @@ func update_y_plus(new_value):
 	generate_geometry(true)
 	
 func update_y_minus(new_value):
-	if new_value > 0 || origin_mode == OriginPosition.BASE_CORNER || origin_mode == OriginPosition.BASE:
+	#print("ONYXCUBE update_y_minus")
+	if new_value < 0 && (origin_mode == OriginPosition.BASE_CORNER || origin_mode == OriginPosition.BASE) :
 		new_value = 0
 		
 	y_minus_position = new_value
 	generate_geometry(true)
 	
 func update_z_plus(new_value):
+	#print("ONYXCUBE update_z_plus")
 	if new_value < 0:
 		new_value = 0
 		
@@ -179,57 +156,26 @@ func update_z_plus(new_value):
 	generate_geometry(true)
 	
 func update_z_minus(new_value):
+	#print("ONYXCUBE update_z_minus")
 	if new_value < 0 || origin_mode == OriginPosition.BASE_CORNER:
 		new_value = 0
 		
 	z_minus_position = new_value
 	generate_geometry(true)
 	
-func update_corner_size(new_value):
-	if new_value <= 0:
-		new_value = 0.01
-		
-	# ensure the rounded corners do not surpass the bounds of the size of the shape sides.
-	var x_range = (x_plus_position - -x_minus_position) / 2
-	var y_range = (y_plus_position - -y_minus_position) / 2
-	var z_range = (z_plus_position - -z_minus_position) / 2
 	
-	match corner_axis:
-		CornerAxis.X:
-			if new_value > y_range:
-				new_value = y_range
-			if new_value > z_range:
-				new_value = z_range
-		CornerAxis.Y:
-			if new_value > x_range:
-				new_value = x_range
-			if new_value > z_range:
-				new_value = z_range
-		CornerAxis.Z:
-			if new_value > x_range:
-				new_value = x_range
-			if new_value > y_range:
-				new_value = y_range
+func update_subdivisions(new_value):
+	if new_value.x < 1:
+		new_value.x = 1
+	if new_value.y < 1:
+		new_value.y = 1
+	if new_value.z < 1:
+		new_value.z = 1
 		
-	corner_size = new_value
+	subdivisions = new_value
 	generate_geometry(true)
 	
-func update_corner_iterations(new_value):
-	if new_value <= 0:
-		new_value = 1
-		
-	corner_iterations = new_value
-	generate_geometry(true)
 	
-func update_corner_axis(new_value):
-	corner_axis = new_value
-	generate_geometry(true)
-
-#func update_subdivisions(new_value):
-#	subdivisions = new_value
-#	generate_geometry(true)
-	
-#
 #func update_bevel_size(new_value):
 #	if new_value > 0:
 #		new_value = 0
@@ -240,16 +186,15 @@ func update_corner_axis(new_value):
 #func update_bevel_target(new_value):
 #	bevel_target = new_value
 #	generate_geometry(true)
-	
+#
 	
 # Used to recalibrate both the origin point location and the position handles.
 func update_positions(new_value):
-	#print("ONYXCUBE update_positions")
+	
 	update_origin_setting = true
 	update_origin()
 	balance_handles()
 	generate_geometry(true)
-	
 
 
 # Changes the origin position relative to the shape and regenerates geometry and handles.
@@ -267,7 +212,6 @@ func update_origin_mode(new_value):
 	previous_origin_mode = origin_mode
 	old_handles = handles.duplicate()
 
-
 func update_unwrap_method(new_value):
 	unwrap_method = new_value
 	generate_geometry(true)
@@ -283,11 +227,7 @@ func update_flip_uvs_horizontally(new_value):
 func update_flip_uvs_vertically(new_value):
 	flip_uvs_vertically = new_value
 	generate_geometry(true)
-	
-func update_smooth_normals(new_value):
-	smooth_normals = new_value
-	generate_geometry(true)
-	
+
 func update_material(new_value):
 	material = new_value
 	OnyxUtils.update_material(self, new_value)
@@ -391,8 +331,7 @@ func update_origin_position(new_location = null):
 	# set it
 	self.global_translate(new_translation)
 	OnyxUtils.translate_children(self, new_translation * -1)
-
-
+	
 
 # ////////////////////////////////////////////////////////////
 # GEOMETRY GENERATION
@@ -404,13 +343,15 @@ func generate_geometry(fix_to_origin_setting):
 	if is_inside_tree() == false:
 		return
 	
+	#print("ONYXCUBE generate_geometry")
+	
 	var maxPoint = Vector3(x_plus_position, y_plus_position, z_plus_position)
 	var minPoint = Vector3(-x_minus_position, -y_minus_position, -z_minus_position)
 	
 	if fix_to_origin_setting == true:
 		match origin_mode:
 			OriginPosition.BASE:
-				maxPoint = Vector3(x_plus_position, (y_plus_position + (y_minus_position * -1)), z_plus_position)
+				maxPoint = Vector3(x_plus_position, (y_plus_position + (-y_minus_position * -1)), z_plus_position)
 				minPoint = Vector3(-x_minus_position, 0, -z_minus_position)
 				
 			OriginPosition.BASE_CORNER:
@@ -425,12 +366,101 @@ func generate_geometry(fix_to_origin_setting):
 	var mesh_factory = OnyxMeshFactory.new()
 	onyx_mesh.clear()
 	
-	mesh_factory.build_rounded_rect(onyx_mesh, minPoint, maxPoint, 'X', corner_size, corner_iterations, smooth_normals, unwrap_method)
+	# Build 8 vertex points
+	var top_x = Vector3(maxPoint.x, maxPoint.y, minPoint.z)
+	var top_xz = Vector3(maxPoint.x, maxPoint.y, maxPoint.z)
+	var top_z = Vector3(minPoint.x, maxPoint.y, maxPoint.z)
+	var top = Vector3(minPoint.x, maxPoint.y, minPoint.z)
+	
+	var bottom_x = Vector3(maxPoint.x, minPoint.y, minPoint.z)
+	var bottom_xz = Vector3(maxPoint.x, minPoint.y, maxPoint.z)
+	var bottom_z = Vector3(minPoint.x, minPoint.y, maxPoint.z)
+	var bottom = Vector3(minPoint.x, minPoint.y, minPoint.z)
+	
+	# Build the 6 vertex Lists
+	var vec_x_minus = [bottom, top, top_z, bottom_z]
+	var vec_x_plus = [bottom_xz, top_xz, top_x, bottom_x]
+	var vec_y_minus = [bottom_x, bottom, bottom_z, bottom_xz]
+	var vec_y_plus = [top, top_x, top_xz, top_z]
+	var vec_z_minus = [bottom_x, top_x, top, bottom]
+	var vec_z_plus = [bottom_z, top_z, top_xz, bottom_xz]
+	
+	var surfaces = []
+	surfaces.append( mesh_factory.internal_build_surface(bottom, top_z, top, bottom_z, Vector2(subdivisions.z, subdivisions.y), 0) )
+	surfaces.append( mesh_factory.internal_build_surface(bottom_xz, top_x, top_xz, bottom_x, Vector2(subdivisions.z, subdivisions.y), 0) )
+	
+	surfaces.append( mesh_factory.internal_build_surface(bottom_x, bottom_z, bottom, bottom_xz, Vector2(subdivisions.z, subdivisions.x), 0) )
+	surfaces.append( mesh_factory.internal_build_surface(top, top_xz, top_x, top_z, Vector2(subdivisions.z, subdivisions.x), 0) )
+	
+	surfaces.append( mesh_factory.internal_build_surface(bottom_x, top, top_x, bottom, Vector2(subdivisions.x, subdivisions.y), 0) )
+	surfaces.append( mesh_factory.internal_build_surface(bottom_z, top_xz, top_z, bottom_xz, Vector2(subdivisions.x, subdivisions.y), 0) )
+	
+	var i = 0
+	
+	for surface in surfaces:
+		
+		var vertices = []
+		for quad in surface:
+			for vertex in quad[0]:
+				vertices.append(vertex)
+		
+		for quad in surface:
+			
+			# UV UNWRAPPING
+			
+			# 1:1 Overlap is Default
+			var uvs = quad[3]
+			
+			# Proportional Overlap
+			# Try and work out how to properly reorient the UVS later...
+			if unwrap_method == UnwrapMethod.PROPORTIONAL_OVERLAP:
+				if i == 0 || i == 1:
+					uvs = VectorUtils.vector3_to_vector2_array(quad[0], 'X', 'Z')
+					uvs = [uvs[2], uvs[3], uvs[0], uvs[1]]
+#					if i == 0:
+#						uvs = VectorUtils.reverse_array(uvs)
+				elif i == 2 || i == 3:
+					uvs = VectorUtils.vector3_to_vector2_array(quad[0], 'Y', 'X')
+					uvs = [uvs[2], uvs[3], uvs[0], uvs[1]]
+					#uvs = VectorUtils.reverse_array(uvs)
+				elif i == 4 || i == 5:
+					uvs = VectorUtils.vector3_to_vector2_array(quad[0], 'Z', 'X')
+					uvs = [uvs[2], uvs[3], uvs[0], uvs[1]]
+#					if i == 5:
+#						uvs = VectorUtils.reverse_array(uvs)
+				
+#				print(uvs)
+			
+			# Island Split - UV split up into two thirds.
+#			elif unwrap_method == UnwrapMethod.ISLAND_SPLIT:
+#
+#				# get the max and min
+#				var surface_range = VectorUtils.get_vector3_ranges(vertices)
+#				var max_point = surface_range['max']
+#				var min_point = surface_range['min']
+#				var diff = max_point - min_point
+#
+#				var initial_uvs = []
+#
+#				if i == 0 || i == 1:
+#					initial_uvs = VectorUtils.vector3_to_vector2_array(quad[0], 'X', 'Z')
+#				elif i == 2 || i == 3:
+#					initial_uvs = VectorUtils.vector3_to_vector2_array(quad[0], 'Y', 'X')
+#				elif i == 4 || i == 5:
+#					initial_uvs = VectorUtils.vector3_to_vector2_array(quad[0], 'Z', 'X')
+#
+#				for uv in initial_uvs:
+#					uv
+			
+			onyx_mesh.add_ngon(quad[0], quad[1], quad[2], uvs, quad[4])
+			
+		i += 1
+
+	# RENDER THE MESH
 	render_onyx_mesh()
 	
 	# Re-submit the handle positions based on the built faces, so other handles that aren't the
-	# focus of a handle operation are being updated
-	
+	# focus of a handle operation are being updated\
 	generate_handles()
 	update_gizmo()
 	

@@ -3,7 +3,7 @@ extends CSGMesh
 
 # ////////////////////////////////////////////////////////////
 # DEPENDENCIES
-var OnyxUtils = load("res://addons/onyx/nodes/block/onyx_utils.gd")
+var OnyxUtils = load("res://addons/onyx/nodes/onyx/onyx_utils.gd")
 var VectorUtils = load("res://addons/onyx/utilities/vector_utils.gd")
 
 # ////////////////////////////////////////////////////////////
