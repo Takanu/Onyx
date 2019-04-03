@@ -95,8 +95,6 @@ static func handle_change(node, index, coord):
 # NOTE - This should only finish committing information, restore_state will finalize movement and other opeirations.
 static func handle_commit(node, index, coord):
 	
-	#print("OnyxUtils - Committing handle")
-	
 	node.update_handle_from_gizmo(index, coord)
 	node.apply_handle_attributes()
 	
@@ -131,7 +129,7 @@ static func restore_state(node, state):
 	var new_handles = state[0]
 	var stored_location = state[1]
 	
-	#print("RESTORING STATE -", state)
+#	print("RESTORING STATE -", state)
 	
 	node.handles = new_handles.duplicate(true)
 	node.old_handles = new_handles.duplicate(true)

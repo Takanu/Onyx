@@ -151,7 +151,7 @@ func update_x_plus(new_value):
 	
 	
 func update_x_minus(new_value):
-	if new_value > 0 || origin_mode == OriginPosition.BASE_CORNER:
+	if new_value < 0 || origin_mode == OriginPosition.BASE_CORNER:
 		new_value = 0
 		
 	x_minus_position = new_value
@@ -165,7 +165,7 @@ func update_y_plus(new_value):
 	generate_geometry(true)
 	
 func update_y_minus(new_value):
-	if new_value > 0 || origin_mode == OriginPosition.BASE_CORNER || origin_mode == OriginPosition.BASE:
+	if new_value < 0 || origin_mode == OriginPosition.BASE_CORNER || origin_mode == OriginPosition.BASE:
 		new_value = 0
 		
 	y_minus_position = new_value
@@ -565,6 +565,7 @@ func balance_handles():
 			z_plus_position = diff_z
 			z_minus_position = 0
 		
+	
 
 # ////////////////////////////////////////////////////////////
 # STANDARD HANDLE FUNCTIONS
