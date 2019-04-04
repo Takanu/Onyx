@@ -3,7 +3,7 @@ extends Node
 
 # ////////////////////////////////////////////////////////////
 # INFO
-# Shared toolset for Onyx-type nodes, dealing with CSG shape creation.
+# Shared toolset for Onyx-type nodes, dealing with CSG shape creation and shared functionality.
 
 # ////////////////////////////////////////////////////////////
 # INITIALIZATION

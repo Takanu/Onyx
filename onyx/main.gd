@@ -13,11 +13,11 @@ const OnyxRamp = preload("./nodes/onyx/onyx_ramp.gd")
 const OnyxRoundedRect = preload("./nodes/onyx/onyx_rounded_cube.gd")
 const OnyxStairs = preload("./nodes/onyx/onyx_stairs.gd")
 
-const OnyxSprinkle  = preload("./nodes/onyx_sprinkle.gd")
-const OnyxFence  = preload("./nodes/onyx_fence.gd")
+const FluxArea  = preload("./nodes/flux/flux_area.gd")
+const FluxCollider  = preload("./nodes/flux/flux_collider.gd")
 
-const NodeHandlerList = [OnyxCube, OnyxCylinder, OnyxSphere, OnyxWedge, OnyxRoundedRect, OnyxStairs, OnyxRamp, OnyxSprinkle, OnyxFence]
-const NodeStrings = ['OnyxCube', 'OnyxCylinder', 'OnyxSphere', 'OnyxWedge', 'OnyxRoundedRect', 'OnyxStairs', 'OnyxSprinkle', 'OnyxFence']
+const NodeHandlerList = [OnyxCube, OnyxCylinder, OnyxSphere, OnyxWedge, OnyxRoundedRect, OnyxStairs, OnyxRamp, FluxArea, FluxCollider]
+const NodeStrings = ['OnyxCube', 'OnyxCylinder', 'OnyxSphere', 'OnyxWedge', 'OnyxRoundedRect', 'OnyxStairs', 'FluxArea', 'FluxCollider']
 
 # Gizmo types
 const OnyxGizmoPlugin = preload("res://addons/Onyx/gizmos/onyx_gizmo_plugin.gd")
@@ -28,8 +28,8 @@ var gizmo_plugin : OnyxGizmoPlugin
 const WireframeCollision_Selected = Color(1, 1, 0, 0.8)
 const WireframeCollision_Unselected = Color(1, 1, 0, 0.1)
 
-const WireframeUtility_Selected = Color(0, 0, 1, 0.8)
-const WireframeUtility_Unselected = Color(0, 0, 1, 0.1)
+const WireframeUtility_Selected = Color(0, 1, 1, 0.8)
+const WireframeUtility_Unselected = Color(0, 1, 1, 0.1)
 
 
 # Selection management
@@ -50,7 +50,7 @@ func _enter_tree():
 	add_spatial_gizmo_plugin(gizmo_plugin)
 	print(gizmo_plugin)
 	
-	# blocks
+	# onyx types
 	add_custom_type("OnyxCube", "CSGMesh", preload("./nodes/onyx/onyx_cube.gd"), preload("res://addons/onyx/ui/nodes/onyx_block.png"))
 	add_custom_type("OnyxCylinder", "CSGMesh", preload("./nodes/onyx/onyx_cylinder.gd"), preload("res://addons/onyx/ui/nodes/onyx_block.png"))
 	add_custom_type("OnyxSphere", "CSGMesh", preload("./nodes/onyx/onyx_sphere.gd"), preload("res://addons/onyx/ui/nodes/onyx_block.png"))
@@ -59,9 +59,9 @@ func _enter_tree():
 	add_custom_type("OnyxRoundedCube", "CSGMesh", preload("./nodes/onyx/onyx_rounded_cube.gd"), preload("res://addons/onyx/ui/nodes/onyx_block.png"))
 	add_custom_type("OnyxStairs", "CSGMesh", preload("./nodes/onyx/onyx_stairs.gd"), preload("res://addons/onyx/ui/nodes/onyx_block.png"))
 	
-	# other core types
-	add_custom_type("OnyxSprinkle", "Spatial", preload("./nodes/onyx_sprinkle.gd"), preload("res://addons/onyx/ui/nodes/onyx_sprinkle.png"))
-	add_custom_type("OnyxFence", "StaticBody", preload("./nodes/onyx_fence.gd"), preload("res://addons/onyx/ui/nodes/onyx_fence.png"))
+	# flux types
+	add_custom_type("FluxArea", "CSGCombiner", preload("./nodes/flux/flux_area.gd"), preload("res://addons/onyx/ui/nodes/onyx_sprinkle.png"))
+	add_custom_type("FluxCollider", "StaticBody", preload("./nodes/flux/flux_collider.gd"), preload("res://addons/onyx/ui/nodes/onyx_fence.png"))
 	
 	# Add custom signals for providing GUI click input.
 	add_user_signal("onyx_viewport_clicked", [{"camera": TYPE_OBJECT} , {"event": TYPE_OBJECT}] )

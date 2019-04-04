@@ -475,6 +475,7 @@ func render_onyx_mesh():
 
 # Uses the current settings to refresh the handle list.
 func generate_handles():
+	
 	handles.clear()
 	
 	var mid_x = (x_plus_position - x_minus_position) / 2

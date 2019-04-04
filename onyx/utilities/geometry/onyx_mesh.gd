@@ -563,6 +563,30 @@ func compare_vertices(v1 : Array, v2 : Array):
 	return true
 
 # ////////////////////////////////////////////////////////////
+# RAYCASTS
+
+# (this could be better optimised with an algorithm that doesn't rely on planes)
+# NOTE - ONLY USE IT IF THE SHAPE IS CONVEX, THIS WONT WORK OTHERWISE.
+func raycast_point_convex_hull(point):
+	
+	# build a plane for every face
+	var planes = []
+	for i in tris.size():
+		var face = tris[i]
+		var vertices = face[0]
+		planes.append( Plane(vertices[0], vertices[1], vertices[2]) )
+	
+	# check if the point lies in front of the plane
+	for plane in planes:
+		if plane.is_point_over(point) == true:
+			#print("point outside hull!")
+			return false
+	
+	#print("point inside hull!")
+	return true
+	
+
+# ////////////////////////////////////////////////////////////
 # MANAGEMENT
 
 func clear():
