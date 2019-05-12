@@ -9,7 +9,6 @@ extends CSGCombiner
 # ////////////////////////////////////////////////////////////
 # DEPENDENCIES
 var FluxUtils = load("res://addons/onyx/nodes/flux/flux_utils.gd")
-var VectorUtils = load('res://addons/onyx/utilities/vector_utils.gd')
 
 
 # ////////////////////////////////////////////////////////////
@@ -56,7 +55,7 @@ var previous_area_type = AreaShape.BOX
 
 # used to keep the handle values driving shape changes alive?  or precisely amendable?  idk yet.
 # DUE TO A GODOT BUG, THIS CANNOT BE EXPORTED RIGHT NOW.
-var area_shape_parameters = {} setget update_area_shape_parameters
+var area_shape_parameters : Dictionary = {} setget update_area_shape_parameters
 
 
 
@@ -431,10 +430,8 @@ func build_location_array():
 
 			# load our utils kit and get the node area.
 			var onyx_utils = load("res://addons/onyx/utilities/onyx_utils.gd").new()
-			var node_aabb = VectorUtils.get_aabb(target_node)
-			
-			if node_aabb != null:
-				current_grid_size += node_aabb.size
+			var node_aabb = onyx_utils.get_aabb(target_node)
+			current_grid_size += node_aabb.size
 
 			# deallocate what we don't need.
 			onyx_utils.free()
@@ -457,6 +454,12 @@ func build_location_array():
 		
 		grid_start += current_grid_size / 2
 		grid_end += current_grid_size / 2
+		
+		#print(volume_bounds)
+		
+		#print(grid_start)
+		#print(grid_end)
+		#print(current_grid_size)
 
 		# NOW LETS ITERATE
 		var grid_index = Vector3(0, 0, 0)

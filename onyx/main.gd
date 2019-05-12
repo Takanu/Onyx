@@ -16,6 +16,8 @@ const OnyxStairs = preload("./nodes/onyx/onyx_stairs.gd")
 const FluxArea  = preload("./nodes/flux/flux_area.gd")
 const FluxCollider  = preload("./nodes/flux/flux_collider.gd")
 
+const ResTest = preload('./nodes/res_test.gd')
+
 const NodeHandlerList = [OnyxCube, OnyxCylinder, OnyxSphere, OnyxWedge, OnyxRoundedRect, OnyxStairs, OnyxRamp, FluxArea, FluxCollider]
 const NodeStrings = ['OnyxCube', 'OnyxCylinder', 'OnyxSphere', 'OnyxWedge', 'OnyxRoundedRect', 'OnyxStairs', 'FluxArea', 'FluxCollider']
 
@@ -28,8 +30,8 @@ var gizmo_plugin : OnyxGizmoPlugin
 const WireframeCollision_Selected = Color(1, 1, 0, 0.8)
 const WireframeCollision_Unselected = Color(1, 1, 0, 0.1)
 
-const WireframeUtility_Selected = Color(0, 1, 1, 0.8)
-const WireframeUtility_Unselected = Color(0, 1, 1, 0.1)
+const WireframeUtility_Selected = Color(0, 1, 1, 0.6)
+const WireframeUtility_Unselected = Color(0, 1, 1, 0.05)
 
 
 # Selection management
@@ -62,6 +64,9 @@ func _enter_tree():
 	# flux types
 	add_custom_type("FluxArea", "CSGCombiner", preload("./nodes/flux/flux_area.gd"), preload("res://addons/onyx/ui/nodes/onyx_sprinkle.png"))
 	add_custom_type("FluxCollider", "StaticBody", preload("./nodes/flux/flux_collider.gd"), preload("res://addons/onyx/ui/nodes/onyx_fence.png"))
+	
+	# debug types
+	add_custom_type("ResTest", "CSGMesh",preload('./nodes/res_test.gd'), preload("res://addons/onyx/ui/nodes/onyx_fence.png"))
 	
 	# Add custom signals for providing GUI click input.
 	add_user_signal("onyx_viewport_clicked", [{"camera": TYPE_OBJECT} , {"event": TYPE_OBJECT}] )

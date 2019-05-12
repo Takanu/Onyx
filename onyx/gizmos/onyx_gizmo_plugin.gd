@@ -38,7 +38,7 @@ func get_undo_redo() -> UndoRedo:
 	return plugin.get_undo_redo()
 
 # Required to confirm gizmo-ness if the Plugin is doing the drawing
-# Might be overriding EditorSpatialGizmo delegation for handle editing, commenting out..
+# not currently needed.
 #func has_gizmo(spatial):
 #	for handled_object in plugin.NodeHandlerList:
 #		if spatial is handled_object:

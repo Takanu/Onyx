@@ -1,0 +1,479 @@
+tool
+extends Object
+
+# ////////////////////////////////////////////////////////////
+# INFO
+# A delegate class designed to represent a specific control point for a gizmo.
+# A control point can represent one or more handles depending on the Display mode it is in.
+
+# Will also handle callbacks and other features between Onyx types and the Gizmo sub-class.
+
+
+# ////////////////////////////////////////////////////////////
+# PROPERTIES
+
+# An optional name of the control point, used for sorting purposes.
+var handle_name: String = ""
+
+# The position of the control point.  This is not necessarily the same as the handles that this object renders.
+var handle_position: Vector3 = Vector3(0, 0, 0)
+
+# (Optional) The rotation of the control point.  Not all control points will need to store rotation data.
+var handle_rotation: Vector3 = Vector3(0, 0, 0)
+
+# (Optional) The scale of the control point.  Not all control points will need to store scale data.
+var handle_scale: Vector3 = Vector3(1, 1, 1)
+
+# If false, the Gizmo will not render this point.
+var is_control_point_visible: bool = true
+
+
+# ////////////////////////////////////////////////////////////
+# DISPLAY
+# The representation and interaction types that a control point can have.
+# FREE - A single handle that can be dragged and moved freely in 3D space, with respect to the camera projection.
+# AXIS - A single handle that aligns it's movement to a specific set of axes.
+# TRANSLATE - A set of three handles that manipulate the class translation in all three global axes.
+# ROTATE - A set of three handles that manipulate the class rotation in all three global axes.
+# SCALE - A set of three handles that manipulate the class scale in all three global axes.
+# CLICK - A single handle that cannot be moved, but immediately triggers a callback function when selected.
+
+enum HandleType {FREE, AXIS, TRANSLATE, ROTATE, SCALE, CLICK}
+var handle_type = HandleType.FREE
+
+# If HandleType.AXIS is used, this defines what axis the control point's movement is locked to.
+var axis_triangle = []
+
+# If TRANSLATE, ROTATE or SCALE is used, this determines how far the axis handles are from the point they control.
+var handle_distance: float = 0.5
+
+# If true, any translation, rotation and scale actions will be constrained to a snapping margin set by Onyx.
+var apply_snap : bool = false
+
+
+# ////////////////////////////////////////////////////////////
+# CALLBACK
+# The node that this handle belongs to, will be used for all callbacks.
+var control_point_owner
+
+# The callback used to create and return undo data.
+var undo_data_callback: String = ""
+
+# The callback used to create and return redo data.
+var redo_data_callback: String = ""
+
+# The callback used to perform an undo.
+var undo_action_callback: String = ""
+
+# The callback used to perform a redo.
+var redo_action_callback: String = ""
+
+# ------------
+
+# (FREE MODE) The method called on the owner when the handle is being translated.
+var free_update_callback: String = ""
+
+# (FREE MODE) The method called on the owner when the handle has finished translated.
+var free_commit_callback: String = ""
+
+# (AXIS MODE) The method called on the owner when the handle is being translated.
+var axis_update_callback: String = ""
+
+# (AXIS MODE) The method called on the owner when the handle has finished translated.
+var axis_commit_callback: String = ""
+
+# (TRANSLATE MODE) The method called on the owner when the handle is being translated.
+var translate_update_callback: String = ""
+
+# (TRANSLATE MODE) The method called on the owner when the handle has finished translated.
+var translate_commit_callback: String = ""
+
+# The method called on the owner when the handle is being rotated.
+var rotate_update_callback: String = ""
+
+# The method called on the owner when the handle has finished rotating.
+var rotate_commit_callback: String = ""
+
+# The method called on the owner when the handle is being scaled.
+var scale_update_callback: String = ""
+
+# The method called on the owner when the handle has finished scaling.
+var scale_commit_callback: String = ""
+
+# The method called on the owner when the handle has been clicked.
+var click_callback: String = ""
+
+
+# ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+# INITIALIZATION
+func init(owner : Node, undo_data_callback : String, redo_data_callback : String, undo_action_callback : String, redo_action_callback : String):
+	self.control_point_owner = owner
+	self.undo_data_callback = undo_data_callback
+	self.redo_data_callback = redo_data_callback
+	self.undo_action_callback = undo_action_callback
+	self.redo_action_callback = redo_action_callback
+	
+
+# ////////////////////////////////////////////////////////////
+# MAINTENANCE
+
+# Clears any callbacks set.
+func clear_callbacks():
+	free_update_callback = ""
+	free_commit_callback = ""
+	axis_update_callback = ""
+	axis_commit_callback = ""
+	translate_update_callback = ""
+	translate_commit_callback = ""
+	
+	rotate_update_callback = ""
+	rotate_commit_callback = ""
+	scale_update_callback = ""
+	scale_commit_callback = ""
+	
+	click_callback = ""
+	
+ 
+# ////////////////////////////////////////////////////////////
+# MODE SWITCH
+# Sets the current handle mode to the FREE type.
+func set_type_free(clear_all_callbacks : bool, update_callback : String, commit_callback : String):
+	
+	if clear_all_callbacks == true:
+		clear_callbacks()
+	
+	self.free_update_callback = update_callback
+	self.free_commit_callback = commit_callback
+
+
+func set_type_axis(clear_all_callbacks : bool, update_callback : String, commit_callback : String, axis_triangle : Array):
+	
+	if clear_all_callbacks == true:
+		clear_callbacks()
+		
+	self.axis_update_callback = update_callback
+	self.axis_commit_callback = commit_callback
+	self.axis_triangle = axis_triangle
+
+func set_type_translate(clear_all_callbacks : bool, update_callback : String, commit_callback : String):
+	
+	if clear_all_callbacks == true:
+		clear_callbacks()
+		
+	self.translate_update_callback = update_callback
+	self.translate_commit_callback = commit_callback
+
+
+func set_type_rotation(clear_all_callbacks : bool, update_callback : String, commit_callback : String):
+	
+	if clear_all_callbacks == true:
+		clear_callbacks()
+		
+	self.rotation_update_callback = update_callback
+	self.rotation_commit_callback = commit_callback
+
+
+func set_type_scale(clear_all_callbacks : bool, update_callback : String, commit_callback : String):
+	
+	if clear_all_callbacks == true:
+		clear_callbacks()
+		
+	self.scale_update_callback = update_callback
+	self.scale_commit_callback = commit_callback
+
+
+func set_type_click(clear_all_callbacks : bool, click_callback : String):
+	
+	if clear_all_callbacks == true:
+		clear_callbacks()
+		
+	self.click_callback = click_callback
+
+
+
+# ////////////////////////////////////////////////////////////
+# GIZMO ACCESS
+# Returns the handles that the gizmo needs to render for this specific control point.
+func get_handle_positions():
+	
+	if is_control_point_visible == false:
+		return null
+	
+	match handle_type:
+		
+		HandleType.FREE:
+			return [handle_position]
+			
+		HandleType.AXIS:
+			return [handle_position]
+			
+		HandleType.TRANSLATE:
+			var handle_x = handle_position + Vector3(handle_distance, 0, 0)
+			var handle_y = handle_position + Vector3(0, handle_distance, 0)
+			var handle_z = handle_position + Vector3(0, 0, handle_distance)
+			return [handle_x, handle_y, handle_z]
+		
+		
+		# currently pass for rotate and scale until i implement it.
+		
+		
+		HandleType.CLICK:
+			return [handle_position]
+
+# Returns the lines that the gizmo needs to render for this specific control point.
+func get_handle_lines():
+	
+	if is_control_point_visible == false:
+		return null
+	
+	if handle_type == HandleType.TRANSLATE:
+		var handle_x = handle_position + Vector3(handle_distance, 0, 0)
+		var handle_y = handle_position + Vector3(0, handle_distance, 0)
+		var handle_z = handle_position + Vector3(0, 0, handle_distance)
+		
+		var line_1 = [PoolVector3Array( [handle_position, handle_x] ), mat_solid_color(255, 0, 0)]
+		var line_2 = [PoolVector3Array( [handle_position, handle_y] ), mat_solid_color(0, 0, 255)]
+		var line_3 = [PoolVector3Array( [handle_position, handle_z] ), mat_solid_color(0, 255, 0)]
+	
+		return [line_1, line_2, line_3]
+		
+	else:
+		return null
+
+# Returns the number of handles this control point currently requests (something rudimentary for counting indexes).
+func get_handle_count():
+	
+	if is_control_point_visible == false:
+		return null
+	
+	match handle_type:
+		
+		HandleType.FREE:
+			return 1
+			
+		HandleType.AXIS:
+			return 1
+			
+		HandleType.TRANSLATE:
+			return 3
+		
+		HandleType.ROTATE:
+			return 3
+		
+		HandleType.SCALE:
+			return 3
+		
+		HandleType.CLICK:
+			return 1
+
+# Returns undo data if successful.
+func get_undo_data():
+	var result = call(self.undo_callback, self)
+	return result
+
+# Returns redo data if successful.
+func get_redo_data():
+	var result = call(self.redo_callback, self)
+	return result
+
+
+# ////////////////////////////////////////////////////////////
+# GIZMO MODIFICATION
+# Depending on the mode set, the handle will be updated in different ways.
+func update_handle(index, camera, point):
+	
+	# If the handle type is click, we don't need to calculate any matrices.  Just get it over with.
+	if handle_type is HandleType.CLICK:
+		control_point_owner.call(click_callback, self)
+		return
+	
+	# Get some matrices and coordinates
+	var world_matrix = control_point_owner.global_transform
+	var camera_matrix = camera.global_transform
+	
+	# Apply the current coordinate to world and camera space
+	var world_space_coord = world_matrix.xform(handle_position)
+	var cam_space_coord = camera_matrix.xform_inv(world_space_coord)
+	
+	match handle_type:
+		
+		HandleType.FREE:
+			# Create a screen plane using the points switched coordinate-space Z-axis.
+			# Create a ray that points from the point we're provided to the camera.
+			# Create an origin using the new point we have.
+			var project_plane = Plane(0,0,1, cam_space_coord.z)
+			var ray_dir = camera.project_local_ray_normal(point)
+			var ray_origin = camera_matrix.xform_inv(camera.project_ray_origin(point))
+				
+				
+			# Get a 3D coordinate we can use based on a ray intersection of the 2D point.
+			# Sometimes the projection might fail so we need to return if that's the case.
+			handle_position = project_plane.intersects_ray(ray_origin, ray_dir)
+			if not handle_position: 
+				return 
+			
+			# If it worked, configure and apply it.
+			handle_position = camera_matrix.xform(handle_position)
+			handle_position = world_matrix.xform_inv(handle_position)
+			
+			# Now we have a valid handle_position, perform a callback.
+			if free_update_callback != "":
+				control_point_owner.call(free_update_callback, self)
+		
+		
+		HandleType.AXIS:
+			#print("RAWR HANDLE MOVED: ", coord)
+			var planes = make_planes(axis_triangle, handle_position)
+			#print("PLANES: ", planes)
+		
+			var ray_origin = camera.project_ray_origin(point)
+			var ray_dir = camera.project_ray_normal(point)
+			ray_origin = world_matrix.xform_inv(ray_origin)
+			ray_dir = world_matrix.basis.xform_inv(ray_dir)
+			
+			
+			handle_position = planes[0].intersects_ray(ray_origin, ray_dir)
+			if not handle_position: 
+				return #sometimes the projection might fail
+				
+			if planes.size() > 1:
+				handle_position = planes[1].project(handle_position)
+			
+			# Now we have a valid handle_position, perform a callback.
+			if axis_update_callback != "":
+				control_point_owner.call(axis_update_callback, self)
+		
+		
+		HandleType.TRANSLATE:
+			pass
+		
+		HandleType.ROTATE:
+			pass
+		
+		HandleType.SCALE:
+			pass
+		
+
+# Receives the commit call from the Gizmo, to be handled in different ways depending on the ControlPoint mode.
+func commit_handle(index, restore):
+	
+	# is there anything else to do here?
+	match handle_type:
+		
+		HandleType.FREE:
+			if free_commit_callback != "":
+				control_point_owner.call(free_commit_callback, self)
+		
+		HandleType.AXIS:
+			if axis_commit_callback != "":
+				control_point_owner.call(axis_commit_callback, self)
+		
+		HandleType.TRANSLATE:
+			if translate_commit_callback != "":
+				control_point_owner.call(translate_commit_callback, self)
+		
+		HandleType.ROTATE:
+			if rotate_commit_callback != "":
+				control_point_owner.call(rotate_commit_callback, self)
+		
+		HandleType.SCALE:
+			if scale_commit_callback != "":
+				control_point_owner.call(scale_commit_callback, self)
+		
+#		HandleType.CLICK:
+#			control_point_owner.call(click_commit_callback, self)
+	
+
+
+# ////////////////////////////////////////////////////////////
+# HELPERS
+# Creates planes with which to lock the position of the handle to a single defined axis, if AXIS is used.
+func make_planes(triangle, handle_loc):
+	
+	if typeof(triangle) != TYPE_ARRAY:
+		print("(onyx_cube_gizmo : make_planes) No triangle set provided.")
+	
+	if triangle.size() < 3:
+		print("(onyx_cube_gizmo : make_planes) Not enough triangles given.")
+	
+	# get the unit vector of the two vectors made from the triangle
+	var movement_vector =  handle_loc - triangle[0]
+	var vertex_1 = triangle[0] + movement_vector
+	var vertex_2 = triangle[1] + movement_vector
+	var vertex_3 = triangle[2] + movement_vector
+	
+	var vec_1 = (vertex_2 - vertex_1).normalized()
+	var vec_2 = (vertex_3 - vertex_1).normalized()
+	var cross = vec_1.cross(vec_2).normalized()
+	var vertex_4 = (cross * 2) + vertex_1
+	
+	#print("VECTORS: ", vec_1, vec_2, cross)
+	#print("FINAL VERTICES: ", vertex_1, vertex_2, vertex_3, vertex_4)
+	
+	# Build the planes
+	var plane_1 = Plane(vertex_1, vertex_2, vertex_4)
+	var plane_2 = Plane(vertex_1, vertex_3, vertex_4)
+	
+	#print("PLANE 1 : ", plane_1)
+	#print("PLANE 2 : ", plane_2)
+	
+	return [plane_1, plane_2]
+
+func mat_solid_color(red, green, blue):
+	var mat = SpatialMaterial.new()
+	mat.render_priority = mat.RENDER_PRIORITY_MAX
+	mat.flags_unshaded = true
+	mat.flags_transparent = true
+	mat.flags_no_depth_test = true
+	mat.albedo_color = Color(red, green, blue)
+	
+	return mat
+	
+
+# Creates a new ControlPoint object and copies all properties to it (any arrays will also be duplicated).
+func copy() -> Object:
+	var new_control_point = load("res://addons/onyx/gizmos/control_point.gd").new()
+	
+	# PROPERTIES
+	new_control_point.handle_name = self.handle_name
+	new_control_point.handle_position = self.handle_position
+	new_control_point.handle_rotation = self.handle_rotation
+	new_control_point.handle_scale = self.handle_scale
+	new_control_point.is_control_point_visible = self.is_control_point_visible
+	
+	# DISPLAY
+	new_control_point.handle_type = self.handle_type
+	new_control_point.axis_triangle = self.axis_triangle.duplicate()
+	new_control_point.handle_distance = self.handle_distance
+	new_control_point.apply_snap = self.apply_snap
+	
+	# CALLBACK
+	new_control_point.control_point_owner = self.control_point_owner
+	new_control_point.undo_callback = self.undo_callback
+	new_control_point.redo_callback = self.redo_callback
+
+	new_control_point.free_update_callback = self.free_update_callback
+	new_control_point.free_commit_callback = self.free_commit_callback
+	new_control_point.axis_update_callback = self.axis_update_callback
+	new_control_point.axis_commit_callback = self.axis_commit_callback
+	new_control_point.translate_update_callback = self.translate_update_callback
+	new_control_point.translate_commit_callback = self.translate_commit_callback
+	new_control_point.rotate_update_callback = self.rotate_update_callback
+	new_control_point.rotate_commit_callback = self.rotate_commit_callback
+	new_control_point.scale_update_callback = self.scale_update_callback
+	new_control_point.scale_commit_callback = self.scale_commit_callback
+	new_control_point.click_callback = self.click_callback
+	
+	
+	return new_control_point
+
+# Replaces the base properties in this object (ones that can be edited by a Gizmo) from the given source ControlPoint.
+func restore_base_properties(source):
+	
+	# PROPERTIES
+	self.handle_name = source.handle_name
+	self.handle_position = source.handle_position
+	self.handle_rotation = source.handle_rotation
+	self.handle_scale = source.handle_scale
+	self.is_control_point_visible = source.is_control_point_visible
+	

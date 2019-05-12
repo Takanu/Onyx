@@ -59,7 +59,16 @@ func redraw():
 #	print("REDRAWING GIZMO -", self)
 	clear()
 	
-	handle_set = get_spatial_node().convert_handles_to_gizmo()
+	var collision_set
+	
+	var node = get_spatial_node()
+	if node.has_method('convert_handles_to_gizmo') == true:
+		handle_set = get_spatial_node().convert_handles_to_gizmo()
+	else:
+		print(node, ' has no method convert_handles_to_gizmo, cannot use SnapGizmo')
+	
+	if node is CSGMesh:
+		collision_set = node.mesh.generate_triangle_mesh()
 	
 	if handle_set.size() > 0:
 		
@@ -69,7 +78,9 @@ func redraw():
 		
 		var handle_mat = get_plugin().get_material("handle", self)
 		add_handles(points, handle_mat)
-		
+	
+	if collision_set != null:
+		add_collision_triangles(collision_set)
 	
 	for line_set in lines:
 		#print("adding lines~~~")
