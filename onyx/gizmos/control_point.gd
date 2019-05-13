@@ -13,19 +13,19 @@ extends Object
 # PROPERTIES
 
 # An optional name of the control point, used for sorting purposes.
-var handle_name: String = ""
+var control_name: String = ""
 
 # The position of the control point.  This is not necessarily the same as the handles that this object renders.
-var handle_position: Vector3 = Vector3(0, 0, 0)
+var control_position: Vector3 = Vector3(0, 0, 0)
 
 # (Optional) The rotation of the control point.  Not all control points will need to store rotation data.
-var handle_rotation: Vector3 = Vector3(0, 0, 0)
+var control_rotation: Vector3 = Vector3(0, 0, 0)
 
 # (Optional) The scale of the control point.  Not all control points will need to store scale data.
-var handle_scale: Vector3 = Vector3(1, 1, 1)
+var control_scale: Vector3 = Vector3(1, 1, 1)
 
 # If false, the Gizmo will not render this point.
-var is_control_point_visible: bool = true
+var is_control_visible: bool = true
 
 
 # ////////////////////////////////////////////////////////////
@@ -37,6 +37,9 @@ var is_control_point_visible: bool = true
 # ROTATE - A set of three handles that manipulate the class rotation in all three global axes.
 # SCALE - A set of three handles that manipulate the class scale in all three global axes.
 # CLICK - A single handle that cannot be moved, but immediately triggers a callback function when selected.
+
+# (ones I want to add later)
+# TRANSLATE_SPLIT (has two handles instead of three, with one handle being constrained to two axes)
 
 enum HandleType {FREE, AXIS, TRANSLATE, ROTATE, SCALE, CLICK}
 var handle_type = HandleType.FREE
@@ -106,12 +109,13 @@ var click_callback: String = ""
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 # INITIALIZATION
-func init(owner : Node, undo_data_callback : String, redo_data_callback : String, undo_action_callback : String, redo_action_callback : String):
+func _init(owner : Node, undo_data_callback : String, redo_data_callback : String, undo_action_callback : String, redo_action_callback : String):
 	self.control_point_owner = owner
 	self.undo_data_callback = undo_data_callback
 	self.redo_data_callback = redo_data_callback
 	self.undo_action_callback = undo_action_callback
 	self.redo_action_callback = redo_action_callback
+	
 	
 
 # ////////////////////////////////////////////////////////////
@@ -142,6 +146,7 @@ func set_type_free(clear_all_callbacks : bool, update_callback : String, commit_
 	if clear_all_callbacks == true:
 		clear_callbacks()
 	
+	self.handle_type = HandleType.FREE
 	self.free_update_callback = update_callback
 	self.free_commit_callback = commit_callback
 
@@ -150,7 +155,8 @@ func set_type_axis(clear_all_callbacks : bool, update_callback : String, commit_
 	
 	if clear_all_callbacks == true:
 		clear_callbacks()
-		
+	
+	self.handle_type = HandleType.AXIS
 	self.axis_update_callback = update_callback
 	self.axis_commit_callback = commit_callback
 	self.axis_triangle = axis_triangle
@@ -159,7 +165,8 @@ func set_type_translate(clear_all_callbacks : bool, update_callback : String, co
 	
 	if clear_all_callbacks == true:
 		clear_callbacks()
-		
+	
+	self.handle_type = HandleType.TRANSLATE
 	self.translate_update_callback = update_callback
 	self.translate_commit_callback = commit_callback
 
@@ -168,7 +175,8 @@ func set_type_rotation(clear_all_callbacks : bool, update_callback : String, com
 	
 	if clear_all_callbacks == true:
 		clear_callbacks()
-		
+	
+	self.handle_type = HandleType.ROTATE
 	self.rotation_update_callback = update_callback
 	self.rotation_commit_callback = commit_callback
 
@@ -177,7 +185,8 @@ func set_type_scale(clear_all_callbacks : bool, update_callback : String, commit
 	
 	if clear_all_callbacks == true:
 		clear_callbacks()
-		
+	
+	self.handle_type = HandleType.SCALE
 	self.scale_update_callback = update_callback
 	self.scale_commit_callback = commit_callback
 
@@ -186,31 +195,32 @@ func set_type_click(clear_all_callbacks : bool, click_callback : String):
 	
 	if clear_all_callbacks == true:
 		clear_callbacks()
-		
+	
+	self.handle_type = HandleType.CLICK
 	self.click_callback = click_callback
 
 
 
 # ////////////////////////////////////////////////////////////
-# GIZMO ACCESS
+# CONTROL POINT ACCESS
 # Returns the handles that the gizmo needs to render for this specific control point.
 func get_handle_positions():
 	
-	if is_control_point_visible == false:
+	if is_control_visible == false:
 		return null
 	
 	match handle_type:
 		
 		HandleType.FREE:
-			return [handle_position]
+			return [control_position]
 			
 		HandleType.AXIS:
-			return [handle_position]
+			return [control_position]
 			
 		HandleType.TRANSLATE:
-			var handle_x = handle_position + Vector3(handle_distance, 0, 0)
-			var handle_y = handle_position + Vector3(0, handle_distance, 0)
-			var handle_z = handle_position + Vector3(0, 0, handle_distance)
+			var handle_x = control_position + Vector3(handle_distance, 0, 0)
+			var handle_y = control_position + Vector3(0, handle_distance, 0)
+			var handle_z = control_position + Vector3(0, 0, handle_distance)
 			return [handle_x, handle_y, handle_z]
 		
 		
@@ -218,22 +228,22 @@ func get_handle_positions():
 		
 		
 		HandleType.CLICK:
-			return [handle_position]
+			return [control_position]
 
 # Returns the lines that the gizmo needs to render for this specific control point.
 func get_handle_lines():
 	
-	if is_control_point_visible == false:
+	if is_control_visible == false:
 		return null
 	
 	if handle_type == HandleType.TRANSLATE:
-		var handle_x = handle_position + Vector3(handle_distance, 0, 0)
-		var handle_y = handle_position + Vector3(0, handle_distance, 0)
-		var handle_z = handle_position + Vector3(0, 0, handle_distance)
+		var handle_x = control_position + Vector3(handle_distance, 0, 0)
+		var handle_y = control_position + Vector3(0, handle_distance, 0)
+		var handle_z = control_position + Vector3(0, 0, handle_distance)
 		
-		var line_1 = [PoolVector3Array( [handle_position, handle_x] ), mat_solid_color(255, 0, 0)]
-		var line_2 = [PoolVector3Array( [handle_position, handle_y] ), mat_solid_color(0, 0, 255)]
-		var line_3 = [PoolVector3Array( [handle_position, handle_z] ), mat_solid_color(0, 255, 0)]
+		var line_1 = [PoolVector3Array( [control_position, handle_x] ), mat_solid_color(255, 0, 0)]
+		var line_2 = [PoolVector3Array( [control_position, handle_y] ), mat_solid_color(0, 0, 255)]
+		var line_3 = [PoolVector3Array( [control_position, handle_z] ), mat_solid_color(0, 255, 0)]
 	
 		return [line_1, line_2, line_3]
 		
@@ -243,7 +253,7 @@ func get_handle_lines():
 # Returns the number of handles this control point currently requests (something rudimentary for counting indexes).
 func get_handle_count():
 	
-	if is_control_point_visible == false:
+	if is_control_visible == false:
 		return null
 	
 	match handle_type:
@@ -265,15 +275,39 @@ func get_handle_count():
 		
 		HandleType.CLICK:
 			return 1
+		
+
+# Returns the core control point data as a Dictionary (name, position, rotation, scale, hidden)
+func get_control_data() -> Dictionary:
+	
+	var result = {}
+	result['name'] = control_name
+	result['position'] = control_position
+	result['rotation'] = control_rotation
+	result['scale'] = control_scale
+	result['visible'] = is_control_visible
+	
+	return result
+
+# Sets core control point data from a previously-created Dictionary.
+func set_control_data(data : Dictionary):
+	
+	# TODO : Error handling, make sure the data we receive is the data we wanted.
+	control_name = data['name']
+	control_position = data['position']
+	control_rotation = data['rotation']
+	control_scale = data['scale']
+	is_control_visible = data['visible']
+
 
 # Returns undo data if successful.
 func get_undo_data():
-	var result = call(self.undo_callback, self)
+	var result = control_point_owner.call(undo_data_callback, self)
 	return result
 
 # Returns redo data if successful.
 func get_redo_data():
-	var result = call(self.redo_callback, self)
+	var result = control_point_owner.call(redo_data_callback, self)
 	return result
 
 
@@ -283,7 +317,7 @@ func get_redo_data():
 func update_handle(index, camera, point):
 	
 	# If the handle type is click, we don't need to calculate any matrices.  Just get it over with.
-	if handle_type is HandleType.CLICK:
+	if handle_type == HandleType.CLICK:
 		control_point_owner.call(click_callback, self)
 		return
 	
@@ -292,7 +326,7 @@ func update_handle(index, camera, point):
 	var camera_matrix = camera.global_transform
 	
 	# Apply the current coordinate to world and camera space
-	var world_space_coord = world_matrix.xform(handle_position)
+	var world_space_coord = world_matrix.xform(control_position)
 	var cam_space_coord = camera_matrix.xform_inv(world_space_coord)
 	
 	match handle_type:
@@ -308,22 +342,22 @@ func update_handle(index, camera, point):
 				
 			# Get a 3D coordinate we can use based on a ray intersection of the 2D point.
 			# Sometimes the projection might fail so we need to return if that's the case.
-			handle_position = project_plane.intersects_ray(ray_origin, ray_dir)
-			if not handle_position: 
+			control_position = project_plane.intersects_ray(ray_origin, ray_dir)
+			if not control_position: 
 				return 
 			
 			# If it worked, configure and apply it.
-			handle_position = camera_matrix.xform(handle_position)
-			handle_position = world_matrix.xform_inv(handle_position)
+			control_position = camera_matrix.xform(control_position)
+			control_position = world_matrix.xform_inv(control_position)
 			
-			# Now we have a valid handle_position, perform a callback.
+			# Now we have a valid control_position, perform a callback.
 			if free_update_callback != "":
 				control_point_owner.call(free_update_callback, self)
 		
 		
 		HandleType.AXIS:
 			#print("RAWR HANDLE MOVED: ", coord)
-			var planes = make_planes(axis_triangle, handle_position)
+			var planes = make_planes(axis_triangle, control_position)
 			#print("PLANES: ", planes)
 		
 			var ray_origin = camera.project_ray_origin(point)
@@ -332,14 +366,14 @@ func update_handle(index, camera, point):
 			ray_dir = world_matrix.basis.xform_inv(ray_dir)
 			
 			
-			handle_position = planes[0].intersects_ray(ray_origin, ray_dir)
-			if not handle_position: 
+			control_position = planes[0].intersects_ray(ray_origin, ray_dir)
+			if not control_position: 
 				return #sometimes the projection might fail
 				
 			if planes.size() > 1:
-				handle_position = planes[1].project(handle_position)
+				control_position = planes[1].project(control_position)
 			
-			# Now we have a valid handle_position, perform a callback.
+			# Now we have a valid control_position, perform a callback.
 			if axis_update_callback != "":
 				control_point_owner.call(axis_update_callback, self)
 		
@@ -435,11 +469,11 @@ func copy() -> Object:
 	var new_control_point = load("res://addons/onyx/gizmos/control_point.gd").new()
 	
 	# PROPERTIES
-	new_control_point.handle_name = self.handle_name
-	new_control_point.handle_position = self.handle_position
-	new_control_point.handle_rotation = self.handle_rotation
-	new_control_point.handle_scale = self.handle_scale
-	new_control_point.is_control_point_visible = self.is_control_point_visible
+	new_control_point.control_name = self.control_name
+	new_control_point.control_position = self.control_position
+	new_control_point.control_rotation = self.control_rotation
+	new_control_point.control_scale = self.control_scale
+	new_control_point.is_control_visible = self.is_control_visible
 	
 	# DISPLAY
 	new_control_point.handle_type = self.handle_type
@@ -471,9 +505,9 @@ func copy() -> Object:
 func restore_base_properties(source):
 	
 	# PROPERTIES
-	self.handle_name = source.handle_name
-	self.handle_position = source.handle_position
-	self.handle_rotation = source.handle_rotation
-	self.handle_scale = source.handle_scale
-	self.is_control_point_visible = source.is_control_point_visible
+	self.control_name = source.control_name
+	self.control_position = source.control_position
+	self.control_rotation = source.control_rotation
+	self.control_scale = source.control_scale
+	self.is_control_visible = source.is_control_visible
 	

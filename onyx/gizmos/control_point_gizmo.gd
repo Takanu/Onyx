@@ -25,8 +25,15 @@ var control_data_hold
 # INITIALIZATION
 
 func _init():
+	print("CONTROL POINT GIZMO CREATED")
 	pass
-	
+
+
+# ////////////////////////////////////////////////////////////
+# CONTROL POINT BUILDING
+func set_control_points(points : Array):
+	control_points = points.duplicate()
+
 # ////////////////////////////////////////////////////////////
 # REDRAWING
 
@@ -35,6 +42,10 @@ func redraw():
 #	
 	# Clear the old draw data.
 	clear()
+	
+	# If we have no control points, attempt to request some.
+	if control_points.size() == 0:
+		control_points = get_spatial_node().get_gizmo_control_points()
 	
 	# If we have a node we can generate a clickable collision mesh for, do it.
 	var collision_set
@@ -90,6 +101,12 @@ func set_handle(index, camera, point):
 	
 	redraw()
 
+# Allows an external function to get the coordinates of a handle.
+# (REQUIRED FOR commit_handle TO WORK, DO NOT REMOVE)
+func get_handle_value(index):
+	var result = get_control_point(index)
+	return result['control'].control_position
+
 
 # Commits the handle to the property (if not cancelled).
 func commit_handle(index, restore, cancel=false):
@@ -97,6 +114,8 @@ func commit_handle(index, restore, cancel=false):
 	var result = get_control_point(index)
 	var target_control = result['control']
 	var local_index = result['local_index']
+	
+#	print("we made it bois")
 	
 	if target_control == null:
 		print("err, fuck?")
@@ -128,6 +147,7 @@ func commit_handle(index, restore, cancel=false):
 		
 		
 	else:
+#		print("we cancelled?  hmm")
 #		var handle = handle_set[handle_current_index]
 #		handle[0] = handle_current_data
 #		handle_set[handle_current_index] = handle
@@ -151,5 +171,7 @@ func get_control_point(index):
 		if index < current_index + control_count:
 			var local_index = index - current_index
 			return {'control': control, 'local_index': local_index}
+		
+		current_index += control_count
 	
 	return null
