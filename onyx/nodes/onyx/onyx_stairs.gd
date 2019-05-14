@@ -5,6 +5,7 @@ extends CSGMesh
 # DEPENDENCIES
 var OnyxUtils = load("res://addons/onyx/nodes/onyx/onyx_utils.gd")
 var VectorUtils = load("res://addons/onyx/utilities/vector_utils.gd")
+var ControlPoint = load("res://addons/onyx/gizmos/control_point.gd")
 
 # ////////////////////////////////////////////////////////////
 # TOOL ENUMS
@@ -30,7 +31,7 @@ var onyx_mesh = OnyxMesh.new()
 var handles = {}
 
 # Old handle points that are saved every time a handle has finished moving.
-var old_handles = {}
+var old_handle_data = {}
 
 # The offset of the origin relative to the rest of the mesh.
 var origin_offset = Vector3(0, 0, 0)
@@ -322,87 +323,68 @@ func render_onyx_mesh():
 # ////////////////////////////////////////////////////////////
 # GIZMO HANDLES
 
-# The distance away from the translation point each handle is.
-const transform_handle_x = Vector3(0.5, 0, 0)
-const transform_handle_y = Vector3(0, 0.5, 0)
-const transform_handle_z = Vector3(0, 0, 0.5)
-
-# The amount the translation handle set is moved from the original point by.
-const transform_offset = Vector3(0, 0, 0)
+# On initialisation, control points are built for transmitting and handling interactive points between the node and the node's gizmo.
+func build_handles():
+	
+	# Exit if not being run in the editor
+	if Engine.editor_hint == false:
+		return
+	
+	var triangle_z = [Vector3(0.0, 1.0, 0.0), Vector3(1.0, 1.0, 0.0), Vector3(1.0, 0.0, 0.0)]
+	
+	var start_position = ControlPoint.new(self, "get_gizmo_undo_state", "get_gizmo_redo_state", "restore_state", "restore_state")
+	start_position.control_name = 'start_position'
+	start_position.set_type_translate(false, "handle_change", "handle_commit")
+	
+	var end_position = ControlPoint.new(self, "get_gizmo_undo_state", "get_gizmo_redo_state", "restore_state", "restore_state")
+	end_position.control_name = 'end_position'
+	end_position.set_type_translate(false, "handle_change", "handle_commit")
+	
+	var stair_width = ControlPoint.new(self, "get_gizmo_undo_state", "get_gizmo_redo_state", "restore_state", "restore_state")
+	stair_width.control_name = 'stair_width'
+	stair_width.set_type_axis(false, "handle_change", "handle_commit", triangle_z)
+	
+	# populate the dictionary
+	handles[start_position.control_name] = start_position
+	handles[end_position.control_name] = end_position
+	handles[stair_width.control_name] = stair_width
+	
+	# need to give it positions in the case of a duplication or scene load.
+	generate_handles()
 
 # Uses the current settings to refresh the handle list.
 func generate_handles():
-	handles.clear()
+	
+	# Exit if not being run in the editor
+	if Engine.editor_hint == false:
+		return
+	
+	# Failsafe for script reloads, BECAUSE I CURRENTLY CAN'T DETECT THEM.
+	if handles.size() == 0: 
+		gizmo.control_points.clear()
+		build_handles()
+		return
 	
 	var depth_mid = Vector3(0, stair_depth/2, 0)
 	var width_mid =  Vector3(stair_width/2, 0, 0)
 	var length_mid = Vector3(0, 0, ((end_position - start_position).length() / stair_count) / 2)
 	
-	handles["start_position_x"] = start_position + transform_handle_x + transform_offset
-	handles["start_position_y"] = start_position + transform_handle_y + transform_offset
-	handles["start_position_z"] = start_position + transform_handle_z + transform_offset
-	handles["end_position_x"] = end_position + transform_handle_x + transform_offset
-	handles["end_position_y"] = end_position + transform_handle_y + transform_offset
-	handles["end_position_z"] = end_position + transform_handle_z + transform_offset
-	
-	handles["stair_width"] = start_position + depth_mid + width_mid
+	handles["start_position"].control_position = start_position 
+	handles["end_position"].control_position = end_position
+	handles["stair_width"].control_position = start_position + depth_mid + width_mid
 	
 
-# Converts the dictionary format of handles to a pair of handles with optional triangle for normal snaps.
-func convert_handles_to_gizmo() -> Array:
-	
-	var result = []
-	
-	# generate collision triangles
-	var triangle_x = [Vector3(0.0, 1.0, 0.0), Vector3(0.0, 1.0, 1.0), Vector3(0.0, 0.0, 1.0)]
-	var triangle_y = [Vector3(1.0, 0.0, 0.0), Vector3(1.0, 0.0, 1.0), Vector3(0.0, 0.0, 1.0)]
-	var triangle_z = [Vector3(0.0, 1.0, 0.0), Vector3(1.0, 1.0, 0.0), Vector3(1.0, 0.0, 0.0)]
-	
-	# convert handle values to an array
-	var handle_array = handles.values()
-
-	result.append( [handle_array[0], triangle_x] )
-	result.append( [handle_array[1], triangle_y] )
-	result.append( [handle_array[2], triangle_z] )
-	result.append( [handle_array[3], triangle_x] )
-	result.append( [handle_array[4], triangle_y] )
-	result.append( [handle_array[5], triangle_z] )
-	
-	result.append( [handle_array[6], triangle_x] )
-	
-	return result
-
-
-# Converts the gizmo handle format of an array of points and applies it to the dictionary format for Onyx.
-func convert_handles_to_onyx(handles) -> Dictionary:
-	
-	var result = {}
-	result["start_position_x"] = handles[0]
-	result["start_position_y"] = handles[1]
-	result["start_position_z"] = handles[2]
-	result["end_position_x"] = handles[3]
-	result["end_position_y"] = handles[4]
-	result["end_position_z"] = handles[5]
-	
-	handles["stair_width"] = handles[6]
-	
-	return result
-	
 
 # Changes the handle based on the given index and coordinates.
-func update_handle_from_gizmo(index, coordinate):
+func update_handle_from_gizmo(control):
 	
-	match index:
+	var coordinate = control.control_position
+	
+	match control.control_name:
 		# positions
-		0: start_position.x = coordinate.x - transform_handle_x.x - transform_offset.x
-		1: start_position.y = coordinate.y - transform_handle_y.y - transform_offset.y
-		2: start_position.z = coordinate.z - transform_handle_z.z - transform_offset.z
-		3: end_position.x = coordinate.x - transform_handle_x.x - transform_offset.x
-		4: end_position.y = coordinate.y - transform_handle_y.y - transform_offset.y
-		5: end_position.z = coordinate.z - transform_handle_z.z - transform_offset.z
-		
-		# stair properties
-		6: stair_width = (coordinate.x - start_position.x) * 2
+		'start_position': start_position = coordinate
+		'end_position': end_position = coordinate
+		'stair_width': stair_width = (coordinate.x - start_position.x) * 2
 		
 	generate_handles()
 	
@@ -410,14 +392,9 @@ func update_handle_from_gizmo(index, coordinate):
 # Applies the current handle values to the shape attributes
 func apply_handle_attributes():
 	
-	start_position.x = handles["start_position_x"].x - transform_handle_x.x - transform_offset.x
-	start_position.y = handles["start_position_y"].y - transform_handle_y.y - transform_offset.y
-	start_position.z = handles["start_position_z"].z - transform_handle_z.z - transform_offset.z
-	end_position.x = handles["end_position_x"].x - transform_handle_x.x - transform_offset.x
-	end_position.y = handles["end_position_y"].y - transform_handle_y.y - transform_offset.y
-	end_position.z = handles["end_position_z"].z - transform_handle_z.z - transform_offset.z
-	
-	stair_width = (handles["stair_width"].x - start_position.x) * 2
+	start_position = handles["start_position"].control_position
+	end_position = handles["end_position"].control_position
+	stair_width = (handles["stair_width"].control_position.x - start_position.x) * 2
 
 # Calibrates the stored properties if they need to change before the origin is updated.
 # Only called during Gizmo movements for origin auto-updating.
@@ -430,30 +407,35 @@ func balance_handles():
 # STANDARD HANDLE FUNCTIONS
 # (DO NOT CHANGE THESE BETWEEN SCRIPTS)
 
+# Returns the control points that the gizmo should currently have.
+# Used by ControlPointGizmo to obtain that data once it's created, AFTER this node is created.
+func get_gizmo_control_points() -> Array:
+	return handles.values()
+
 # Notifies the node that a handle has changed.
-func handle_change(index, coord):
-	OnyxUtils.handle_change(self, index, coord)
+func handle_change(control):
+	OnyxUtils.handle_change(self, control)
 
 # Called when a handle has stopped being dragged.
-func handle_commit(index, coord):
-	OnyxUtils.handle_commit(self, index, coord)
+func handle_commit(control):
+	OnyxUtils.handle_commit(self, control)
 
 
 
 # ////////////////////////////////////////////////////////////
 # STATES
 # Returns a state that can be used to undo or redo a previous change to the shape.
-func get_gizmo_redo_state():
+func get_gizmo_redo_state(control):
 	return OnyxUtils.get_gizmo_redo_state(self)
 	
 # Returns a state specifically for undo functions in SnapGizmo.
-func get_gizmo_undo_state():
+func get_gizmo_undo_state(control):
 	return OnyxUtils.get_gizmo_undo_state(self)
 
 # Restores the state of the shape to a previous given state.
 func restore_state(state):
 	OnyxUtils.restore_state(self, state)
-	var new_handles = state[0]
+
 
 
 # ////////////////////////////////////////////////////////////

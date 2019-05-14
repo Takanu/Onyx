@@ -26,19 +26,13 @@ func create_gizmo(spatial):
 	print(spatial)
 	
 	for handled_object in plugin.NodeHandlerList:
-		if spatial is OnyxCube:
+		if spatial is handled_object:
 			var new_gizmo = ControlPointGizmo.new()
 			
-			print('GizmoPlugin - CONTROL POINT GIZMO creation successful, returning gizmo: ', new_gizmo, spatial)
-			return new_gizmo
-			
-		elif spatial is handled_object:
-			var new_gizmo = SnapGizmo.new()
-			
-			print('GizmoPlugin - Gizmo creation successful, returning gizmo: ', new_gizmo, spatial)
+#			print('GizmoPlugin - CONTROL POINT GIZMO creation successful, returning gizmo: ', new_gizmo, spatial)
 			return new_gizmo
 		
-	print('GizmoPlugin - Gizmo creation UNSUCCESSFUL, returning nothing (:.')
+#	print('GizmoPlugin - Gizmo creation UNSUCCESSFUL, returning nothing (:.')
 	return null
 	
 

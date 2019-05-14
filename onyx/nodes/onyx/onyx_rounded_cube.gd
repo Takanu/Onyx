@@ -5,6 +5,7 @@ extends CSGMesh
 # DEPENDENCIES
 var OnyxUtils = load("res://addons/onyx/nodes/onyx/onyx_utils.gd")
 var VectorUtils = load("res://addons/onyx/utilities/vector_utils.gd")
+var ControlPoint = load("res://addons/onyx/gizmos/control_point.gd")
 
 # ////////////////////////////////////////////////////////////
 # TOOL ENUMS
@@ -38,7 +39,7 @@ var gizmo_mat = load("res://addons/onyx/materials/gizmo_t1.tres")
 var handles = {}
 
 # Old handle points that are saved every time a handle has finished moving.
-var old_handles = {}
+var old_handle_data = {}
 
 # The offset of the origin relative to the rest of the mesh.
 var origin_offset = Vector3(0, 0, 0)
@@ -265,7 +266,7 @@ func update_origin_mode(new_value):
 	
 	# ensure the origin mode toggle is preserved, and ensure the adjusted handles are saved.
 	previous_origin_mode = origin_mode
-	old_handles = handles.duplicate()
+	old_handle_data = OnyxUtils.get_control_data(self)
 
 
 func update_unwrap_method(new_value):
@@ -443,74 +444,99 @@ func render_onyx_mesh():
 # ////////////////////////////////////////////////////////////
 # GIZMO HANDLES
 
-# Uses the current settings to refresh the handle list.
-func generate_handles():
-	handles.clear()
+# On initialisation, control points are built for transmitting and handling interactive points between the node and the node's gizmo.
+func build_handles():
 	
-	var mid_x = (x_plus_position - x_minus_position) / 2
-	var mid_y = (y_plus_position - y_minus_position) / 2
-	var mid_z = (z_plus_position - z_minus_position) / 2
+	print("ONYXCUBE build_handles")
 	
-	var diff_x = abs(x_plus_position - -x_minus_position)
-	var diff_y = abs(y_plus_position - -y_minus_position)
-	var diff_z = abs(z_plus_position - -z_minus_position)
+	# Exit if not being run in the editor
+	if Engine.editor_hint == false:
+		return
 	
-	handles["x_minus"] = Vector3(-x_minus_position, mid_y, mid_z)
-	handles["x_plus"] = Vector3(x_plus_position, mid_y, mid_z)
-	handles["y_minus"] = Vector3(mid_x, -y_minus_position, mid_z)
-	handles["y_plus"] = Vector3(mid_x, y_plus_position, mid_z)
-	handles["z_minus"] = Vector3(mid_x, mid_y, -z_minus_position)
-	handles["z_plus"] = Vector3(mid_x, mid_y, z_plus_position)
-	
-	
-
-# Converts the dictionary format of handles to a pair of handles with optional triangle for normal snaps.
-func convert_handles_to_gizmo() -> Array:
-	
-	var result = []
-	
-	# generate collision triangles
 	var triangle_x = [Vector3(0.0, 1.0, 0.0), Vector3(0.0, 1.0, 1.0), Vector3(0.0, 0.0, 1.0)]
 	var triangle_y = [Vector3(1.0, 0.0, 0.0), Vector3(1.0, 0.0, 1.0), Vector3(0.0, 0.0, 1.0)]
 	var triangle_z = [Vector3(0.0, 1.0, 0.0), Vector3(1.0, 1.0, 0.0), Vector3(1.0, 0.0, 0.0)]
 	
-	# convert handle values to an array
-	var handle_array = handles.values()
-
-	result.append( [handle_array[0], triangle_x] )
-	result.append( [handle_array[1], triangle_x] )
-	result.append( [handle_array[2], triangle_y] )
-	result.append( [handle_array[3], triangle_y] )
-	result.append( [handle_array[4], triangle_z] )
-	result.append( [handle_array[5], triangle_z] )
+	var x_minus = ControlPoint.new(self, "get_gizmo_undo_state", "get_gizmo_redo_state", "restore_state", "restore_state")
+	x_minus.control_name = 'x_minus'
+	x_minus.set_type_axis(false, "handle_change", "handle_commit", triangle_x)
 	
-	return result
-
-
-# Converts the gizmo handle format of an array of points and applies it to the dictionary format for Onyx.
-func convert_handles_to_onyx(handles) -> Dictionary:
+	var x_plus = ControlPoint.new(self, "get_gizmo_undo_state", "get_gizmo_redo_state", "restore_state", "restore_state")
+	x_plus.control_name = 'x_plus'
+	x_plus.set_type_axis(false, "handle_change", "handle_commit", triangle_x)
 	
-	var result = {}
-	result["x_minus"] = handles[0]
-	result["x_plus"] = handles[1]
-	result["y_minus"] = handles[2]
-	result["y_plus"] = handles[3]
-	result["z_minus"] = handles[4]
-	result["z_plus"] = handles[5]
+	var y_minus = ControlPoint.new(self, "get_gizmo_undo_state", "get_gizmo_redo_state", "restore_state", "restore_state")
+	y_minus.control_name = 'y_minus'
+	y_minus.set_type_axis(false, "handle_change", "handle_commit", triangle_y)
 	
-	return result
+	var y_plus = ControlPoint.new(self, "get_gizmo_undo_state", "get_gizmo_redo_state", "restore_state", "restore_state")
+	y_plus.control_name = 'y_plus'
+	y_plus.set_type_axis(false, "handle_change", "handle_commit", triangle_y)
+	
+	var z_minus = ControlPoint.new(self, "get_gizmo_undo_state", "get_gizmo_redo_state", "restore_state", "restore_state")
+	z_minus.control_name = 'z_minus'
+	z_minus.set_type_axis(false, "handle_change", "handle_commit", triangle_z)
+	
+	var z_plus = ControlPoint.new(self, "get_gizmo_undo_state", "get_gizmo_redo_state", "restore_state", "restore_state")
+	z_plus.control_name = 'z_plus'
+	z_plus.set_type_axis(false, "handle_change", "handle_commit", triangle_z)
+	
+	# populate the dictionary
+	handles["x_minus"] = x_minus
+	handles["x_plus"] = x_plus
+	handles["y_minus"] = y_minus
+	handles["y_plus"] = y_plus
+	handles["z_minus"] = z_minus
+	handles["z_plus"] = z_plus
+	
+	# need to give it positions in the case of a duplication or scene load.
+	generate_handles()
+	
+
+# Uses the current settings to refresh the control point positions.
+func generate_handles():
+	
+	print("ONYXCUBE generate_handles")
+	
+	# Exit if not being run in the editor
+	if Engine.editor_hint == false:
+		return
+	
+	# Failsafe for script reloads, BECAUSE I CURRENTLY CAN'T DETECT THEM.
+	if handles.size() == 0:
+		gizmo.control_points.clear()
+		build_handles()
+		return
+	
+	var mid_x = (x_plus_position - x_minus_position) / 2
+	var mid_y = (y_plus_position - y_minus_position) / 2
+	var mid_z = (z_plus_position - z_minus_position) / 2
+
+	var diff_x = abs(x_plus_position - -x_minus_position)
+	var diff_y = abs(y_plus_position - -y_minus_position)
+	var diff_z = abs(z_plus_position - -z_minus_position)
+
+	handles["x_minus"].control_position = Vector3(-x_minus_position, mid_y, mid_z)
+	handles["x_plus"].control_position = Vector3(x_plus_position, mid_y, mid_z)
+	handles["y_minus"].control_position = Vector3(mid_x, -y_minus_position, mid_z)
+	handles["y_plus"].control_position = Vector3(mid_x, y_plus_position, mid_z)
+	handles["z_minus"].control_position = Vector3(mid_x, mid_y, -z_minus_position)
+	handles["z_plus"].control_position = Vector3(mid_x, mid_y, z_plus_position)
+	
 	
 
 # Changes the handle based on the given index and coordinates.
-func update_handle_from_gizmo(index, coordinate):
+func update_handle_from_gizmo(control):
 	
-	match index:
-		0: x_minus_position = min(coordinate.x, x_plus_position) * -1
-		1: x_plus_position = max(coordinate.x, -x_minus_position)
-		2: y_minus_position = min(coordinate.y, y_plus_position) * -1
-		3: y_plus_position = max(coordinate.y, -y_minus_position)
-		4: z_minus_position = min(coordinate.z, z_plus_position) * -1
-		5: z_plus_position = max(coordinate.z, -z_minus_position)
+	var coordinate = control.control_position
+	
+	match control.control_name:
+		'x_minus': x_minus_position = min(coordinate.x, x_plus_position) * -1
+		'x_plus': x_plus_position = max(coordinate.x, -x_minus_position)
+		'y_minus': y_minus_position = min(coordinate.y, y_plus_position) * -1
+		'y_plus': y_plus_position = max(coordinate.y, -y_minus_position)
+		'z_minus': z_minus_position = min(coordinate.z, z_plus_position) * -1
+		'z_plus': z_plus_position = max(coordinate.z, -z_minus_position)
 		
 	generate_handles()
 	
@@ -518,13 +544,14 @@ func update_handle_from_gizmo(index, coordinate):
 # Applies the current handle values to the shape attributes
 func apply_handle_attributes():
 	
-	x_minus_position = handles["x_minus"].x * -1
-	x_plus_position = handles["x_plus"].x
-	y_minus_position = handles["y_minus"].y * -1
-	y_plus_position = handles["y_plus"].y
-	z_minus_position = handles["z_minus"].z * -1
-	z_plus_position = handles["z_plus"].z
-	
+	x_minus_position = handles["x_minus"].control_position.x * -1
+	x_plus_position = handles["x_plus"].control_position.x
+	y_minus_position = handles["y_minus"].control_position.y * -1
+	y_plus_position = handles["y_plus"].control_position.y
+	z_minus_position = handles["z_minus"].control_position.z * -1
+	z_plus_position = handles["z_plus"].control_position.z
+
+
 
 # Calibrates the stored properties if they need to change before the origin is updated.
 # Only called during Gizmo movements for origin auto-updating.
@@ -571,30 +598,35 @@ func balance_handles():
 # STANDARD HANDLE FUNCTIONS
 # (DO NOT CHANGE THESE BETWEEN SCRIPTS)
 
+# Returns the control points that the gizmo should currently have.
+# Used by ControlPointGizmo to obtain that data once it's created, AFTER this node is created.
+func get_gizmo_control_points() -> Array:
+	return handles.values()
+
 # Notifies the node that a handle has changed.
-func handle_change(index, coord):
-	OnyxUtils.handle_change(self, index, coord)
+func handle_change(control):
+	OnyxUtils.handle_change(self, control)
 
 # Called when a handle has stopped being dragged.
-func handle_commit(index, coord):
-	OnyxUtils.handle_commit(self, index, coord)
+func handle_commit(control):
+	OnyxUtils.handle_commit(self, control)
 
 
 
 # ////////////////////////////////////////////////////////////
 # STATES
 # Returns a state that can be used to undo or redo a previous change to the shape.
-func get_gizmo_redo_state():
+func get_gizmo_redo_state(control):
 	return OnyxUtils.get_gizmo_redo_state(self)
 	
 # Returns a state specifically for undo functions in SnapGizmo.
-func get_gizmo_undo_state():
+func get_gizmo_undo_state(control):
 	return OnyxUtils.get_gizmo_undo_state(self)
 
 # Restores the state of the shape to a previous given state.
 func restore_state(state):
 	OnyxUtils.restore_state(self, state)
-	var new_handles = state[0]
+
 
 
 # ////////////////////////////////////////////////////////////

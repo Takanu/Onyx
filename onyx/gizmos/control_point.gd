@@ -226,7 +226,6 @@ func get_handle_positions():
 		
 		# currently pass for rotate and scale until i implement it.
 		
-		
 		HandleType.CLICK:
 			return [control_position]
 
@@ -241,9 +240,9 @@ func get_handle_lines():
 		var handle_y = control_position + Vector3(0, handle_distance, 0)
 		var handle_z = control_position + Vector3(0, 0, handle_distance)
 		
-		var line_1 = [PoolVector3Array( [control_position, handle_x] ), mat_solid_color(255, 0, 0)]
-		var line_2 = [PoolVector3Array( [control_position, handle_y] ), mat_solid_color(0, 0, 255)]
-		var line_3 = [PoolVector3Array( [control_position, handle_z] ), mat_solid_color(0, 255, 0)]
+		var line_1 = [PoolVector3Array( [control_position, handle_x] ), mat_solid_color(1, 0.3, 0.0)]
+		var line_2 = [PoolVector3Array( [control_position, handle_y] ), mat_solid_color(0.3, 1, 0.3)]
+		var line_3 = [PoolVector3Array( [control_position, handle_z] ), mat_solid_color(0.3, 0.3, 1)]
 	
 		return [line_1, line_2, line_3]
 		
@@ -325,13 +324,15 @@ func update_handle(index, camera, point):
 	var world_matrix = control_point_owner.global_transform
 	var camera_matrix = camera.global_transform
 	
-	# Apply the current coordinate to world and camera space
-	var world_space_coord = world_matrix.xform(control_position)
-	var cam_space_coord = camera_matrix.xform_inv(world_space_coord)
-	
 	match handle_type:
 		
 		HandleType.FREE:
+#			print("Handling FREE POINT")
+			
+			# Apply the current coordinate to world and camera space
+			var world_space_coord = world_matrix.xform(control_position)
+			var cam_space_coord = camera_matrix.xform_inv(world_space_coord)
+			
 			# Create a screen plane using the points switched coordinate-space Z-axis.
 			# Create a ray that points from the point we're provided to the camera.
 			# Create an origin using the new point we have.
@@ -342,44 +343,72 @@ func update_handle(index, camera, point):
 				
 			# Get a 3D coordinate we can use based on a ray intersection of the 2D point.
 			# Sometimes the projection might fail so we need to return if that's the case.
-			control_position = project_plane.intersects_ray(ray_origin, ray_dir)
-			if not control_position: 
+			var new_position = project_plane.intersects_ray(ray_origin, ray_dir)
+			if not new_position: 
 				return 
 			
 			# If it worked, configure and apply it.
-			control_position = camera_matrix.xform(control_position)
-			control_position = world_matrix.xform_inv(control_position)
+			new_position = camera_matrix.xform(new_position)
+			new_position = world_matrix.xform_inv(new_position)
 			
 			# Now we have a valid control_position, perform a callback.
+			var control_position = new_position
 			if free_update_callback != "":
 				control_point_owner.call(free_update_callback, self)
 		
 		
 		HandleType.AXIS:
+#			print("Handling AXIS POINT")
 			#print("RAWR HANDLE MOVED: ", coord)
-			var planes = make_planes(axis_triangle, control_position)
-			#print("PLANES: ", planes)
-		
-			var ray_origin = camera.project_ray_origin(point)
-			var ray_dir = camera.project_ray_normal(point)
-			ray_origin = world_matrix.xform_inv(ray_origin)
-			ray_dir = world_matrix.basis.xform_inv(ray_dir)
-			
-			
-			control_position = planes[0].intersects_ray(ray_origin, ray_dir)
-			if not control_position: 
+			var new_position = project_point_to_axis(point, camera, control_position, world_matrix, axis_triangle)
+
+			if not new_position: 
 				return #sometimes the projection might fail
-				
-			if planes.size() > 1:
-				control_position = planes[1].project(control_position)
 			
 			# Now we have a valid control_position, perform a callback.
+			control_position = new_position
 			if axis_update_callback != "":
 				control_point_owner.call(axis_update_callback, self)
 		
 		
 		HandleType.TRANSLATE:
-			pass
+#			print("Handling TRANSLATE POINT")
+			
+			var target_axis_triangle = []
+			var target_position
+			var handle_offset
+			
+			match index:
+				0: target_axis_triangle = [Vector3(0.0, 1.0, 0.0), Vector3(0.0, 1.0, 1.0), Vector3(0.0, 0.0, 1.0)]
+				1: target_axis_triangle = [Vector3(1.0, 0.0, 0.0), Vector3(1.0, 0.0, 1.0), Vector3(0.0, 0.0, 1.0)]
+				2: target_axis_triangle = [Vector3(0.0, 1.0, 0.0), Vector3(1.0, 1.0, 0.0), Vector3(1.0, 0.0, 0.0)]
+			match index:
+				0: target_position = control_position + Vector3(handle_distance, 0, 0)
+				1: target_position = control_position + Vector3(0, handle_distance, 0)
+				2: target_position = control_position + Vector3(0, 0, handle_distance)
+			match index:
+				0: handle_offset = Vector3(handle_distance, 0, 0)
+				1: handle_offset = Vector3(0, handle_distance, 0)
+				2: handle_offset = Vector3(0, 0, handle_distance)
+				
+			var new_position = project_point_to_axis(point, camera, control_position, world_matrix, target_axis_triangle)
+			
+			if new_position == null: 
+					return
+			
+			# TODO : Remove when the projection system is fixed.
+			match index:
+				0: control_position.x = new_position.x
+				1: control_position.y = new_position.y
+				2: control_position.z = new_position.z
+			
+			control_position -= handle_offset
+			
+			# Now we have a valid control_position, perform a callback.
+#			print("SETTING RAWR")
+			if translate_update_callback != "":
+				control_point_owner.call(translate_update_callback, self)
+			
 		
 		HandleType.ROTATE:
 			pass
@@ -421,6 +450,34 @@ func commit_handle(index, restore):
 
 # ////////////////////////////////////////////////////////////
 # HELPERS
+func project_point_to_axis(point, camera, target_position, world_matrix, axis_triangle):
+#	print("RAWR HANDLE MOVED: ", target_position)
+	var planes = make_planes(axis_triangle, target_position)
+#	print("PLANES: ", planes)
+
+	var ray_origin = camera.project_ray_origin(point)
+	var ray_dir = camera.project_ray_normal(point)
+	ray_origin = world_matrix.xform_inv(ray_origin)
+	ray_dir = world_matrix.basis.xform_inv(ray_dir)
+	
+	# TODO - This system is busted, replace it with something better.
+	
+	var new_position = Vector3()
+	var intersect_pos = planes[0].intersects_ray(ray_origin, ray_dir)
+	if not intersect_pos: 
+		return null
+	
+#	print('TARGET POSITION: ', target_position)
+#	print('INTERSECT POSITION: ', intersect_pos)
+		
+	if planes.size() > 1:
+		new_position = planes[1].project(intersect_pos)
+	
+#	print('NEW POSITION: ', new_position)
+	
+	return new_position
+	
+
 # Creates planes with which to lock the position of the handle to a single defined axis, if AXIS is used.
 func make_planes(triangle, handle_loc):
 	
@@ -429,6 +486,10 @@ func make_planes(triangle, handle_loc):
 	
 	if triangle.size() < 3:
 		print("(onyx_cube_gizmo : make_planes) Not enough triangles given.")
+	
+#	print("~~~~~")
+#	print(triangle, handle_loc)
+#	print("~~~~~")
 	
 	# get the unit vector of the two vectors made from the triangle
 	var movement_vector =  handle_loc - triangle[0]
@@ -441,15 +502,15 @@ func make_planes(triangle, handle_loc):
 	var cross = vec_1.cross(vec_2).normalized()
 	var vertex_4 = (cross * 2) + vertex_1
 	
-	#print("VECTORS: ", vec_1, vec_2, cross)
-	#print("FINAL VERTICES: ", vertex_1, vertex_2, vertex_3, vertex_4)
+#	print("VECTORS: ", vec_1, vec_2, cross)
+#	print("FINAL VERTICES: ", vertex_1, vertex_2, vertex_3, vertex_4)
 	
 	# Build the planes
 	var plane_1 = Plane(vertex_1, vertex_2, vertex_4)
 	var plane_2 = Plane(vertex_1, vertex_3, vertex_4)
 	
-	#print("PLANE 1 : ", plane_1)
-	#print("PLANE 2 : ", plane_2)
+#	print("PLANE 1 : ", plane_1)
+#	print("PLANE 2 : ", plane_2)
 	
 	return [plane_1, plane_2]
 

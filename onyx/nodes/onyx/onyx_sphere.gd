@@ -5,6 +5,7 @@ extends CSGMesh
 # DEPENDENCIES
 var OnyxUtils = load("res://addons/onyx/nodes/onyx/onyx_utils.gd")
 var VectorUtils = load("res://addons/onyx/utilities/vector_utils.gd")
+var ControlPoint = load("res://addons/onyx/gizmos/control_point.gd")
 
 # ////////////////////////////////////////////////////////////
 # TOOL ENUMS
@@ -32,7 +33,7 @@ var onyx_mesh = OnyxMesh.new()
 var handles : Dictionary = {}
 
 # Old handle points that are saved every time a handle has finished moving.
-var old_handles : Dictionary = {}
+var old_handle_data : Dictionary = {}
 
 # The offset of the origin relative to the rest of the mesh.
 var origin_offset = Vector3(0, 0, 0)
@@ -184,7 +185,7 @@ func update_origin_mode(new_value):
 	
 	# ensure the origin mode toggle is preserved, and ensure the adjusted handles are saved.
 	previous_origin_mode = origin_mode
-	old_handles = handles.duplicate()
+	old_handle_data = OnyxUtils.get_control_data(self)
 
 
 func update_unwrap_method(new_value):
@@ -344,71 +345,84 @@ func render_onyx_mesh():
 # ////////////////////////////////////////////////////////////
 # GIZMO HANDLES
 
-# Uses the current settings to refresh the handle list.
-func generate_handles():
-	handles.clear()
+# On initialisation, control points are built for transmitting and handling interactive points between the node and the node's gizmo.
+func build_handles():
 	
-	match origin_mode:
-		OriginPosition.CENTER:
-			handles["height"] = Vector3(0, height / 2, 0)
-			handles["x_width"] = Vector3(x_width / 2, 0, 0)
-			handles["z_width"] = Vector3(0, 0, z_width / 2)
-			
-		OriginPosition.BASE:
-			handles["height"] = Vector3(0, height, 0)
-			handles["x_width"] = Vector3(x_width / 2, height / 2, 0)
-			handles["z_width"] = Vector3(0, height / 2, z_width / 2)
-			
-		OriginPosition.BASE_CORNER:
-			handles["height"] = Vector3(x_width / 2, height, z_width / 2)
-			handles["x_width"] = Vector3(x_width, height / 2, z_width / 2)
-			handles["z_width"] = Vector3(x_width / 2, height / 2, z_width)
+	# Exit if not being run in the editor
+	if Engine.editor_hint == false:
+		return
 	
-	
-
-# Converts the dictionary format of handles to a pair of handles with optional triangle for normal snaps.
-func convert_handles_to_gizmo() -> Array:
-	
-	var result = []
-	
-	# generate collision triangles
 	var triangle_x = [Vector3(0.0, 1.0, 0.0), Vector3(0.0, 1.0, 1.0), Vector3(0.0, 0.0, 1.0)]
 	var triangle_y = [Vector3(1.0, 0.0, 0.0), Vector3(1.0, 0.0, 1.0), Vector3(0.0, 0.0, 1.0)]
 	var triangle_z = [Vector3(0.0, 1.0, 0.0), Vector3(1.0, 1.0, 0.0), Vector3(1.0, 0.0, 0.0)]
 	
-	# convert handle values to an array
-	var handle_array = handles.values()
-	result.append( [handle_array[0], triangle_y] )
-	result.append( [handle_array[1], triangle_x] )
-	result.append( [handle_array[2], triangle_z] )
+	var height = ControlPoint.new(self, "get_gizmo_undo_state", "get_gizmo_redo_state", "restore_state", "restore_state")
+	height.control_name = 'height'
+	height.set_type_axis(false, "handle_change", "handle_commit", triangle_y)
 	
-	return result
+	var x_width = ControlPoint.new(self, "get_gizmo_undo_state", "get_gizmo_redo_state", "restore_state", "restore_state")
+	x_width.control_name = 'x_width'
+	x_width.set_type_axis(false, "handle_change", "handle_commit", triangle_x)
+	
+	var z_width = ControlPoint.new(self, "get_gizmo_undo_state", "get_gizmo_redo_state", "restore_state", "restore_state")
+	z_width.control_name = 'z_width'
+	z_width.set_type_axis(false, "handle_change", "handle_commit", triangle_z)
+	
+	
+	# populate the dictionary
+	handles[height.control_name] = height
+	handles[x_width.control_name] = x_width
+	handles[z_width.control_name] = z_width
+	
+	# need to give it positions in the case of a duplication or scene load.
+	generate_handles()
 
-
-# Converts the gizmo handle format of an array of points and applies it to the dictionary format for Onyx.
-func convert_handles_to_onyx(handles) -> Dictionary:
+# Uses the current settings to refresh the handle list.
+func generate_handles():
 	
-	var result = {}
-	result["height"] = handles[0]
-	result["x_width"] = handles[1]
-	result["z_width"] = handles[2]
+	# Exit if not being run in the editor
+	if Engine.editor_hint == false:
+		return
 	
-	return result
+	# Failsafe for script reloads, BECAUSE I CURRENTLY CAN'T DETECT THEM.
+	if handles.size() == 0: 
+		gizmo.control_points.clear()
+		build_handles()
+		return
+	
+	match origin_mode:
+		OriginPosition.CENTER:
+			handles["height"].control_position = Vector3(0, height / 2, 0)
+			handles["x_width"].control_position = Vector3(x_width / 2, 0, 0)
+			handles["z_width"].control_position = Vector3(0, 0, z_width / 2)
+			
+		OriginPosition.BASE:
+			handles["height"].control_position = Vector3(0, height, 0)
+			handles["x_width"].control_position = Vector3(x_width / 2, height / 2, 0)
+			handles["z_width"].control_position = Vector3(0, height / 2, z_width / 2)
+			
+		OriginPosition.BASE_CORNER:
+			handles["height"].control_position = Vector3(x_width / 2, height, z_width / 2)
+			handles["x_width"].control_position = Vector3(x_width, height / 2, z_width / 2)
+			handles["z_width"].control_position = Vector3(x_width / 2, height / 2, z_width)
+	
 	
 
 # Changes the handle based on the given index and coordinates.
-func update_handle_from_gizmo(index, coordinate):
+func update_handle_from_gizmo(control):
+	
+	var coordinate = control.control_position
 	
 	var target_val = 0.0
-	match index:
-			0: target_val = max(coordinate.y, 0)
-			1: target_val = max(coordinate.x, 0)
-			2: target_val = max(coordinate.z, 0)
+	match control.control_name:
+			'height': target_val = max(coordinate.y, 0)
+			'x_width': target_val = max(coordinate.x, 0)
+			'z_width': target_val = max(coordinate.z, 0)
 	
 	# Multiply the target depending on where the origin is (to adjust for different handle scales).
 	if origin_mode == OriginPosition.CENTER:
 		target_val = target_val * 2
-	elif origin_mode == OriginPosition.BASE && index != 0:
+	elif origin_mode == OriginPosition.BASE && control.control_name != 'height':
 		target_val = target_val * 2
 	
 	# If proportional shape toggle is on, apply to all values
@@ -419,30 +433,10 @@ func update_handle_from_gizmo(index, coordinate):
 	
 	# Otherwise apply selectively.
 	else:
-		match index:
-			0: height = target_val
-			1: x_width = target_val
-			2: z_width = target_val
-	
-	
-	# Old handle adjustments, for reference.
-#	if origin_mode == OriginPosition.CENTER:
-#		match index:
-#			0: height = max(coordinate.y, 0) * 2
-#			1: x_width = max(coordinate.x, 0) * 2
-#			2: z_width = max(coordinate.z, 0) * 2
-#
-#	if origin_mode == OriginPosition.BASE:
-#		match index:
-#			0: height = max(coordinate.y, 0) 
-#			1: x_width = max(coordinate.x, 0) * 2
-#			2: z_width = max(coordinate.z, 0) * 2
-#
-#	if origin_mode == OriginPosition.BASE_CORNER:
-#		match index:
-#			0: height = max(coordinate.y, 0) 
-#			1: x_width = max(coordinate.x, 0)
-#			2: z_width = max(coordinate.z, 0)
+		match control.control_name:
+			'height': height = target_val
+			'x_width': x_width = target_val
+			'z_width': z_width = target_val
 	
 	generate_handles()
 	
@@ -451,20 +445,19 @@ func update_handle_from_gizmo(index, coordinate):
 func apply_handle_attributes():
 	
 	if origin_mode == OriginPosition.CENTER:
-		height = handles["height"].y * 2
-		x_width = handles["x_width"].x * 2
-		z_width = handles["z_width"].z * 2
+		height = handles["height"].control_position.y * 2
+		x_width = handles["x_width"].control_position.x * 2
+		z_width = handles["z_width"].control_position.z * 2
 	
 	if origin_mode == OriginPosition.BASE:
-		height = handles["height"].y
-		x_width = handles["x_width"].x * 2
-		z_width = handles["z_width"].z * 2
+		height = handles["height"].control_position.y
+		x_width = handles["x_width"].control_position.x * 2
+		z_width = handles["z_width"].control_position.z * 2
 	
 	if origin_mode == OriginPosition.BASE_CORNER:
-		height = handles["height"].y
-		x_width = handles["x_width"].x
-		z_width = handles["z_width"].z
-	
+		height = handles["height"].control_position.y
+		x_width = handles["x_width"].control_position.x
+		z_width = handles["z_width"].control_position.z
 	
 	
 
@@ -479,31 +472,34 @@ func balance_handles():
 # STANDARD HANDLE FUNCTIONS
 # (DO NOT CHANGE THESE BETWEEN SCRIPTS)
 
+# Returns the control points that the gizmo should currently have.
+# Used by ControlPointGizmo to obtain that data once it's created, AFTER this node is created.
+func get_gizmo_control_points() -> Array:
+	return handles.values()
+
 # Notifies the node that a handle has changed.
-func handle_change(index, coord):
-	OnyxUtils.handle_change(self, index, coord)
+func handle_change(control):
+	OnyxUtils.handle_change(self, control)
 
 # Called when a handle has stopped being dragged.
-func handle_commit(index, coord):
-	OnyxUtils.handle_commit(self, index, coord)
+func handle_commit(control):
+	OnyxUtils.handle_commit(self, control)
 
 
 
 # ////////////////////////////////////////////////////////////
 # STATES
 # Returns a state that can be used to undo or redo a previous change to the shape.
-func get_gizmo_redo_state():
+func get_gizmo_redo_state(control):
 	return OnyxUtils.get_gizmo_redo_state(self)
 	
 # Returns a state specifically for undo functions in SnapGizmo.
-func get_gizmo_undo_state():
+func get_gizmo_undo_state(control):
 	return OnyxUtils.get_gizmo_undo_state(self)
 
 # Restores the state of the shape to a previous given state.
 func restore_state(state):
 	OnyxUtils.restore_state(self, state)
-	var new_handles = state[0]
-
 
 # ////////////////////////////////////////////////////////////
 # SELECTION
