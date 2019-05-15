@@ -545,30 +545,30 @@ func apply_handle_attributes():
 	var point_base_diff = point_width - base_x_size
 
 	if origin_mode == OriginPosition.CENTER:
-		point_position.x = handles['point_position'].point_position.x
-		point_position.y = handles['point_position'].point_position.y * 2
-		point_position.z = handles['point_position'].point_position.z
-		point_width = (handles['point_width'].point_position.x - point_position.x) * 2
-		base_x_size = handles['base_x_size'].point_position.x * 2
-		base_z_size = handles['base_z_size'].point_position.z * 2
+		point_position.x = handles['point_position'].control_position.x
+		point_position.y = handles['point_position'].control_position.y * 2
+		point_position.z = handles['point_position'].control_position.z
+		point_width = (handles['point_width'].control_position.x - point_position.x) * 2
+		base_x_size = handles['base_x_size'].control_position.x * 2
+		base_z_size = handles['base_z_size'].control_position.z * 2
 	
 	if origin_mode == OriginPosition.BASE:
-		point_position.x = handles['point_position'].point_position
-		point_width = (handles['point_width'].point_position.x - point_position.x) * 2
-		base_x_size = handles['base_x_size'].point_position.x * 2
-		base_z_size = handles['base_z_size'].point_position.z * 2
+		point_position.x = handles['point_position'].control_position
+		point_width = (handles['point_width'].control_position.x - point_position.x) * 2
+		base_x_size = handles['base_x_size'].control_position.x * 2
+		base_z_size = handles['base_z_size'].control_position.z * 2
 	
 	if origin_mode == OriginPosition.BASE_CORNER:
-		point_position.x = handles['point_position'].point_position.x - half_base.x
-		point_position.y = handles['point_position'].point_position.y
-		point_position.z = handles['point_position'].point_position.z - half_base.z
+		point_position.x = handles['point_position'].control_position.x - half_base.x
+		point_position.y = handles['point_position'].control_position.y
+		point_position.z = handles['point_position'].control_position.z - half_base.z
 		
 		if point_base_diff > 0:
-			point_width = handles['point_width'].point_position.x - point_position.x
-			base_x_size = handles['base_x_size'].point_position.x - (point_base_diff / 2)
+			point_width = handles['point_width'].control_position.x - point_position.x
+			base_x_size = handles['base_x_size'].control_position.x - (point_base_diff / 2)
 		else:
-			point_width = handles['point_width'].point_position.x - point_position.x + (point_base_diff / 2)
-			base_x_size = handles['base_x_size'].point_position.x
+			point_width = handles['point_width'].control_position.x - point_position.x + (point_base_diff / 2)
+			base_x_size = handles['base_x_size'].control_position.x
 		
 # Removes the transform offset applied to handles for the sake of visual clarity on the screen.
 #func 

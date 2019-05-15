@@ -10,7 +10,7 @@ extends CSGCombiner
 # DEPENDENCIES
 var FluxUtils = load("res://addons/onyx/nodes/flux/flux_utils.gd")
 var VectorUtils = load('res://addons/onyx/utilities/vector_utils.gd')
-
+var ControlPoint = load("res://addons/onyx/gizmos/control_point.gd")
 
 # ////////////////////////////////////////////////////////////
 # CONSTANTS
@@ -31,7 +31,7 @@ var local_tracked_pos = Vector3(0, 0, 0)
 var handles : Dictionary = {}
 
 # Old handle points that are saved every time a handle has finished moving.
-var old_handles : Dictionary = {}
+var old_handle_data : Dictionary = {}
 
 # The OnyxMesh used to build and render the volumes.
 var onyx_mesh = OnyxMesh.new()
@@ -144,11 +144,11 @@ func _ready():
 			
 		# if we have no handles already, make some
 		# (used during duplication and other functions)
-		elif handles.size() == 0:
-			generate_handles()
+		if handles.size() == 0:
+			build_handles()
 		
-		# Ensure the old_handles variable match the current handles we have for undo/redo.
-		old_handles = handles.duplicate(true)
+		# Ensure the old_handle_data variable match the current handles we have for undo/redo.
+		old_handle_data = FluxUtils.get_control_data(self)
 		
 
 # Initialises the node that will be used to parent all spawned nodes to.
@@ -261,7 +261,7 @@ func set_area_type(new_value):
 	
 	# ensure the origin mode toggle is preserved, and ensure the adjusted handles are saved.
 	previous_area_type = area_type
-	old_handles = handles.duplicate()
+	old_handle_data = FluxUtils.get_control_data(self)
 	
 
 # ////////////////////////////////////////////////////////////
@@ -564,11 +564,49 @@ func spawn_node_candidate():
 # ////////////////////////////////////////////////////////////
 # GIZMO HANDLES
 
+# On initialisation, control points are built for transmitting and handling interactive points between the node and the node's gizmo.
+func build_handles():
+	
+	# Exit if not being run in the editor
+	if Engine.editor_hint == false:
+		return
+	
+	var triangle_x = [Vector3(0.0, 1.0, 0.0), Vector3(0.0, 1.0, 1.0), Vector3(0.0, 0.0, 1.0)]
+	var triangle_y = [Vector3(1.0, 0.0, 0.0), Vector3(1.0, 0.0, 1.0), Vector3(0.0, 0.0, 1.0)]
+	var triangle_z = [Vector3(0.0, 1.0, 0.0), Vector3(1.0, 1.0, 0.0), Vector3(1.0, 0.0, 0.0)]
+	
+	var x_size = ControlPoint.new(self, "get_gizmo_undo_state", "get_gizmo_redo_state", "restore_state", "restore_state")
+	x_size.control_name = 'x_size'
+	x_size.set_type_axis(false, "handle_change", "handle_commit", triangle_x)
+	
+	var y_size = ControlPoint.new(self, "get_gizmo_undo_state", "get_gizmo_redo_state", "restore_state", "restore_state")
+	y_size.control_name = 'y_size'
+	y_size.set_type_axis(false, "handle_change", "handle_commit", triangle_y)
+	
+	var z_size = ControlPoint.new(self, "get_gizmo_undo_state", "get_gizmo_redo_state", "restore_state", "restore_state")
+	z_size.control_name = 'z_size'
+	z_size.set_type_axis(false, "handle_change", "handle_commit", triangle_z)
+	
+	# populate the dictionary
+	handles[x_size.control_name] = x_size
+	handles[y_size.control_name] = y_size
+	handles[z_size.control_name] = z_size
+	
+	# need to give it positions in the case of a duplication or scene load.
+	generate_handles()
+
 # Uses the current settings to refresh the handle list.
 func generate_handles():
 	
-	print("generate_handles")
-	handles.clear()
+	# Exit if not being run in the editor
+	if Engine.editor_hint == false:
+		return
+	
+	# Failsafe for script reloads, BECAUSE I CURRENTLY CAN'T DETECT THEM.
+	if handles.size() == 0: 
+		gizmo.control_points.clear()
+		build_handles()
+		return
 	
 	match area_type:
 		AreaShape.BOX:
@@ -579,9 +617,9 @@ func generate_handles():
 			
 			print(x_size)
 			
-			handles['x_size'] = Vector3(x_size / 2, 0, 0)
-			handles['y_size'] = Vector3(0, y_size / 2, 0)
-			handles['z_size'] = Vector3(0, 0, z_size / 2)
+			handles['x_size'].control_position = Vector3(x_size / 2, 0, 0)
+			handles['y_size'].control_position = Vector3(0, y_size / 2, 0)
+			handles['z_size'].control_position = Vector3(0, 0, z_size / 2)
 		
 		AreaShape.CYLINDER:
 			
@@ -589,73 +627,30 @@ func generate_handles():
 			var y_size = area_shape_parameters['y_size']
 			var z_size = area_shape_parameters['z_size']
 			
-			handles['x_size'] = Vector3(x_size / 2, 0, 0)
-			handles['y_size'] = Vector3(0, y_size / 2, 0)
-			handles['z_size'] = Vector3(0, 0, z_size / 2)
+			handles['x_size'].control_position = Vector3(x_size / 2, 0, 0)
+			handles['y_size'].control_position = Vector3(0, y_size / 2, 0)
+			handles['z_size'].control_position = Vector3(0, 0, z_size / 2)
 	
 
-# Converts the dictionary format of handles to a pair of handles with optional triangle for normal snaps.
-func convert_handles_to_gizmo() -> Array:
-	
-	print("convert_handles_to_gizmo")
-	
-	# convert handles here
-	var result = []
-	
-	# generate collision triangles
-	var triangle_x = [Vector3(0.0, 1.0, 0.0), Vector3(0.0, 1.0, 1.0), Vector3(0.0, 0.0, 1.0)]
-	var triangle_y = [Vector3(1.0, 0.0, 0.0), Vector3(1.0, 0.0, 1.0), Vector3(0.0, 0.0, 1.0)]
-	var triangle_z = [Vector3(0.0, 1.0, 0.0), Vector3(1.0, 1.0, 0.0), Vector3(1.0, 0.0, 0.0)]
-	
-	# convert handle values to an array
-	var handle_array = handles.values()
-	
-	match area_type:
-		AreaShape.BOX:
-			
-			result.append( [handle_array[0], triangle_x] )
-			result.append( [handle_array[1], triangle_y] )
-			result.append( [handle_array[2], triangle_z] )
-		
-		AreaShape.CYLINDER:
-			
-			result.append( [handle_array[0], triangle_x] )
-			result.append( [handle_array[1], triangle_y] )
-			result.append( [handle_array[2], triangle_z] )
-	
-	return result
-
-
-# Converts the gizmo handle format of an array of points and applies it to the dictionary format for Onyx.
-func convert_handles_to_onyx(handles) -> Dictionary:
-	
-	print("convert_handles_to_onyx")
-	
-	var result = {}
-	result["x_size"] = handles[0]
-	result["y_size"] = handles[1]
-	result["z_size"] = handles[2]
-	
-	return result
-	
 
 # Changes the handle based on the given index and coordinates.
-func update_handle_from_gizmo(index, coordinate):
+func update_handle_from_gizmo(control):
 	
 	print("update_handle_from_gizmo")
+	var coordinate = control.control_position
 	
 	match area_type:
 		AreaShape.BOX:
-			match index:
-				0: area_shape_parameters['x_size'] = max(coordinate.x, 0) * 2
-				1: area_shape_parameters['y_size'] = max(coordinate.y, 0) * 2
-				2: area_shape_parameters['z_size'] = max(coordinate.z, 0) * 2
+			match control.control_name:
+				'x_size': area_shape_parameters['x_size'] = max(coordinate.x, 0) * 2
+				'y_size': area_shape_parameters['y_size'] = max(coordinate.y, 0) * 2
+				'z_size': area_shape_parameters['z_size'] = max(coordinate.z, 0) * 2
 		
 		AreaShape.CYLINDER:
-			match index:
-				0: area_shape_parameters['x_size'] = max(coordinate.x, 0) * 2
-				1: area_shape_parameters['y_size'] = max(coordinate.y, 0) * 2
-				2: area_shape_parameters['z_size'] = max(coordinate.z, 0) * 2
+			match control.control_name:
+				'x_size': area_shape_parameters['x_size'] = max(coordinate.x, 0) * 2
+				'y_size': area_shape_parameters['y_size'] = max(coordinate.y, 0) * 2
+				'z_size': area_shape_parameters['z_size'] = max(coordinate.z, 0) * 2
 
 # Applies the current handle values to the shape attributes
 func apply_handle_attributes():
@@ -664,36 +659,41 @@ func apply_handle_attributes():
 	
 	match area_type:
 		AreaShape.BOX:
-			area_shape_parameters['x_size'] = handles["x_size"].x * 2
-			area_shape_parameters['y_size'] = handles["y_size"].y * 2
-			area_shape_parameters['z_size'] = handles["z_size"].z * 2
+			area_shape_parameters['x_size'] = handles["x_size"].control_position.x * 2
+			area_shape_parameters['y_size'] = handles["y_size"].control_position.y * 2
+			area_shape_parameters['z_size'] = handles["z_size"].control_position.z * 2
 			
 		AreaShape.CYLINDER:
-			area_shape_parameters['x_size'] = handles["x_size"].x * 2
-			area_shape_parameters['y_size'] = handles["y_size"].y * 2
-			area_shape_parameters['z_size'] = handles["z_size"].z * 2
+			area_shape_parameters['x_size'] = handles["x_size"].control_position.x * 2
+			area_shape_parameters['y_size'] = handles["y_size"].control_position.y * 2
+			area_shape_parameters['z_size'] = handles["z_size"].control_position.z * 2
 
 
 # ////////////////////////////////////////////////////////////
 # STANDARD HANDLE FUNCTIONS
 # (DO NOT CHANGE THESE BETWEEN SCRIPTS)
 
+# Returns the control points that the gizmo should currently have.
+# Used by ControlPointGizmo to obtain that data once it's created, AFTER this node is created.
+func get_gizmo_control_points() -> Array:
+	return handles.values()
+
 # Notifies the node that a handle has changed.
-func handle_change(index, coord):
+func handle_change(control):
 	print("handle_change")
-	update_handle_from_gizmo(index, coord)
+	update_handle_from_gizmo(control)
 	generate_geometry()
 
 # Called when a handle has stopped being dragged.
-func handle_commit(index, coord):
+func handle_commit(control):
 	print("handle_commit")
-	update_handle_from_gizmo(index, coord)
+	update_handle_from_gizmo(control)
 	apply_handle_attributes()
 	
 	build_location_array()
 	spawn_children()
 	
-	old_handles = handles.duplicate(true)
+	old_handle_data = FluxUtils.get_control_data(self)
 
 
 # ////////////////////////////////////////////////////////////

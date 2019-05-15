@@ -4,7 +4,6 @@ extends EditorSpatialGizmoPlugin
 # INFO
 # Gizmo plugin that manages and creates gizmos for other Onyx types.
 
-const SnapGizmo = preload("res://addons/onyx/gizmos/snap_gizmo.gd")
 const ControlPointGizmo = preload("res://addons/onyx/gizmos/control_point_gizmo.gd")
 const OnyxCube = preload("res://addons/onyx/nodes/onyx/onyx_cube.gd")
 
@@ -29,7 +28,7 @@ func create_gizmo(spatial):
 		if spatial is handled_object:
 			var new_gizmo = ControlPointGizmo.new()
 			
-#			print('GizmoPlugin - CONTROL POINT GIZMO creation successful, returning gizmo: ', new_gizmo, spatial)
+			print('GizmoPlugin - CONTROL POINT GIZMO creation successful, returning gizmo: ', new_gizmo, spatial)
 			return new_gizmo
 		
 #	print('GizmoPlugin - Gizmo creation UNSUCCESSFUL, returning nothing (:.')

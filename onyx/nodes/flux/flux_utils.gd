@@ -10,6 +10,24 @@ extends Node
 
 # ???
 
+# ////////////////////////////////////////////////////////////
+# STATE MANAGEMENT
+
+# Returns a list of handle data from each handle.
+static func get_control_data(node) -> Dictionary:
+	
+	var result = {}
+	for control in node.handles.values():
+		result[control.control_name] = control.get_control_data()
+	
+	return result
+
+# Changes all current handle data with a previously set list of handle data.
+static func set_control_data(node : Object, data : Dictionary):
+	
+	for data_key in data.keys():
+		node.handles[data_key].set_control_data(data[data_key])
+
 
 # ////////////////////////////////////////////////////////////
 # HANDLE MANAGEMENT FUNCTIONS
