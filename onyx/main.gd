@@ -62,11 +62,11 @@ func _enter_tree():
 	add_custom_type("OnyxStairs", "CSGMesh", preload("./nodes/onyx/onyx_stairs.gd"), preload("res://addons/onyx/ui/nodes/onyx_block.png"))
 	
 	# flux types
-	add_custom_type("FluxArea", "CSGCombiner", preload("./nodes/flux/flux_area.gd"), preload("res://addons/onyx/ui/nodes/onyx_sprinkle.png"))
-	add_custom_type("FluxCollider", "StaticBody", preload("./nodes/flux/flux_collider.gd"), preload("res://addons/onyx/ui/nodes/onyx_fence.png"))
+	#add_custom_type("FluxArea", "CSGCombiner", preload("./nodes/flux/flux_area.gd"), preload("res://addons/onyx/ui/nodes/onyx_sprinkle.png"))
+	#add_custom_type("FluxCollider", "StaticBody", preload("./nodes/flux/flux_collider.gd"), preload("res://addons/onyx/ui/nodes/onyx_fence.png"))
 	
 	# debug types
-	add_custom_type("ResTest", "CSGMesh",preload('./nodes/res_test.gd'), preload("res://addons/onyx/ui/nodes/onyx_fence.png"))
+	#add_custom_type("ResTest", "CSGMesh",preload('./nodes/res_test.gd'), preload("res://addons/onyx/ui/nodes/onyx_fence.png"))
 	
 	# Add custom signals for providing GUI click input.
 	add_user_signal("onyx_viewport_clicked", [{"camera": TYPE_OBJECT} , {"event": TYPE_OBJECT}] )

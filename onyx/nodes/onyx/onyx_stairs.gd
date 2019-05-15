@@ -192,7 +192,7 @@ func generate_geometry(fix_to_origin_setting):
 	if is_inside_tree() == false:
 		return
 	
-	print(self, " - Generating geometry")
+#	print(self, " - Generating geometry")
 
 	# This shape is too custom to delegate, so it's being done here
 	#   X---------X  e1 e2

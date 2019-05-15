@@ -447,7 +447,7 @@ func render_onyx_mesh():
 # On initialisation, control points are built for transmitting and handling interactive points between the node and the node's gizmo.
 func build_handles():
 	
-	print("ONYXCUBE build_handles")
+#	print("ONYXCUBE build_handles")
 	
 	# Exit if not being run in the editor
 	if Engine.editor_hint == false:
@@ -496,7 +496,7 @@ func build_handles():
 # Uses the current settings to refresh the control point positions.
 func generate_handles():
 	
-	print("ONYXCUBE generate_handles")
+#	print("ONYXCUBE generate_handles")
 	
 	# Exit if not being run in the editor
 	if Engine.editor_hint == false:

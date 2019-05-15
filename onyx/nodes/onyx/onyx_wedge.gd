@@ -553,7 +553,7 @@ func apply_handle_attributes():
 		base_z_size = handles['base_z_size'].control_position.z * 2
 	
 	if origin_mode == OriginPosition.BASE:
-		point_position.x = handles['point_position'].control_position
+		point_position = handles['point_position'].control_position
 		point_width = (handles['point_width'].control_position.x - point_position.x) * 2
 		base_x_size = handles['base_x_size'].control_position.x * 2
 		base_z_size = handles['base_z_size'].control_position.z * 2

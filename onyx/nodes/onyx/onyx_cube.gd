@@ -78,7 +78,7 @@ export(Material) var material = null setget update_material
 # Global initialisation
 func _enter_tree():
 	
-	print('_enter_tree()')
+#	print('_enter_tree()')
 	
 	# If this is being run in the editor, sort out the gizmo.
 	if Engine.editor_hint == true:
@@ -95,7 +95,7 @@ func _exit_tree():
 	
 func _ready():
 	
-	print('_ready()')
+#	print('_ready()')
 	
 #	if Engine.editor_hint == true:
 #		build_handles()
@@ -143,8 +143,8 @@ func handle_set_catch(new_value):
 
 # Used when a handle variable changes in the properties panel.
 func update_x_plus(new_value):
-	print('handles - ', handles)
-	print("ONYXCUBE update_x_plus")
+#	print('handles - ', handles)
+#	print("ONYXCUBE update_x_plus")
 	if new_value < 0:
 		new_value = 0
 		
@@ -153,7 +153,7 @@ func update_x_plus(new_value):
 	
 	
 func update_x_minus(new_value):
-	print("ONYXCUBE update_x_minus")
+#	print("ONYXCUBE update_x_minus")
 	if new_value < 0 || origin_mode == OriginPosition.BASE_CORNER:
 		new_value = 0
 		
@@ -161,7 +161,7 @@ func update_x_minus(new_value):
 	generate_geometry(true)
 	
 func update_y_plus(new_value):
-	print("ONYXCUBE update_y_plus")
+#	print("ONYXCUBE update_y_plus")
 	if new_value < 0:
 		new_value = 0
 		
@@ -169,7 +169,7 @@ func update_y_plus(new_value):
 	generate_geometry(true)
 	
 func update_y_minus(new_value):
-	print("ONYXCUBE update_y_minus")
+#	print("ONYXCUBE update_y_minus")
 	if new_value < 0 && (origin_mode == OriginPosition.BASE_CORNER || origin_mode == OriginPosition.BASE) :
 		new_value = 0
 		
@@ -177,7 +177,7 @@ func update_y_minus(new_value):
 	generate_geometry(true)
 	
 func update_z_plus(new_value):
-	print("ONYXCUBE update_z_plus")
+#	print("ONYXCUBE update_z_plus")
 	if new_value < 0:
 		new_value = 0
 		
@@ -186,7 +186,7 @@ func update_z_plus(new_value):
 	
 	
 func update_z_minus(new_value):
-	print("ONYXCUBE update_z_minus")
+#	print("ONYXCUBE update_z_minus")
 	if new_value < 0 || origin_mode == OriginPosition.BASE_CORNER:
 		new_value = 0
 		
@@ -195,7 +195,7 @@ func update_z_minus(new_value):
 	
 	
 func update_subdivisions(new_value):
-	print("ONYXCUBE update_subdivisions")
+#	print("ONYXCUBE update_subdivisions")
 	if new_value.x < 1:
 		new_value.x = 1
 	if new_value.y < 1:
@@ -221,7 +221,7 @@ func update_subdivisions(new_value):
 	
 # Used to recalibrate both the origin point location and the position handles.
 func update_positions(new_value):
-	print("ONYXCUBE update_positions")
+#	print("ONYXCUBE update_positions")
 	update_origin_setting = true
 	update_origin()
 	balance_handles()
@@ -230,7 +230,7 @@ func update_positions(new_value):
 
 # Changes the origin position relative to the shape and regenerates geometry and handles.
 func update_origin_mode(new_value):
-	print("ONYXCUBE update_origin_mode")
+#	print("ONYXCUBE update_origin_mode")
 	if previous_origin_mode == new_value:
 		return
 	
@@ -244,27 +244,27 @@ func update_origin_mode(new_value):
 	old_handle_data = OnyxUtils.get_handle_data(self)
 
 func update_unwrap_method(new_value):
-	print("ONYXCUBE update_unwrap_method")
+#	print("ONYXCUBE update_unwrap_method")
 	unwrap_method = new_value
 	generate_geometry(true)
 
 func update_uv_scale(new_value):
-	print("ONYXCUBE update_uv_scale")
+#	print("ONYXCUBE update_uv_scale")
 	uv_scale = new_value
 	generate_geometry(true)
 
 func update_flip_uvs_horizontally(new_value):
-	print("ONYXCUBE update_flip_uvs_horizontally")
+#	print("ONYXCUBE update_flip_uvs_horizontally")
 	flip_uvs_horizontally = new_value
 	generate_geometry(true)
 	
 func update_flip_uvs_vertically(new_value):
-	print("ONYXCUBE update_flip_uvs_vertically")
+#	print("ONYXCUBE update_flip_uvs_vertically")
 	flip_uvs_vertically = new_value
 	generate_geometry(true)
 
 func update_material(new_value):
-	print("ONYXCUBE update_material")
+#	print("ONYXCUBE update_material")
 	material = new_value
 	OnyxUtils.update_material(self, new_value)
 	
@@ -283,7 +283,7 @@ func update_origin():
 	if handles.size() == 0:
 		return
 	
-	print("ONYXCUBE update_origin")
+#	print("ONYXCUBE update_origin")
 	
 	# based on the current position and properties, work out how much to move the origin.
 	var diff = Vector3(0, 0, 0)
@@ -330,7 +330,7 @@ func update_origin():
 # DOES NOT update the origin when the origin property has changed, for use with handle commits.
 func update_origin_position(new_location = null):
 	
-	print("ONYXCUBE update_origin_position")
+#	print("ONYXCUBE update_origin_position")
 	
 	var new_loc = Vector3()
 	var global_tf = self.global_transform
@@ -379,13 +379,13 @@ func update_origin_position(new_location = null):
 # Using the set handle points, geometry is generated and drawn.  The handles owned by the gizmo are also updated.
 func generate_geometry(fix_to_origin_setting):
 	
-	print('trying to generate geometry...')
+#	print('trying to generate geometry...')
 	
 	# Prevents geometry generation if the node hasn't loaded yet
 	if is_inside_tree() == false:
 		return
 	
-	print("!!! ONYXCUBE generate_geometry !!!")
+#	print("!!! ONYXCUBE generate_geometry !!!")
 	
 	var maxPoint = Vector3(x_plus_position, y_plus_position, z_plus_position)
 	var minPoint = Vector3(-x_minus_position, -y_minus_position, -z_minus_position)
@@ -519,7 +519,7 @@ func render_onyx_mesh():
 # On initialisation, control points are built for transmitting and handling interactive points between the node and the node's gizmo.
 func build_handles():
 	
-	print("ONYXCUBE build_handles")
+#	print("ONYXCUBE build_handles")
 	
 	# Exit if not being run in the editor
 	if Engine.editor_hint == false:
@@ -568,7 +568,7 @@ func build_handles():
 # Uses the current settings to refresh the control point positions.
 func generate_handles():
 	
-	print("ONYXCUBE generate_handles")
+#	print("ONYXCUBE generate_handles")
 	
 	# Exit if not being run in the editor
 	if Engine.editor_hint == false:
