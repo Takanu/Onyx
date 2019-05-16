@@ -39,6 +39,9 @@ var old_handle_data : Dictionary = {}
 # Used to decide whether to update the geometry.  Enables parents to be moved without forcing updates.
 var local_tracked_pos = Vector3()
 
+# If true, this node is currently selected.
+var is_selected = false
+
 
 # Exported variables representing all usable handles for re-shaping the mesh, in order.
 # Must be exported to be saved in a scene?  smh.
@@ -78,7 +81,7 @@ export(Material) var material = null setget update_material
 # Global initialisation
 func _enter_tree():
 	
-#	print('_enter_tree()')
+	print('_enter_tree()')
 	
 	# If this is being run in the editor, sort out the gizmo.
 	if Engine.editor_hint == true:
@@ -95,7 +98,7 @@ func _exit_tree():
 	
 func _ready():
 	
-#	print('_ready()')
+	print('_ready()')
 	
 #	if Engine.editor_hint == true:
 #		build_handles()
@@ -519,7 +522,10 @@ func render_onyx_mesh():
 # On initialisation, control points are built for transmitting and handling interactive points between the node and the node's gizmo.
 func build_handles():
 	
-#	print("ONYXCUBE build_handles")
+#	print("ONYXCUBE build_handles")'
+	# If it's not selected, do not generate
+	if is_selected == false:
+		return
 	
 	# Exit if not being run in the editor
 	if Engine.editor_hint == false:
@@ -569,6 +575,9 @@ func build_handles():
 func generate_handles():
 	
 #	print("ONYXCUBE generate_handles")
+	# If it's not selected, do not generate
+	if is_selected == false:
+		return
 	
 	# Exit if not being run in the editor
 	if Engine.editor_hint == false:
@@ -576,9 +585,10 @@ func generate_handles():
 	
 	# Failsafe for script reloads, BECAUSE I CURRENTLY CAN'T DETECT THEM.
 	if handles.size() == 0:
-		gizmo.control_points.clear()
-		build_handles()
-		return
+		if gizmo != null:
+			gizmo.control_points.clear()
+			build_handles()
+			return
 	
 	var mid_x = (x_plus_position - x_minus_position) / 2
 	var mid_y = (y_plus_position - y_minus_position) / 2
@@ -702,9 +712,14 @@ func restore_state(state):
 # SELECTION
 
 func editor_select():
-	pass
+	print("EDITOR SELECTED")
+	is_selected = true
+	generate_handles()
+	old_handle_data = OnyxUtils.get_control_data(self)
 	
 func editor_deselect():
-	pass
-	
+	print("EDITOR DESELECTED")
+	is_selected = false
+	gizmo.control_points.clear()
+	handles.clear()
 	
