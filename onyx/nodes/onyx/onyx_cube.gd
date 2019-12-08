@@ -62,7 +62,6 @@ export(Vector3) var subdivisions = Vector3(1, 1, 1)
 #enum BevelTarget {Y_AXIS, X_AXIS, Z_AXIS}
 #export(BevelTarget) var bevel_target = BevelTarget.Y_AXIS setget update_bevel_target
 
-
 # UVS
 enum UnwrapMethod {PROPORTIONAL_OVERLAP, CLAMPED_OVERLAP}
 export(UnwrapMethod) var unwrap_method = UnwrapMethod.PROPORTIONAL_OVERLAP setget update_unwrap_method
@@ -706,12 +705,15 @@ func restore_state(state):
 func editor_select():
 	print("EDITOR SELECTED")
 	is_selected = true
+	
 	generate_handles()
 	old_handle_data = OnyxUtils.get_control_data(self)
+	
 	
 func editor_deselect():
 	print("EDITOR DESELECTED")
 	is_selected = false
+	
 	gizmo.control_points.clear()
 	handles.clear()
 	

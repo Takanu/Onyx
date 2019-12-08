@@ -37,6 +37,13 @@ const WireframeUtility_Unselected = Color(0, 1, 1, 0.05)
 # Selection management
 var currently_selected_node = null
 
+# User Interface Variables
+var snap_gizmo_toolbar = null
+var snap_gizmo_enabled = false
+var snap_gizmo_increment = 1
+var snap_gizmo_grid = false
+var snap_gizmo_slicer = false
+
 # ////////////////////////////////////////////////////////////
 # FUNCTIONS
 
@@ -71,6 +78,9 @@ func _enter_tree():
 	# Add custom signals for providing GUI click input.
 	add_user_signal("onyx_viewport_clicked", [{"camera": TYPE_OBJECT} , {"event": TYPE_OBJECT}] )
 	
+	# Add a custom snap toolbar for gizmos
+	snap_gizmo_toolbar = load("res://addons/onyx/ui/tools/gizmo_snap_toolbar.tscn").instance()
+	add_control_to_container(CONTAINER_SPATIAL_EDITOR_MENU, snap_gizmo_toolbar)
 
 
 # ////////////////////////////////////////////////////////////
@@ -139,7 +149,9 @@ func forward_spatial_gui_input(camera, ev):
 
 
 func _exit_tree():
-	# Clean-up of the plugin goes here
+	#  Clean-up of the plugin goes here
+	remove_control_from_container(CONTAINER_SPATIAL_EDITOR_MENU, snap_gizmo_toolbar)
+	
 	for string in NodeStrings:
 		remove_custom_type(string)
 	remove_spatial_gizmo_plugin(gizmo_plugin)

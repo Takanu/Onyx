@@ -175,3 +175,5 @@ func get_control_point(index):
 		current_index += control_count
 	
 	return null
+	
+

@@ -24,6 +24,9 @@ var control_rotation: Vector3 = Vector3(0, 0, 0)
 # (Optional) The scale of the control point.  Not all control points will need to store scale data.
 var control_scale: Vector3 = Vector3(1, 1, 1)
 
+# The previously recorded position.  This can only be accessed while the point is being moved.
+var control_transform_hold = {}
+
 # If false, the Gizmo will not render this point.
 var is_control_visible: bool = true
 
@@ -49,9 +52,6 @@ var axis_triangle = []
 
 # If TRANSLATE, ROTATE or SCALE is used, this determines how far the axis handles are from the point they control.
 var handle_distance: float = 0.5
-
-# If true, any translation, rotation and scale actions will be constrained to a snapping margin set by Onyx.
-var apply_snap : bool = false
 
 
 # ////////////////////////////////////////////////////////////
@@ -365,10 +365,28 @@ func update_handle(index, camera, point):
 			if not new_position: 
 				return #sometimes the projection might fail
 			
-			# Now we have a valid control_position, perform a callback.
-			control_position = new_position
-			if axis_update_callback != "":
+			if control_transform_hold.has("position") == false:
+					control_transform_hold["position"] = new_position
+					continue
+			
+			# If snapping is enabled, we have stuff to do.
+			if control_point_owner.plugin.snap_gizmo_enabled == true:
+				
+				var snap_increment = control_point_owner.plugin.snap_gizmo_increment
+				
+				# This is awful, you are awful.
+				var diff_gauge_x = round(new_position.x / snap_increment) * snap_increment
+				var diff_gauge_y = round(new_position.y / snap_increment) * snap_increment
+				var diff_gauge_z = round(new_position.z / snap_increment) * snap_increment
+				new_position = Vector3(diff_gauge_x, diff_gauge_y, diff_gauge_z)
+				
+				control_position = new_position
 				control_point_owner.call(axis_update_callback, self)
+			
+			else:
+				control_position = new_position
+				if axis_update_callback != "":
+					control_point_owner.call(axis_update_callback, self)
 		
 		
 		HandleType.TRANSLATE:
@@ -419,6 +437,10 @@ func update_handle(index, camera, point):
 
 # Receives the commit call from the Gizmo, to be handled in different ways depending on the ControlPoint mode.
 func commit_handle(index, restore):
+	
+	control_transform_hold["position"] = control_position
+	control_transform_hold["rotation"] = control_rotation
+	control_transform_hold["scale"] = control_scale
 	
 	# is there anything else to do here?
 	match handle_type:

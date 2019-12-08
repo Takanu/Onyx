@@ -1,137 +1,65 @@
 [gd_scene load_steps=5 format=2]
 
 [ext_resource path="res://addons/onyx/ui/tools/buttons/gizmo_add.png" type="Texture" id=1]
-[ext_resource path="res://addons/onyx/ui/tools/toggle_button_element.gd" type="Script" id=2]
-[ext_resource path="res://addons/onyx/ui/tools/buttons/gizmo_delete.png" type="Texture" id=3]
+[ext_resource path="res://addons/onyx/ui/tools/toggle_button_array_element.gd" type="Script" id=2]
+[ext_resource path="res://addons/onyx/ui/tools/buttons/gizmo_remove.png" type="Texture" id=3]
 [ext_resource path="res://addons/onyx/ui/tools/buttons/gizmo_edit.png" type="Texture" id=4]
 
-[node name="toolbar" type="HBoxContainer" index="0"]
-anchor_left = 0.0
-anchor_top = 0.0
-anchor_right = 0.0
-anchor_bottom = 0.0
-rect_pivot_offset = Vector2( 0, 0 )
-rect_clip_content = false
-mouse_filter = 1
-mouse_default_cursor_shape = 0
-size_flags_horizontal = 1
-size_flags_vertical = 1
-alignment = 0
 
-[node name="VSeparator" type="VSeparator" parent="." index="0"]
-anchor_left = 0.0
-anchor_top = 0.0
-anchor_right = 0.0
-anchor_bottom = 0.0
+
+[node name="toolbar" type="HBoxContainer"]
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="VSeparator" type="VSeparator" parent="."]
 margin_right = 4.0
 margin_bottom = 22.0
-rect_pivot_offset = Vector2( 0, 0 )
-rect_clip_content = false
-mouse_filter = 0
-mouse_default_cursor_shape = 0
-size_flags_horizontal = 1
-size_flags_vertical = 1
-_sections_unfolded = [ "Rect" ]
 
-[node name="add" type="Button" parent="." index="1"]
-anchor_left = 0.0
-anchor_top = 0.0
-anchor_right = 0.0
-anchor_bottom = 0.0
+[node name="add" type="Button" parent="."]
 margin_left = 8.0
 margin_right = 36.0
 margin_bottom = 22.0
-rect_pivot_offset = Vector2( 0, 0 )
-rect_clip_content = false
 hint_tooltip = "Create a new handle point."
-focus_mode = 2
-mouse_filter = 0
-mouse_default_cursor_shape = 0
-size_flags_horizontal = 1
-size_flags_vertical = 1
 toggle_mode = true
-enabled_focus_mode = 2
-shortcut = null
-group = null
 icon = ExtResource( 1 )
 flat = true
-align = 1
 script = ExtResource( 2 )
-_sections_unfolded = [ "Anchor" ]
 
-[node name="remove" type="Button" parent="." index="2"]
-anchor_left = 0.0
-anchor_top = 0.0
-anchor_right = 0.0
-anchor_bottom = 0.0
+[node name="remove" type="Button" parent="."]
 margin_left = 40.0
 margin_right = 68.0
 margin_bottom = 22.0
-rect_pivot_offset = Vector2( 0, 0 )
-rect_clip_content = false
 hint_tooltip = "Remove an existing handle point."
-focus_mode = 2
-mouse_filter = 0
-mouse_default_cursor_shape = 0
 size_flags_horizontal = 2
 size_flags_vertical = 2
 toggle_mode = true
-enabled_focus_mode = 2
-shortcut = null
-group = null
 icon = ExtResource( 3 )
 flat = true
-align = 1
 script = ExtResource( 2 )
-_sections_unfolded = [ "Hint" ]
 
-[node name="position" type="Button" parent="." index="3"]
-anchor_left = 0.0
-anchor_top = 0.0
-anchor_right = 0.0
-anchor_bottom = 0.0
+[node name="position" type="Button" parent="."]
 margin_left = 72.0
 margin_right = 100.0
 margin_bottom = 22.0
 rect_pivot_offset = Vector2( 365.168, -80.6051 )
-rect_clip_content = false
 hint_tooltip = "Remove an existing handle point."
-focus_mode = 2
-mouse_filter = 0
-mouse_default_cursor_shape = 0
 size_flags_horizontal = 2
 size_flags_vertical = 2
 toggle_mode = true
-enabled_focus_mode = 2
-shortcut = null
-group = null
 icon = ExtResource( 4 )
 flat = true
-align = 1
 script = ExtResource( 2 )
 
-[node name="scale" type="Button" parent="." index="4"]
-anchor_left = 0.0
-anchor_top = 0.0
-anchor_right = 0.0
-anchor_bottom = 0.0
+[node name="scale" type="Button" parent="."]
 margin_left = 104.0
 margin_right = 132.0
 margin_bottom = 22.0
 rect_pivot_offset = Vector2( 365.168, -80.6051 )
-rect_clip_content = false
 hint_tooltip = "Remove an existing handle point."
-focus_mode = 2
-mouse_filter = 0
-mouse_default_cursor_shape = 0
 size_flags_horizontal = 2
 size_flags_vertical = 2
 toggle_mode = true
-enabled_focus_mode = 2
-shortcut = null
-group = null
 icon = ExtResource( 4 )
 flat = true
-align = 1
 script = ExtResource( 2 )
-

@@ -1,0 +1,31 @@
+[gd_scene load_steps=4 format=2]
+
+[ext_resource path="res://addons/onyx/ui/tools/buttons/gizmo_snap.png" type="Texture" id=1]
+[ext_resource path="res://addons/onyx/ui/tools/toggle_button_single.gd" type="Script" id=2]
+[ext_resource path="res://addons/onyx/ui/tools/gizmo_snap_toolbar.gd" type="Script" id=3]
+
+[node name="gizmo_snap_toolbar" type="Control"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource( 3 )
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="VSeparator" type="VSeparator" parent="."]
+margin_right = 4.0
+margin_bottom = 22.0
+__meta__ = {
+"_edit_use_anchors_": false,
+"_editor_description_": ""
+}
+
+[node name="snap" type="Button" parent="."]
+margin_right = 12.0
+margin_bottom = 20.0
+toggle_mode = true
+icon = ExtResource( 1 )
+script = ExtResource( 2 )
+__meta__ = {
+"_edit_use_anchors_": false
+}

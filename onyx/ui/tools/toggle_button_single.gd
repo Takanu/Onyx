@@ -27,30 +27,5 @@ func _ready():
 
 
 func _toggled(is_pressed):
-	
-	if is_pressed == true:
-		
-		# Untoggle all other buttons
-		var container = get_parent()		
-		for child in container.get_children():
-			if child is BaseButton:
-				
-				if child.name != self.name:
-					print(child.name)
-					child.set_pressed(false)
-					child._toggled(false)
-		
-		# Toggle this button and activate the function
-		set_pressed(is_pressed)
-		
-		if owner_node != null && function_trigger != "":
-			owner_node.call(function_trigger, true)
-		
-		
-	# Otherwise if we are pressed, "unpress" and call the owner node.
-	else:
-		if pressed == true:
-			set_pressed(is_pressed)
-			
-			if owner_node != null && function_trigger != "":
-				owner_node.call(function_trigger, false)
+	owner_node.call(function_trigger)
+
