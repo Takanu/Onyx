@@ -89,7 +89,6 @@ export(bool) var flip_uvs_vertically = false setget update_flip_uvs_vertically
 
 # MATERIALS
 export(bool) var smooth_normals = true setget update_smooth_normals
-export(Material) var material = null setget update_material
 
 
 # ////////////////////////////////////////////////////////////
@@ -114,7 +113,7 @@ func _enter_tree():
 		
 
 func _exit_tree():
-    pass
+	pass
 	
 func _ready():
 	
@@ -289,9 +288,6 @@ func update_smooth_normals(new_value):
 	smooth_normals = new_value
 	generate_geometry(true)
 	
-func update_material(new_value):
-	material = new_value
-	OnyxUtils.update_material(self, new_value)
 	
 
 # Updates the origin location when the corresponding property is changed.

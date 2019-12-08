@@ -59,9 +59,6 @@ export(Vector2) var uv_scale = Vector2(1.0, 1.0) setget update_uv_scale
 export(bool) var flip_uvs_horizontally = false setget update_flip_uvs_horizontally
 export(bool) var flip_uvs_vertically = false setget update_flip_uvs_vertically
 
-# MATERIALS
-export(Material) var material = null setget update_material
-
 
 # ////////////////////////////////////////////////////////////
 # FUNCTIONS
@@ -83,7 +80,7 @@ func _enter_tree():
 		
 
 func _exit_tree():
-    pass
+	pass
 	
 func _ready():
 	
@@ -181,10 +178,6 @@ func update_flip_uvs_horizontally(new_value):
 func update_flip_uvs_vertically(new_value):
 	flip_uvs_vertically = new_value
 	generate_geometry(true)
-
-func update_material(new_value):
-	material = new_value
-	OnyxUtils.update_material(self, new_value)
 
 # Updates the origin during generate_geometry() as well as the currently defined handles, 
 # to ensure it's anchored where it needs to be.

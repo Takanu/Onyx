@@ -47,7 +47,7 @@ func _enter_tree():
 	# Give this node a name so any other node can access it using "node/EditorNode/Onyx"
 	name = "Onyx"
 	
-    # Initialization of the plugin goes here
+	# Initialization of the plugin goes here
 	gizmo_plugin = OnyxGizmoPlugin.new(self)
 	add_spatial_gizmo_plugin(gizmo_plugin)
 	print(gizmo_plugin)
@@ -139,7 +139,7 @@ func forward_spatial_gui_input(camera, ev):
 
 
 func _exit_tree():
-    # Clean-up of the plugin goes here
+	# Clean-up of the plugin goes here
 	for string in NodeStrings:
 		remove_custom_type(string)
 	remove_spatial_gizmo_plugin(gizmo_plugin)

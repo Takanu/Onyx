@@ -133,16 +133,16 @@ func build_sphere(height, x_width, z_width, segments, height_segments, position,
 				phi2 += deltaPhi
 				
 			#phi2   phi1
-		    # |      |
-		    # 2------1 -- theta1
-		    # |\ _   |
-		    # |    \ |
-		    # 3------4 -- theta2
-		    #
+			# |      |
+			# 2------1 -- theta1
+			# |\ _   |
+			# |    \ |
+			# 3------4 -- theta2
+			#
 
 			# Vertices
 			var vertex1 = Vector3(sin(theta2) * cos(phi2) * (x_width/2),  cos(theta2) * (height/2),  sin(theta2) * sin(phi2) * (z_width/2))
-    		
+			
 			var vertex2 = Vector3(sin(theta1) * cos(phi2) * (x_width/2),  cos(theta1) * (height/2),  sin(theta1) * sin(phi2) * (z_width/2))
 			
 			var vertex3 = Vector3(sin(theta1) * cos(phi1) * (x_width/2),  cos(theta1) * (height/2),  sin(theta1) * sin(phi1) * (z_width/2))
