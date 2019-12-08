@@ -2,8 +2,8 @@
 
 importer="texture"
 type="StreamTexture"
-path.s3tc="res://.import/onyx_handle_1.png-d80f608b49a8cac04ccea947251a1828.s3tc.stex"
-path.etc2="res://.import/onyx_handle_1.png-d80f608b49a8cac04ccea947251a1828.etc2.stex"
+path.s3tc="res://.import/onyx_handle_1.png-480ceb78c6ef4a9840cdb45096284035.s3tc.stex"
+path.etc2="res://.import/onyx_handle_1.png-480ceb78c6ef4a9840cdb45096284035.etc2.stex"
 metadata={
 "imported_formats": [ "s3tc", "etc2" ],
 "vram_texture": true
@@ -11,8 +11,8 @@ metadata={
 
 [deps]
 
-source_file="res://Onyx/onyx/materials/textures/onyx_handle_1.png"
-dest_files=[ "res://.import/onyx_handle_1.png-d80f608b49a8cac04ccea947251a1828.s3tc.stex", "res://.import/onyx_handle_1.png-d80f608b49a8cac04ccea947251a1828.etc2.stex" ]
+source_file="res://addons/addons/onyx/materials/textures/onyx_handle_1.png"
+dest_files=[ "res://.import/onyx_handle_1.png-480ceb78c6ef4a9840cdb45096284035.s3tc.stex", "res://.import/onyx_handle_1.png-480ceb78c6ef4a9840cdb45096284035.etc2.stex" ]
 
 [params]
 

@@ -2,8 +2,8 @@
 
 importer="texture"
 type="StreamTexture"
-path.s3tc="res://.import/uv_grid_1.png-5b3d5927a89ce7cdec1f225c25e85396.s3tc.stex"
-path.etc2="res://.import/uv_grid_1.png-5b3d5927a89ce7cdec1f225c25e85396.etc2.stex"
+path.s3tc="res://.import/uv_grid_1.png-8e5438c8b9374b41f4b1cdcb324c9019.s3tc.stex"
+path.etc2="res://.import/uv_grid_1.png-8e5438c8b9374b41f4b1cdcb324c9019.etc2.stex"
 metadata={
 "imported_formats": [ "s3tc", "etc2" ],
 "vram_texture": true
@@ -11,8 +11,8 @@ metadata={
 
 [deps]
 
-source_file="res://Onyx/onyx/materials/uv_grids/textures/orientation/uv_grid_1.png"
-dest_files=[ "res://.import/uv_grid_1.png-5b3d5927a89ce7cdec1f225c25e85396.s3tc.stex", "res://.import/uv_grid_1.png-5b3d5927a89ce7cdec1f225c25e85396.etc2.stex" ]
+source_file="res://addons/addons/onyx/materials/uv_grids/textures/orientation/uv_grid_1.png"
+dest_files=[ "res://.import/uv_grid_1.png-8e5438c8b9374b41f4b1cdcb324c9019.s3tc.stex", "res://.import/uv_grid_1.png-8e5438c8b9374b41f4b1cdcb324c9019.etc2.stex" ]
 
 [params]
 

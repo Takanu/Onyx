@@ -2,15 +2,15 @@
 
 importer="texture"
 type="StreamTexture"
-path="res://.import/uv_grid_1.png-67e802f8c03b3953c6892e033e22525a.stex"
+path="res://.import/uv_grid_1.png-6202d83103ea0aef09ab3015c6d863f4.stex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://Onyx/onyx/materials/uv_grids/textures/style test/uv_grid_1.png"
-dest_files=[ "res://.import/uv_grid_1.png-67e802f8c03b3953c6892e033e22525a.stex" ]
+source_file="res://addons/addons/onyx/materials/uv_grids/textures/style test/uv_grid_1.png"
+dest_files=[ "res://.import/uv_grid_1.png-6202d83103ea0aef09ab3015c6d863f4.stex" ]
 
 [params]
 

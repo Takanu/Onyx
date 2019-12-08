@@ -2,8 +2,8 @@
 
 importer="texture"
 type="StreamTexture"
-path.s3tc="res://.import/billboard_test.png-75aef188dd49e004978e609aac374662.s3tc.stex"
-path.etc2="res://.import/billboard_test.png-75aef188dd49e004978e609aac374662.etc2.stex"
+path.s3tc="res://.import/billboard_test.png-6a07d3b4e4d7936f70e7d7d53c453c26.s3tc.stex"
+path.etc2="res://.import/billboard_test.png-6a07d3b4e4d7936f70e7d7d53c453c26.etc2.stex"
 metadata={
 "imported_formats": [ "s3tc", "etc2" ],
 "vram_texture": true
@@ -11,8 +11,8 @@ metadata={
 
 [deps]
 
-source_file="res://Onyx/onyx/gizmos/billboard_test.png"
-dest_files=[ "res://.import/billboard_test.png-75aef188dd49e004978e609aac374662.s3tc.stex", "res://.import/billboard_test.png-75aef188dd49e004978e609aac374662.etc2.stex" ]
+source_file="res://addons/addons/onyx/gizmos/billboard_test.png"
+dest_files=[ "res://.import/billboard_test.png-6a07d3b4e4d7936f70e7d7d53c453c26.s3tc.stex", "res://.import/billboard_test.png-6a07d3b4e4d7936f70e7d7d53c453c26.etc2.stex" ]
 
 [params]
 

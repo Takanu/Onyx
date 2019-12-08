@@ -2,15 +2,15 @@
 
 importer="texture"
 type="StreamTexture"
-path="res://.import/gizmo_delete.png-cd3baeccaafbd4e70d36bc26b98e1c25.stex"
+path="res://.import/gizmo_delete.png-3a5893807d3caebaee1501bfaf63aa5f.stex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://Onyx/onyx/ui/tools/buttons/gizmo_delete.png"
-dest_files=[ "res://.import/gizmo_delete.png-cd3baeccaafbd4e70d36bc26b98e1c25.stex" ]
+source_file="res://addons/addons/onyx/ui/tools/buttons/gizmo_delete.png"
+dest_files=[ "res://.import/gizmo_delete.png-3a5893807d3caebaee1501bfaf63aa5f.stex" ]
 
 [params]
 

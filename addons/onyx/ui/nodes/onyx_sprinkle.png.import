@@ -2,15 +2,15 @@
 
 importer="texture"
 type="StreamTexture"
-path="res://.import/onyx_sprinkle.png-41d89cf42de5c0f297229ea4307e2132.stex"
+path="res://.import/onyx_sprinkle.png-9e6310bee65ad61a56587f1c3576455c.stex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://Onyx/onyx/ui/nodes/onyx_sprinkle.png"
-dest_files=[ "res://.import/onyx_sprinkle.png-41d89cf42de5c0f297229ea4307e2132.stex" ]
+source_file="res://addons/addons/onyx/ui/nodes/onyx_sprinkle.png"
+dest_files=[ "res://.import/onyx_sprinkle.png-9e6310bee65ad61a56587f1c3576455c.stex" ]
 
 [params]
 
