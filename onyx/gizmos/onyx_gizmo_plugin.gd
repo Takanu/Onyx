@@ -18,17 +18,14 @@ func _ready():
 	pass # Replace with function body.
 	
 func get_name():
-    return "OnyxGizmoPlugin"
+	return "OnyxGizmoPlugin"
 	
 # Creates gizmo types!
 func create_gizmo(spatial):
-	print(spatial)
 	
 	for handled_object in plugin.NodeHandlerList:
 		if spatial is handled_object:
 			var new_gizmo = ControlPointGizmo.new()
-			
-			print('GizmoPlugin - CONTROL POINT GIZMO creation successful, returning gizmo: ', new_gizmo, spatial)
 			return new_gizmo
 		
 #	print('GizmoPlugin - Gizmo creation UNSUCCESSFUL, returning nothing (:.')

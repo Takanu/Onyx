@@ -77,8 +77,6 @@ export(bool) var flip_uvs_vertically = false setget update_flip_uvs_vertically
 # Global initialisation
 func _enter_tree():
 	
-	print('_enter_tree()')
-	
 	# If this is being run in the editor, sort out the gizmo.
 	if Engine.editor_hint == true:
 		
@@ -93,23 +91,6 @@ func _exit_tree():
 	pass
 	
 func _ready():
-	
-	print('_ready()')
-	
-#	if Engine.editor_hint == true:
-#		build_handles()
-#
-#		if mesh == null:
-#			generate_geometry(true)
-#
-#		# if we have no handles already, make some
-#		# (used during duplication and other functions)
-#		if handles.size() == 0:
-#			build_handles()
-#			generate_handles()
-#
-#		# Ensure the old_handles variable match the current handles we have for undo/redo.
-#		old_handle_data = get_control_data()
 	
 	# Delegate ready functionality for in-editor functions.
 	OnyxUtils.onyx_ready(self)
@@ -706,14 +687,12 @@ func editor_select():
 	print("EDITOR SELECTED")
 	is_selected = true
 	
-	generate_handles()
-	old_handle_data = OnyxUtils.get_control_data(self)
+	OnyxUtils.handle_build(self)
 	
 	
 func editor_deselect():
 	print("EDITOR DESELECTED")
 	is_selected = false
 	
-	gizmo.control_points.clear()
-	handles.clear()
+	OnyxUtils.handle_clear(self)
 	

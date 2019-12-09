@@ -25,7 +25,6 @@ var control_data_hold
 # INITIALIZATION
 
 func _init():
-	print("CONTROL POINT GIZMO CREATED")
 	pass
 
 

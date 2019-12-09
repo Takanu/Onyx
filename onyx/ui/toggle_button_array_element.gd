@@ -28,10 +28,6 @@ func _ready():
 
 func _toggled(is_pressed):
 	
-	print("HEY BUTTON PRESSED")
-	print(owner_node)
-	print(function_trigger)
-	
 	if is_pressed == true:
 		
 		# Untoggle all other buttons
@@ -48,7 +44,6 @@ func _toggled(is_pressed):
 		set_pressed(is_pressed)
 		
 		if owner_node != null && function_trigger != "":
-			print("HEY CALLING OWNER")
 			owner_node.call(function_trigger, true)
 		
 		
@@ -58,5 +53,4 @@ func _toggled(is_pressed):
 			set_pressed(is_pressed)
 			
 			if owner_node != null && function_trigger != "":
-				print("HEY CALLING OWNER")
 				owner_node.call(function_trigger, false)

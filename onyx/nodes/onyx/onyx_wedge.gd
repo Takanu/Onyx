@@ -86,7 +86,6 @@ func _ready():
 	
 	# Delegate ready functionality for in-editor functions.
 	OnyxUtils.onyx_ready(self)
-
 	
 func _notification(what):
 	if what == Spatial.NOTIFICATION_TRANSFORM_CHANGED:
@@ -611,8 +610,9 @@ func restore_state(state):
 # SELECTION
 
 func editor_select():
-	pass
+	OnyxUtils.handle_build(self)
 	
 func editor_deselect():
-	pass
+	OnyxUtils.handle_clear(self)
+	
 	

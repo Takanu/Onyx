@@ -534,9 +534,9 @@ func restore_state(state):
 # SELECTION
 
 func editor_select():
-	pass
+	OnyxUtils.handle_build(self)
 	
 func editor_deselect():
-	pass
+	OnyxUtils.handle_clear(self)
 	
 	

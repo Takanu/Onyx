@@ -30,14 +30,12 @@ func snap_increment_update(value):
 # Used for controlling the behaviour of the Gizmo Snap toolbar popup menu.
 func snap_item_selected(id):
 	
-	print("PIIING - ", id)
 	var plugin = get_node("/root/EditorNode/Onyx")
 	var snap_menu = get_node("snap_menu")
 	
 	match id:
 		
 		MENU_GIZMO_SNAP_ENABLE:
-			print("PIIING - ", id)
 			
 			if plugin.snap_gizmo_enabled == false:
 				plugin.snap_gizmo_enabled = true
@@ -47,7 +45,6 @@ func snap_item_selected(id):
 				snap_menu.get_popup().set_item_checked(MENU_GIZMO_SNAP_ENABLE, false)
 				
 		MENU_GIZMO_SHOW_GRID:
-			print("PIIING - ", id)
 			
 			if plugin.snap_gizmo_grid == false:
 				plugin.snap_gizmo_grid = true
@@ -57,7 +54,6 @@ func snap_item_selected(id):
 				snap_menu.get_popup().set_item_checked(MENU_GIZMO_SHOW_GRID, false)
 				
 		MENU_GIZMO_SHOW_SLICER:
-			print("PIIING - ", id)
 			
 			if plugin.snap_gizmo_slicer == false:
 				plugin.snap_gizmo_slicer = true
