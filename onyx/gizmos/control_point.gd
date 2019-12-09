@@ -382,6 +382,7 @@ func update_handle(index, camera, point):
 				
 				control_position = new_position
 				control_point_owner.call(axis_update_callback, self)
+				return
 			
 			else:
 				control_position = new_position

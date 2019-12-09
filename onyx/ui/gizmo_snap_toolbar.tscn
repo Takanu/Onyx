@@ -1,0 +1,43 @@
+[gd_scene load_steps=3 format=2]
+
+[ext_resource path="res://addons/onyx/ui/gizmo_snap_toolbar.gd" type="Script" id=3]
+
+[sub_resource type="StyleBoxLine" id=1]
+color = Color( 0.580392, 0.580392, 0.580392, 1 )
+vertical = true
+
+[node name="gizmo_snap_toolbar" type="HBoxContainer"]
+anchor_right = 1.0
+margin_bottom = -538.0
+script = ExtResource( 3 )
+
+[node name="VSeparator" type="VSeparator" parent="."]
+margin_right = 4.0
+margin_bottom = 24.0
+custom_styles/separator = SubResource( 1 )
+__meta__ = {
+"_edit_use_anchors_": false,
+"_editor_description_": ""
+}
+
+[node name="snap_menu" type="MenuButton" parent="."]
+margin_left = 8.0
+margin_right = 50.0
+margin_bottom = 24.0
+text = "Snap"
+items = [ "Enable Snapping", null, 1, false, false, 0, 0, null, "", false, "Show Snap Grid", null, 1, false, false, 1, 0, null, "", false, "Show Slicer", null, 1, false, false, 2, 0, null, "", false ]
+__meta__ = {
+"_edit_use_anchors_": false,
+"_editor_description_": "Provides options for gizmo snapping control for all Onyx plugin types."
+}
+
+[node name="snap_increment" type="SpinBox" parent="."]
+margin_left = 54.0
+margin_right = 128.0
+margin_bottom = 24.0
+step = 0.1
+value = 1.0
+allow_greater = true
+__meta__ = {
+"_editor_description_": "Sets the snap increment when editing Onyx-related node gizmos.  Snapping must be enabled first in the snap menu."
+}

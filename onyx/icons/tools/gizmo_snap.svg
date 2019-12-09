@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg width="100%" height="100%" viewBox="0 0 32 32" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:1.5;">
+    <g transform="matrix(1,0,0,1,-184,-64)">
+        <g id="gizmo_snap" transform="matrix(0.0195312,0,0,0.0260417,180,60)">
+            <rect x="0" y="0" width="2048" height="1536" style="fill:none;"/>
+            <g transform="matrix(44.8,0,0,33.6,128,96)">
+                <circle cx="20" cy="20" r="16" style="fill:none;stroke:rgb(242,242,242);stroke-width:1.83px;"/>
+            </g>
+            <g transform="matrix(51.2,0,0,38.4,-9216,-2379.47)">
+                <path d="M194,83.965L194,82.031L194,79.914C194,78.346 194.623,76.841 195.732,75.732C196.841,74.623 198.346,74 199.914,74C199.915,74 199.916,74 199.917,74C203.19,74 205.865,76.61 205.947,79.881C205.977,81.089 206,82 206,82L206,84" style="fill:none;stroke:rgb(242,242,242);stroke-width:3px;stroke-linecap:butt;stroke-linejoin:miter;"/>
+            </g>
+            <g transform="matrix(51.2,0,0,38.4,-9472,-2305.33)">
+                <path d="M199,84.035L199,88" style="fill:none;stroke:white;stroke-width:3px;stroke-linecap:butt;stroke-linejoin:miter;"/>
+            </g>
+            <g transform="matrix(51.2,0,0,38.4,-8857.6,-2305.33)">
+                <path d="M199,84.035L199,88" style="fill:none;stroke:white;stroke-width:3px;stroke-linecap:butt;stroke-linejoin:miter;"/>
+            </g>
+        </g>
+    </g>
+</svg>

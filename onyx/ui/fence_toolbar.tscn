@@ -1,11 +1,9 @@
 [gd_scene load_steps=5 format=2]
 
-[ext_resource path="res://addons/onyx/ui/tools/buttons/gizmo_add.png" type="Texture" id=1]
-[ext_resource path="res://addons/onyx/ui/tools/toggle_button_array_element.gd" type="Script" id=2]
-[ext_resource path="res://addons/onyx/ui/tools/buttons/gizmo_remove.png" type="Texture" id=3]
-[ext_resource path="res://addons/onyx/ui/tools/buttons/gizmo_edit.png" type="Texture" id=4]
-
-
+[ext_resource path="res://addons/onyx/icons/tools/gizmo_add.svg" type="Texture" id=1]
+[ext_resource path="res://addons/onyx/ui/toggle_button_array_element.gd" type="Script" id=2]
+[ext_resource path="res://addons/onyx/icons/tools/gizmo_remove.svg" type="Texture" id=3]
+[ext_resource path="res://addons/onyx/icons/tools/gizmo_edit.svg" type="Texture" id=4]
 
 [node name="toolbar" type="HBoxContainer"]
 __meta__ = {
@@ -14,12 +12,12 @@ __meta__ = {
 
 [node name="VSeparator" type="VSeparator" parent="."]
 margin_right = 4.0
-margin_bottom = 22.0
+margin_bottom = 38.0
 
 [node name="add" type="Button" parent="."]
 margin_left = 8.0
-margin_right = 36.0
-margin_bottom = 22.0
+margin_right = 52.0
+margin_bottom = 38.0
 hint_tooltip = "Create a new handle point."
 toggle_mode = true
 icon = ExtResource( 1 )
@@ -27,9 +25,9 @@ flat = true
 script = ExtResource( 2 )
 
 [node name="remove" type="Button" parent="."]
-margin_left = 40.0
-margin_right = 68.0
-margin_bottom = 22.0
+margin_left = 56.0
+margin_right = 100.0
+margin_bottom = 38.0
 hint_tooltip = "Remove an existing handle point."
 size_flags_horizontal = 2
 size_flags_vertical = 2
@@ -39,9 +37,9 @@ flat = true
 script = ExtResource( 2 )
 
 [node name="position" type="Button" parent="."]
-margin_left = 72.0
-margin_right = 100.0
-margin_bottom = 22.0
+margin_left = 104.0
+margin_right = 148.0
+margin_bottom = 38.0
 rect_pivot_offset = Vector2( 365.168, -80.6051 )
 hint_tooltip = "Remove an existing handle point."
 size_flags_horizontal = 2
@@ -52,9 +50,9 @@ flat = true
 script = ExtResource( 2 )
 
 [node name="scale" type="Button" parent="."]
-margin_left = 104.0
-margin_right = 132.0
-margin_bottom = 22.0
+margin_left = 152.0
+margin_right = 196.0
+margin_bottom = 38.0
 rect_pivot_offset = Vector2( 365.168, -80.6051 )
 hint_tooltip = "Remove an existing handle point."
 size_flags_horizontal = 2

@@ -21,6 +21,7 @@ const ResTest = preload('./nodes/res_test.gd')
 const NodeHandlerList = [OnyxCube, OnyxCylinder, OnyxSphere, OnyxWedge, OnyxRoundedRect, OnyxStairs, OnyxRamp, FluxArea, FluxCollider]
 const NodeStrings = ['OnyxCube', 'OnyxCylinder', 'OnyxSphere', 'OnyxWedge', 'OnyxRoundedRect', 'OnyxStairs', 'FluxArea', 'FluxCollider']
 
+
 # Gizmo types
 const OnyxGizmoPlugin = preload("res://addons/Onyx/gizmos/onyx_gizmo_plugin.gd")
 var gizmo_plugin : OnyxGizmoPlugin
@@ -37,12 +38,16 @@ const WireframeUtility_Unselected = Color(0, 1, 1, 0.05)
 # Selection management
 var currently_selected_node = null
 
+# User Interface Objects
+var snap_menu
+
 # User Interface Variables
-var snap_gizmo_toolbar = null
 var snap_gizmo_enabled = false
 var snap_gizmo_increment = 1
 var snap_gizmo_grid = false
 var snap_gizmo_slicer = false
+
+
 
 # ////////////////////////////////////////////////////////////
 # FUNCTIONS
@@ -60,13 +65,13 @@ func _enter_tree():
 	print(gizmo_plugin)
 	
 	# onyx types
-	add_custom_type("OnyxCube", "CSGMesh", preload("./nodes/onyx/onyx_cube.gd"), preload("res://addons/onyx/ui/nodes/onyx_block.png"))
-	add_custom_type("OnyxCylinder", "CSGMesh", preload("./nodes/onyx/onyx_cylinder.gd"), preload("res://addons/onyx/ui/nodes/onyx_block.png"))
-	add_custom_type("OnyxSphere", "CSGMesh", preload("./nodes/onyx/onyx_sphere.gd"), preload("res://addons/onyx/ui/nodes/onyx_block.png"))
-	add_custom_type("OnyxWedge", "CSGMesh", preload("./nodes/onyx/onyx_wedge.gd"), preload("res://addons/onyx/ui/nodes/onyx_block.png"))
-	add_custom_type("OnyxRamp", "CSGMesh", preload("./nodes/onyx/onyx_ramp.gd"), preload("res://addons/onyx/ui/nodes/onyx_block.png"))
-	add_custom_type("OnyxRoundedCube", "CSGMesh", preload("./nodes/onyx/onyx_rounded_cube.gd"), preload("res://addons/onyx/ui/nodes/onyx_block.png"))
-	add_custom_type("OnyxStairs", "CSGMesh", preload("./nodes/onyx/onyx_stairs.gd"), preload("res://addons/onyx/ui/nodes/onyx_block.png"))
+	add_custom_type("OnyxCube", "CSGMesh", preload("./nodes/onyx/onyx_cube.gd"), preload("res://addons/onyx/icons/nodes/onyx_block.png"))
+	add_custom_type("OnyxCylinder", "CSGMesh", preload("./nodes/onyx/onyx_cylinder.gd"), preload("res://addons/onyx/icons/nodes/onyx_block.png"))
+	add_custom_type("OnyxSphere", "CSGMesh", preload("./nodes/onyx/onyx_sphere.gd"), preload("res://addons/onyx/icons/nodes/onyx_block.png"))
+	add_custom_type("OnyxWedge", "CSGMesh", preload("./nodes/onyx/onyx_wedge.gd"), preload("res://addons/onyx/icons/nodes/onyx_block.png"))
+	add_custom_type("OnyxRamp", "CSGMesh", preload("./nodes/onyx/onyx_ramp.gd"), preload("res://addons/onyx/icons/nodes/onyx_block.png"))
+	add_custom_type("OnyxRoundedCube", "CSGMesh", preload("./nodes/onyx/onyx_rounded_cube.gd"), preload("res://addons/onyx/icons/nodes/onyx_block.png"))
+	add_custom_type("OnyxStairs", "CSGMesh", preload("./nodes/onyx/onyx_stairs.gd"), preload("res://addons/onyx/icons/nodes/onyx_block.png"))
 	
 	# flux types
 	#add_custom_type("FluxArea", "CSGCombiner", preload("./nodes/flux/flux_area.gd"), preload("res://addons/onyx/ui/nodes/onyx_sprinkle.png"))
@@ -79,8 +84,8 @@ func _enter_tree():
 	add_user_signal("onyx_viewport_clicked", [{"camera": TYPE_OBJECT} , {"event": TYPE_OBJECT}] )
 	
 	# Add a custom snap toolbar for gizmos
-	snap_gizmo_toolbar = load("res://addons/onyx/ui/tools/gizmo_snap_toolbar.tscn").instance()
-	add_control_to_container(CONTAINER_SPATIAL_EDITOR_MENU, snap_gizmo_toolbar)
+	snap_menu = load("res://addons/onyx/ui/gizmo_snap_toolbar.tscn").instance()
+	add_control_to_container(CONTAINER_SPATIAL_EDITOR_MENU, snap_menu)
 
 
 # ////////////////////////////////////////////////////////////
@@ -150,7 +155,8 @@ func forward_spatial_gui_input(camera, ev):
 
 func _exit_tree():
 	#  Clean-up of the plugin goes here
-	remove_control_from_container(CONTAINER_SPATIAL_EDITOR_MENU, snap_gizmo_toolbar)
+	remove_control_from_container(CONTAINER_SPATIAL_EDITOR_MENU, snap_menu)
+	snap_menu.queue_free()
 	
 	for string in NodeStrings:
 		remove_custom_type(string)

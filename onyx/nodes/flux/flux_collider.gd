@@ -35,7 +35,7 @@ export(Dictionary) var fence_width_points
 var plugin
 
 # The toolbar the fence will add to the editor to allow for the creation and deletion of handles.
-var control = preload("res://addons/onyx/ui/tools/fence_toolbar.tscn")
+var control = preload("res://addons/onyx/ui/fence_toolbar.tscn")
 
 # The wireframe visualization of the fence
 var fence_geom = ImmediateGeometry.new()
@@ -88,7 +88,7 @@ func initialise_handles():
 
 func editor_select():
 	fence_geom.material_override = mat_solid_color(plugin.WireframeCollision_Selected)
-	control = plugin.add_toolbar("res://addons/onyx/ui/tools/fence_toolbar.tscn")
+	control = plugin.add_toolbar("res://addons/onyx/ui/fence_toolbar.tscn")
 	
 	# Setup the toolbar functions
 	control.get_child(1).owner_node = self

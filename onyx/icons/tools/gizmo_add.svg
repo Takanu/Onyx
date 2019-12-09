@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg width="100%" height="100%" viewBox="0 0 32 32" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:1.5;">
+    <g transform="matrix(1,0,0,1,-4,-64)">
+        <g id="gizmo_add_2" transform="matrix(0.0195312,0,0,0.0260417,0,60)">
+            <rect x="0" y="0" width="2048" height="1536" style="fill:none;"/>
+            <g transform="matrix(44.8,0,0,33.6,128,96)">
+                <circle cx="20" cy="20" r="16" style="fill:none;stroke:rgb(242,242,242);stroke-width:1.83px;"/>
+            </g>
+            <g transform="matrix(1.27444,-8.8432e-17,-1.59178e-15,1.27444,-281.027,-210.77)">
+                <g transform="matrix(48,-1.20021e-14,-7.60339e-15,30,64,168)">
+                    <path d="M20,12L20,28" style="fill:none;stroke:rgb(242,242,242);stroke-width:2.73px;stroke-linecap:square;"/>
+                </g>
+                <g transform="matrix(40,-1.06496e-29,1.14952e-14,36,224,48)">
+                    <path d="M28,20L12,20" style="fill:none;stroke:rgb(242,242,242);stroke-width:2.73px;stroke-linecap:square;"/>
+                </g>
+            </g>
+        </g>
+    </g>
+</svg>

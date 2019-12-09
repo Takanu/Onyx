@@ -2,15 +2,15 @@
 
 importer="texture"
 type="StreamTexture"
-path="res://.import/gizmo_add.png-7ce924d48138b29da54ea8b888d4deec.stex"
+path="res://.import/gizmo_edit.svg-3e7aab0a5db7b4dcad1461653cbf0e7a.stex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://addons/onyx/ui/tools/buttons/gizmo_add.png"
-dest_files=[ "res://.import/gizmo_add.png-7ce924d48138b29da54ea8b888d4deec.stex" ]
+source_file="res://addons/onyx/icons/tools/gizmo_edit.svg"
+dest_files=[ "res://.import/gizmo_edit.svg-3e7aab0a5db7b4dcad1461653cbf0e7a.stex" ]
 
 [params]
 
