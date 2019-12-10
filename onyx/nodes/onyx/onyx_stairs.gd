@@ -302,7 +302,7 @@ func generate_geometry(fix_to_origin_setting):
 	# Re-submit the handle positions based on the built faces, so other handles that aren't the
 	# focus of a handle operation are being updated
 	
-	generate_handles()
+	refresh_handle_data()
 	update_gizmo()
 	
 
@@ -342,10 +342,10 @@ func build_handles():
 	handles[stair_width.control_name] = stair_width
 	
 	# need to give it positions in the case of a duplication or scene load.
-	generate_handles()
+	refresh_handle_data()
 
 # Uses the current settings to refresh the handle list.
-func generate_handles():
+func refresh_handle_data():
 	
 	# Exit if not being run in the editor
 	if Engine.editor_hint == false:
@@ -378,7 +378,7 @@ func update_handle_from_gizmo(control):
 		'end_position': end_position = coordinate
 		'stair_width': stair_width = (coordinate.x - start_position.x) * 2
 		
-	generate_handles()
+	refresh_handle_data()
 	
 
 # Applies the current handle values to the shape attributes

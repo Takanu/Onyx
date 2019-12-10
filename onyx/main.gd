@@ -5,7 +5,7 @@ extends EditorPlugin
 # PROPERTIES
 
 # Core node types
-const OnyxCube = preload("./nodes/onyx/onyx_cube.gd")
+const OnyxCube = preload("./nodes/onyx/onyx_cube_new.gd")
 const OnyxCylinder = preload("./nodes/onyx/onyx_cylinder.gd")
 const OnyxSphere = preload("./nodes/onyx/onyx_sphere.gd")
 const OnyxWedge = preload("./nodes/onyx/onyx_wedge.gd")
@@ -65,7 +65,7 @@ func _enter_tree():
 	print(gizmo_plugin)
 	
 	# onyx types
-	add_custom_type("OnyxCube", "CSGMesh", preload("./nodes/onyx/onyx_cube.gd"), preload("res://addons/onyx/icons/nodes/onyx_block.png"))
+	add_custom_type("OnyxCube", "CSGMesh", preload("./nodes/onyx/onyx_cube_new.gd"), preload("res://addons/onyx/icons/nodes/onyx_block.png"))
 	add_custom_type("OnyxCylinder", "CSGMesh", preload("./nodes/onyx/onyx_cylinder.gd"), preload("res://addons/onyx/icons/nodes/onyx_block.png"))
 	add_custom_type("OnyxSphere", "CSGMesh", preload("./nodes/onyx/onyx_sphere.gd"), preload("res://addons/onyx/icons/nodes/onyx_block.png"))
 	add_custom_type("OnyxWedge", "CSGMesh", preload("./nodes/onyx/onyx_wedge.gd"), preload("res://addons/onyx/icons/nodes/onyx_block.png"))

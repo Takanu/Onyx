@@ -333,7 +333,7 @@ func generate_geometry():
 			mesh_factory.build_cylinder(onyx_mesh, 16, y_size, x_size / 2, z_size / 2, 1, Vector3(0, -y_size / 2, 0), 0, false)
 		
 	onyx_mesh.render_wireframe(volume_geom, plugin.WireframeUtility_Selected)
-	generate_handles()
+	refresh_handle_data()
 	
 
 
@@ -593,10 +593,10 @@ func build_handles():
 	handles[z_size.control_name] = z_size
 	
 	# need to give it positions in the case of a duplication or scene load.
-	generate_handles()
+	refresh_handle_data()
 
 # Uses the current settings to refresh the handle list.
-func generate_handles():
+func refresh_handle_data():
 	
 	# Exit if not being run in the editor
 	if Engine.editor_hint == false:

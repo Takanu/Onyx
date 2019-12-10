@@ -144,7 +144,7 @@ func _ready():
 		# if we have no handles already, make some
 		# (used during duplication and other functions)
 		elif handles.size() == 0:
-			generate_handles()
+			refresh_handle_data()
 		
 		# Ensure the old_handles variable match the current handles we have for undo/redo.
 		old_handles = handles.duplicate(true)
@@ -332,7 +332,7 @@ func generate_geometry():
 			mesh_factory.build_cylinder(onyx_mesh, 16, y_size, x_size / 2, z_size / 2, 1, Vector3(0, -y_size / 2, 0), 0, false)
 		
 	onyx_mesh.render_wireframe(volume_geom, plugin.WireframeUtility_Selected)
-	generate_handles()
+	refresh_handle_data()
 	
 
 
@@ -568,7 +568,7 @@ func spawn_node_candidate():
 # GIZMO HANDLES
 
 # Uses the current settings to refresh the handle list.
-func generate_handles():
+func refresh_handle_data():
 	
 	print("generate_handles")
 	handles.clear()

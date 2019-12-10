@@ -15,7 +15,7 @@ static func onyx_ready(node):
 		if node.mesh == null:
 			node.build_handles()
 			node.generate_geometry(true)
-			node.generate_handles()
+			node.refresh_handle_data()
 		
 		# Ensure the old_handles variable match the current handles we have for undo/redo.
 		node.old_handle_data = get_control_data(node)
@@ -105,7 +105,7 @@ static func handle_build(node):
 	
 	if Engine.editor_hint == true:
 		node.build_handles()
-		node.generate_handles()
+		node.refresh_handle_data()
 		node.old_handle_data = get_control_data(node)
 
 # Used when an object is deselected to clear the handle info.

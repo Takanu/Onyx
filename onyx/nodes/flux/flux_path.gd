@@ -131,7 +131,7 @@ func generate_geometry():
 	
 	# hnnng too tired right now.
 	onyx_mesh.render_wireframe(volume_geom, plugin.WireframeUtility_Selected)
-	generate_handles()
+	refresh_handle_data()
 
 # Fetches and returns a series of points to spawn objets on, based on various parameters.
 func build_location_array():

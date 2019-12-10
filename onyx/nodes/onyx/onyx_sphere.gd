@@ -12,7 +12,7 @@ var ControlPoint = load("res://addons/onyx/gizmos/control_point.gd")
 
 # allows origin point re-orientation, for precise alignments and convenience.
 enum OriginPosition {CENTER, BASE, BASE_CORNER}
-export(OriginPosition) var origin_mode = OriginPosition.BASE setget update_origin_mode
+export(OriginPosition) var origin_mode = OriginPosition.BASE setget update_origin_type
 
 # used to keep track of how to move the origin point into a new position.
 var previous_origin_mode = OriginPosition.BASE
@@ -158,26 +158,26 @@ func update_z_width(new_value):
 	
 func update_proportional_toggle(new_value):
 	keep_shape_proportional = new_value
-	update_origin()
+	update_origin_mode()
 	balance_handles()
 	generate_geometry(true)
 	
 # Used to recalibrate both the origin point location and the position handles.
 func update_positions(new_value):
 	update_origin_setting = true
-	update_origin()
+	update_origin_mode()
 	balance_handles()
 	generate_geometry(true)
 
 
 # Changes the origin position relative to the shape and regenerates geometry and handles.
-func update_origin_mode(new_value):
+func update_origin_type(new_value):
 
 	if previous_origin_mode == new_value:
 		return
 	
 	origin_mode = new_value
-	update_origin()
+	update_origin_mode()
 	balance_handles()
 	generate_geometry(true)
 	
@@ -211,7 +211,7 @@ func update_smooth_normals(new_value):
 
 # Updates the origin during generate_geometry() as well as the currently defined handles, 
 # to ensure it's anchored where it needs to be.
-func update_origin():
+func update_origin_mode():
 	
 # 	print("updating origin222...")
 	
@@ -329,7 +329,7 @@ func generate_geometry(fix_to_origin_setting):
 	
 	# Re-submit the handle positions based on the built faces, so other handles that aren't the
 	# focus of a handle operation are being updated\
-	generate_handles()
+	refresh_handle_data()
 	update_gizmo()
 
 # Makes any final tweaks, then prepares and transfers the mesh.
@@ -370,10 +370,10 @@ func build_handles():
 	handles[z_width.control_name] = z_width
 	
 	# need to give it positions in the case of a duplication or scene load.
-	generate_handles()
+	refresh_handle_data()
 
 # Uses the current settings to refresh the handle list.
-func generate_handles():
+func refresh_handle_data():
 	
 	# Exit if not being run in the editor
 	if Engine.editor_hint == false:
@@ -433,7 +433,7 @@ func update_handle_from_gizmo(control):
 			'x_width': x_width = target_val
 			'z_width': z_width = target_val
 	
-	generate_handles()
+	refresh_handle_data()
 	
 
 # Applies the current handle values to the shape attributes
