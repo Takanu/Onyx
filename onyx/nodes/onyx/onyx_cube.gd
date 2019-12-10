@@ -1,9 +1,8 @@
 tool
-extends CSGMesh
+extends "res://addons/onyx/nodes/onyx/onyx.gd"
 
 # ////////////////////////////////////////////////////////////
 # DEPENDENCIES
-var OnyxUtils = load("res://addons/onyx/nodes/onyx/onyx_utils.gd")
 var VectorUtils = load("res://addons/onyx/utilities/vector_utils.gd")
 var ControlPoint = load("res://addons/onyx/gizmos/control_point.gd")
 
@@ -24,25 +23,6 @@ export(bool) var update_origin_setting = true setget update_positions
 # ////////////////////////////////////////////////////////////
 # PROPERTIES
 
-# The plugin this node belongs to
-var plugin
-
-# The face set script, used for managing geometric data.
-var onyx_mesh = OnyxMesh.new()
-
-# The handle points that will be used to resize the mesh (NOT built in the format required by the gizmo)
-var handles : Dictionary = {} setget handle_set_catch
-
-# Old handle points that are saved every time a handle has finished moving.
-var old_handle_data : Dictionary = {}
-
-# Used to decide whether to update the geometry.  Enables parents to be moved without forcing updates.
-var local_tracked_pos = Vector3()
-
-# If true, this node is currently selected.
-var is_selected = false
-
-
 # Exported variables representing all usable handles for re-shaping the mesh, in order.
 # Must be exported to be saved in a scene?  smh.
 export(float) var x_plus_position = 0.5 setget update_x_plus
@@ -57,60 +37,47 @@ export(float) var z_minus_position = 0.5 setget update_z_minus
 # Used to subdivide the mesh to prevent CSG boolean glitches.
 export(Vector3) var subdivisions = Vector3(1, 1, 1)
 
-# BEVELS
-#export(float) var bevel_size = 0.2 setget update_bevel_size
-#enum BevelTarget {Y_AXIS, X_AXIS, Z_AXIS}
-#export(BevelTarget) var bevel_target = BevelTarget.Y_AXIS setget update_bevel_target
 
 # UVS
 enum UnwrapMethod {PROPORTIONAL_OVERLAP, CLAMPED_OVERLAP}
-export(UnwrapMethod) var unwrap_method = UnwrapMethod.PROPORTIONAL_OVERLAP setget update_unwrap_method
-
-export(Vector2) var uv_scale = Vector2(1.0, 1.0) setget update_uv_scale
-export(bool) var flip_uvs_horizontally = false setget update_flip_uvs_horizontally
-export(bool) var flip_uvs_vertically = false setget update_flip_uvs_vertically
+var unwrap_method = UnwrapMethod.PROPORTIONAL_OVERLAP
 
 
 # ////////////////////////////////////////////////////////////
-# FUNCTIONS
+# PROPERTY GENERATORS
+# Used to give the unwrap method a property category
+# If you're watching this Godot developers.... why.
+func _get_property_list():
+	var props = [
+		{	
+			# The usage here ensures this property isn't actually saved, as it's an intermediary
+			
+			"name" : "uv_options/unwrap_method",
+			"type" : TYPE_STRING,
+			"usage": PROPERTY_USAGE_EDITOR,
+			"hint": PROPERTY_HINT_ENUM,
+			"hint_string": "Proportional Overlap, Clamped Overlap"
+		},
+	]
+	return props
 
-# Global initialisation
-func _enter_tree():
-	
-	# If this is being run in the editor, sort out the gizmo.
-	if Engine.editor_hint == true:
+func _set(property, value):
+	match property:
+		"uv_options/unwrap_method":
+			if value == "Proportional Overlap":
+				unwrap_method = UnwrapMethod.PROPORTIONAL_OVERLAP
+			else:
+				unwrap_method = UnwrapMethod.CLAMPED_OVERLAP
+			
+			
+	generate_geometry()
 		
-		# load plugin
-		plugin = get_node("/root/EditorNode/Onyx")
 
-		set_notify_local_transform(true)
-		set_notify_transform(true)
-		set_ignore_transform_notification(false)
+func _get(property):
+	match property:
+		"uv_options/unwrap_method":
+			return unwrap_method
 
-func _exit_tree():
-	pass
-	
-func _ready():
-	
-	# Delegate ready functionality for in-editor functions.
-	OnyxUtils.onyx_ready(self)
-
-	
-func _notification(what):
-	
-	if what == Spatial.NOTIFICATION_TRANSFORM_CHANGED:
-		
-		# check that transform changes are local only
-		if local_tracked_pos != translation:
-			local_tracked_pos = translation
-			call_deferred("_editor_transform_changed")
-		
-func _editor_transform_changed():
-	pass
-	
-
-				
-				
 # ////////////////////////////////////////////////////////////
 # PROPERTY UPDATERS
 
@@ -129,7 +96,7 @@ func update_x_plus(new_value):
 		new_value = 0
 		
 	x_plus_position = new_value
-	generate_geometry(true)
+	generate_geometry()
 	
 	
 func update_x_minus(new_value):
@@ -138,7 +105,7 @@ func update_x_minus(new_value):
 		new_value = 0
 		
 	x_minus_position = new_value
-	generate_geometry(true)
+	generate_geometry()
 	
 func update_y_plus(new_value):
 #	print("ONYXCUBE update_y_plus")
@@ -146,7 +113,7 @@ func update_y_plus(new_value):
 		new_value = 0
 		
 	y_plus_position = new_value
-	generate_geometry(true)
+	generate_geometry()
 	
 func update_y_minus(new_value):
 #	print("ONYXCUBE update_y_minus")
@@ -154,7 +121,7 @@ func update_y_minus(new_value):
 		new_value = 0
 		
 	y_minus_position = new_value
-	generate_geometry(true)
+	generate_geometry()
 	
 func update_z_plus(new_value):
 #	print("ONYXCUBE update_z_plus")
@@ -162,7 +129,7 @@ func update_z_plus(new_value):
 		new_value = 0
 		
 	z_plus_position = new_value
-	generate_geometry(true)
+	generate_geometry()
 	
 	
 func update_z_minus(new_value):
@@ -171,7 +138,7 @@ func update_z_minus(new_value):
 		new_value = 0
 		
 	z_minus_position = new_value
-	generate_geometry(true)
+	generate_geometry()
 	
 	
 func update_subdivisions(new_value):
@@ -184,20 +151,9 @@ func update_subdivisions(new_value):
 		new_value.z = 1
 		
 	subdivisions = new_value
-	generate_geometry(true)
+	generate_geometry()
 	
 	
-#func update_bevel_size(new_value):
-#	if new_value > 0:
-#		new_value = 0
-#
-#	bevel_size = new_value
-#	generate_geometry(true)
-#
-#func update_bevel_target(new_value):
-#	bevel_target = new_value
-#	generate_geometry(true)
-#
 	
 # Used to recalibrate both the origin point location and the position handles.
 func update_positions(new_value):
@@ -205,7 +161,7 @@ func update_positions(new_value):
 	update_origin_setting = true
 	update_origin_mode()
 	balance_handles()
-	generate_geometry(true)
+	generate_geometry()
 
 
 # Changes the origin position relative to the shape and regenerates geometry and handles.
@@ -217,32 +173,13 @@ func update_origin_type(new_value):
 	origin_mode = new_value
 	update_origin_mode()
 	balance_handles()
-	generate_geometry(true)
+	generate_geometry()
 	
 	# ensure the origin mode toggle is preserved, and ensure the adjusted handles are saved.
 	previous_origin_mode = origin_mode
-	old_handle_data = OnyxUtils.get_handle_data(self)
+	old_handle_data = get_control_data()
 
-func update_unwrap_method(new_value):
-#	print("ONYXCUBE update_unwrap_method")
-	unwrap_method = new_value
-	generate_geometry(true)
 
-func update_uv_scale(new_value):
-#	print("ONYXCUBE update_uv_scale")
-	uv_scale = new_value
-	generate_geometry(true)
-
-func update_flip_uvs_horizontally(new_value):
-#	print("ONYXCUBE update_flip_uvs_horizontally")
-	flip_uvs_horizontally = new_value
-	generate_geometry(true)
-	
-func update_flip_uvs_vertically(new_value):
-#	print("ONYXCUBE update_flip_uvs_vertically")
-	flip_uvs_vertically = new_value
-	generate_geometry(true)
-	
 
 # Updates the origin location when the corresponding property is changed.
 func update_origin_mode():
@@ -297,8 +234,8 @@ func update_origin_mode():
 	#print("TRANSLATION: ", new_translation)
 	
 	# set it
-	self.global_translate(new_translation)
-	OnyxUtils.translate_children(self, new_translation * -1)
+	global_translate(new_translation)
+	translate_children(new_translation * -1)
 	
 
 # Updates the origin position for the currently-active Origin Mode, either building a new one using properties or through a new position.
@@ -344,15 +281,15 @@ func update_origin_position(new_location = null):
 	
 	
 	# set it
-	self.global_translate(new_translation)
-	OnyxUtils.translate_children(self, new_translation * -1)
+	global_translate(new_translation)
+	translate_children(new_translation * -1)
 	
 
 # ////////////////////////////////////////////////////////////
 # GEOMETRY GENERATION
 
 # Using the set handle points, geometry is generated and drawn.  The handles owned by the gizmo are also updated.
-func generate_geometry(fix_to_origin_setting):
+func generate_geometry(fix_to_origin_setting = false):
 	
 #	print('trying to generate geometry...')
 	
@@ -482,10 +419,6 @@ func generate_geometry(fix_to_origin_setting):
 	refresh_handle_data()
 	update_gizmo()
 	
-
-# Makes any final tweaks, then prepares and transfers the mesh.
-func render_onyx_mesh():
-	OnyxUtils.render_onyx_mesh(self)
 
 
 # ////////////////////////////////////////////////////////////
@@ -646,53 +579,3 @@ func balance_handles():
 			z_plus_position = diff_z
 			z_minus_position = 0
 		
-
-# ////////////////////////////////////////////////////////////
-# STANDARD HANDLE FUNCTIONS
-# (DO NOT CHANGE THESE BETWEEN SCRIPTS)
-
-# Returns the control points that the gizmo should currently have.
-# Used by ControlPointGizmo to obtain that data once it's created, AFTER this node is created.
-func get_gizmo_control_points() -> Array:
-	return handles.values()
-
-# Notifies the node that a handle has changed.
-func handle_change(control):
-	OnyxUtils.handle_change(self, control)
-
-# Called when a handle has stopped being dragged.
-func handle_commit(control):
-	OnyxUtils.handle_commit(self, control)
-
-
-# ////////////////////////////////////////////////////////////
-# STATES
-# Returns a state that can be used to undo or redo a previous change to the shape.
-func get_gizmo_redo_state(control) -> Array:
-	return OnyxUtils.get_gizmo_redo_state(self)
-	
-# Returns a state specifically for undo functions in SnapGizmo.
-func get_gizmo_undo_state(control) -> Array:
-	return OnyxUtils.get_gizmo_undo_state(self)
-
-# Restores the state of the shape to a previous given state.
-func restore_state(state):
-	OnyxUtils.restore_state(self, state)
-
-
-# ////////////////////////////////////////////////////////////
-# SELECTION
-
-func editor_select():
-	print("EDITOR SELECTED")
-	is_selected = true
-	
-	OnyxUtils.handle_build(self)
-	
-	
-func editor_deselect():
-	print("EDITOR DESELECTED")
-	is_selected = false
-	
-	OnyxUtils.handle_clear(self)
-	

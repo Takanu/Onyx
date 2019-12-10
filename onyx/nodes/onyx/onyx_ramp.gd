@@ -1,44 +1,13 @@
 tool
-extends CSGMesh
+extends "res://addons/onyx/nodes/onyx/onyx.gd"
 
 # ////////////////////////////////////////////////////////////
 # DEPENDENCIES
-var OnyxUtils = load("res://addons/onyx/nodes/onyx/onyx_utils.gd")
 var VectorUtils = load("res://addons/onyx/utilities/vector_utils.gd")
 var ControlPoint = load("res://addons/onyx/gizmos/control_point.gd")
 
 # ////////////////////////////////////////////////////////////
-# TOOL ENUMS
-
-# allows origin point re-orientation, for precise alignments and convenience.
-# NOT AVAILABLE ON TYPES WITH SPLINES OR POSITION POINTS.
-
-#enum OriginPosition {CENTER, BASE, BASE_CORNER}
-#export(OriginPosition) var origin_mode = OriginPosition.BASE setget update_origin_mode
-#var previous_origin_mode = OriginPosition.BASE
-#export(bool) var update_origin_setting = true setget update_positions
-
-# ////////////////////////////////////////////////////////////
 # PROPERTIES
-
-# The plugin this node belongs to
-var plugin
-
-# The face set script, used for managing geometric data.
-var onyx_mesh = OnyxMesh.new()
-
-# The handle points that will be used to resize the mesh (NOT built in the format required by the gizmo)
-var handles : Dictionary = {}
-
-# Old handle points that are saved every time a handle has finished moving.
-var old_handle_data : Dictionary = {}
-
-# The offset of the origin relative to the rest of the mesh.
-var origin_offset = Vector3(0, 0, 0)
-
-# Used to decide whether to update the geometry.  Enables parents to be moved without forcing updates.
-var local_tracked_pos = Vector3(0, 0, 0)
-
 
 # Exported variables representing all usable handles for re-shaping the mesh, in order.
 # Must be exported to be saved in a scene?  smh.
@@ -60,54 +29,44 @@ export(RampFillType) var ramp_fill_type = RampFillType.NONE setget update_ramp_f
 enum UnwrapMethod {PROPORTIONAL_OVERLAP, DIRECT_OVERLAP}
 export(UnwrapMethod) var unwrap_method = UnwrapMethod.PROPORTIONAL_OVERLAP setget update_unwrap_method
 
-export(Vector2) var uv_scale = Vector2(1.0, 1.0) setget update_uv_scale
-export(bool) var flip_uvs_horizontally = false setget update_flip_uvs_horizontally
-export(bool) var flip_uvs_vertically = false setget update_flip_uvs_vertically
-
-
 
 # ////////////////////////////////////////////////////////////
-# FUNCTIONS
+# PROPERTY GENERATORS
+# Used to give the unwrap method a property category
+# If you're watching this Godot developers.... why.
+func _get_property_list():
+	var props = [
+		{	
+			# The usage here ensures this property isn't actually saved, as it's an intermediary
+			
+			"name" : "uv_options/unwrap_method",
+			"type" : TYPE_STRING,
+			"usage": PROPERTY_USAGE_EDITOR,
+			"hint": PROPERTY_HINT_ENUM,
+			"hint_string": "Proportional Overlap, Direct Overlap"
+		},
+	]
+	return props
+
+func _set(property, value):
+	match property:
+		"uv_options/unwrap_method":
+			if value == "Proportional Overlap":
+				unwrap_method = UnwrapMethod.PROPORTIONAL_OVERLAP
+			else:
+				unwrap_method = UnwrapMethod.DIRECT_OVERLAP
+			
+			
+	generate_geometry()
+		
+
+func _get(property):
+	match property:
+		"uv_options/unwrap_method":
+			return unwrap_method
 
 
-# Global initialisation
-func _enter_tree():
-	#print("ONYXCUBE _enter_tree")
-		
-		
-	# If this is being run in the editor, sort out the gizmo.
-	if Engine.editor_hint == true:
-		
-		# load plugin
-		plugin = get_node("/root/EditorNode/Onyx")
 
-		set_notify_local_transform(true)
-		set_notify_transform(true)
-		set_ignore_transform_notification(false)
-		
-		
-
-func _exit_tree():
-	pass
-	
-func _ready():
-	
-	# Delegate ready functionality for in-editor functions.
-	OnyxUtils.onyx_ready(self)
-
-	
-func _notification(what):
-	if what == Spatial.NOTIFICATION_TRANSFORM_CHANGED:
-		
-		# check that transform changes are local only
-		if local_tracked_pos != translation:
-			local_tracked_pos = translation
-			call_deferred("_editor_transform_changed")
-		
-func _editor_transform_changed():
-	pass
-
-				
 # ////////////////////////////////////////////////////////////
 # PROPERTY UPDATERS
 
@@ -183,7 +142,7 @@ func update_flip_uvs_vertically(new_value):
 # GEOMETRY GENERATION
 
 # Using the set handle points, geometry is generated and drawn.  The handles owned by the gizmo are also updated.
-func generate_geometry(fix_to_origin_setting):
+func generate_geometry(fix_to_origin_setting = false):
 	
 	# Prevents geometry generation if the node hasn't loaded yet
 	if is_inside_tree() == false:
@@ -388,10 +347,6 @@ func generate_geometry(fix_to_origin_setting):
 	update_gizmo()
 	
 
-# Makes any final tweaks, then prepares and transfers the mesh.
-func render_onyx_mesh():
-	OnyxUtils.render_onyx_mesh(self)
-
 
 # ////////////////////////////////////////////////////////////
 # GIZMO HANDLES
@@ -476,48 +431,3 @@ func balance_handles():
 	
 	# balance handles here
 	pass
-
-# ////////////////////////////////////////////////////////////
-# STANDARD HANDLE FUNCTIONS
-# (DO NOT CHANGE THESE BETWEEN SCRIPTS)
-
-# Returns the control points that the gizmo should currently have.
-# Used by ControlPointGizmo to obtain that data once it's created, AFTER this node is created.
-func get_gizmo_control_points() -> Array:
-	return handles.values()
-
-# Notifies the node that a handle has changed.
-func handle_change(control):
-	OnyxUtils.handle_change(self, control)
-
-# Called when a handle has stopped being dragged.
-func handle_commit(control):
-	OnyxUtils.handle_commit(self, control)
-
-
-
-# ////////////////////////////////////////////////////////////
-# STATES
-# Returns a state that can be used to undo or redo a previous change to the shape.
-func get_gizmo_redo_state(control):
-	return OnyxUtils.get_gizmo_redo_state(self)
-	
-# Returns a state specifically for undo functions in SnapGizmo.
-func get_gizmo_undo_state(control):
-	return OnyxUtils.get_gizmo_undo_state(self)
-
-# Restores the state of the shape to a previous given state.
-func restore_state(state):
-	OnyxUtils.restore_state(self, state)
-
-
-# ////////////////////////////////////////////////////////////
-# SELECTION
-
-func editor_select():
-	OnyxUtils.handle_build(self)
-	
-func editor_deselect():
-	OnyxUtils.handle_clear(self)
-	
-	

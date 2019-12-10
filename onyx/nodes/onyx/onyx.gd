@@ -79,8 +79,7 @@ func _set(property, value):
 			flip_uvs_vertically = value
 			
 	generate_geometry()
-		
-	print("DING - ", property, value)
+
 
 func _get(property):
 	match property:
@@ -137,7 +136,7 @@ func _ready():
 # ////////////////////////////////////////////////////////////
 # MESH BUILDING AND RENDERING
 
-func generate_geometry():
+func generate_geometry(fix_to_origin_setting = false):
 	print("nope!")
 	pass
 

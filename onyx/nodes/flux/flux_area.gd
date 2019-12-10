@@ -430,14 +430,12 @@ func build_location_array():
 				return
 
 			# load our utils kit and get the node area.
-			var onyx_utils = load("res://addons/onyx/utilities/onyx_utils.gd").new()
 			var node_aabb = VectorUtils.get_aabb(target_node)
 			
 			if node_aabb != null:
 				current_grid_size += node_aabb.size
 
 			# deallocate what we don't need.
-			onyx_utils.free()
 			target_node.free()
 
 		#print("getting face set bounds")

@@ -21,7 +21,7 @@ static func get_aabb(node):
 		return get_mesh_aabb(node.get_mesh())
 		
 	elif node is ImmediateGeometry:
-		print("onyx_utils.get_aabb(node) cannot obtain data from ImmediateGeometry, provide a face_dictionary instead.")
+		print("VectorUtils.get_aabb(node) cannot obtain data from ImmediateGeometry, provide a face_dictionary instead.")
 		return
 		
 	# //////////////
@@ -37,7 +37,7 @@ static func get_aabb(node):
 		return AABB(lb, ub)
 		
 	elif node is CSGPolygon:
-		print("onyx_utils.get_aabb(node) cannot obtain data from CSGPolygon, im just not going to go there right now.")
+		print("VectorUtils.get_aabb(node) cannot obtain data from CSGPolygon, im just not going to go there right now.")
 		return
 		
 	elif node is CSGSphere:
@@ -54,17 +54,17 @@ static func get_aabb(node):
 		return get_mesh_aabb(node.get_mesh())
 		
 	elif node is CSGShape:
-		print("onyx_utils.get_aabb(node) cannot obtain data from CSGShape, provide a different CSG or node type")
+		print("VectorUtils.get_aabb(node) cannot obtain data from CSGShape, provide a different CSG or node type")
 		return
 		
 	# //////////////
 	# OTHER NODES
 	elif node is SpriteBase3D:
-		print("SpriteBase3D not yet available for use with onyx_utils.get_aabb(node).")
+		print("SpriteBase3D not yet available for use with VectorUtils.get_aabb(node).")
 		return
 	
 	elif node is CollisionPolygon:
-		print("onyx_utils.get_aabb(node) refuses to use a CollisionPolygon as it wont be used at runtime, use a CollisionShape or literally anything else :D")
+		print("VectorUtils.get_aabb(node) refuses to use a CollisionPolygon as it wont be used at runtime, use a CollisionShape or literally anything else :D")
 		return
 		
 	elif node is CollisionShape:
@@ -92,7 +92,7 @@ static func get_aabb(node):
 			return AABB(lb, ub)
 			
 		elif shape is PlaneShape:
-			print("Really?  REALLY?  onyx_utils.get_aabb(node) refuses to use a PlaneShape, choose literally anything else plz.")
+			print("Really?  REALLY?  VectorUtils.get_aabb(node) refuses to use a PlaneShape, choose literally anything else plz.")
 			return
 			
 		elif shape is RayShape:
@@ -253,7 +253,7 @@ static func get_vector2_ranges(vectors : Array) -> Dictionary:
 # NOTE - THIS CURRENTLY DOESN'T WORK
 static func get_uv_triangle_transform(vector_array : Array):
 	if vector_array.size() > 3 || vector_array.size() < 3:
-		print('OnyxUtils : get_triangle_transform : Array needs three Vertex values to work, returning...')
+		print('VectorUtils : get_triangle_transform : Array needs three Vertex values to work, returning...')
 		return null
 	
 	var AB = vector_array[2] - vector_array[0]

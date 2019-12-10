@@ -14,7 +14,6 @@ class_name OnyxMesh
 
 # ////////////////////////////////////////////////////////////
 # DEPENDENCIES
-var OnyxUtils = load("res://addons/onyx/nodes/onyx/onyx_utils.gd")
 var VectorUtils = load("res://addons/onyx/utilities/vector_utils.gd")
 
 
