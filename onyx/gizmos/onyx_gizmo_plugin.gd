@@ -26,6 +26,7 @@ func create_gizmo(spatial):
 	for handled_object in plugin.NodeHandlerList:
 		if spatial is handled_object:
 			var new_gizmo = ControlPointGizmo.new()
+			print("New Gizmo Created - ", new_gizmo)
 			return new_gizmo
 		
 #	print('GizmoPlugin - Gizmo creation UNSUCCESSFUL, returning nothing (:.')

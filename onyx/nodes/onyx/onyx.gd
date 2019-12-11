@@ -1,6 +1,8 @@
 tool
 extends CSGMesh
 
+class_name OnyxBase
+
 # ////////////////////////////////////////////////////////////
 # INFO
 # Base class for all Onyx-type nodes, provides fundamental functionality.
@@ -35,6 +37,22 @@ var local_tracked_pos = Vector3(0, 0, 0)
 # If true, this node is currently selected.
 var is_selected = false
 
+# HOLLOW MODE //////////////
+
+# Enables and disables hollow mode
+var hollow_enable = false
+
+# The object that if set, will be used to hollow out the main shape.
+var hollow_onyx_object
+
+# The set of margins to be stored
+var hollow_margin_values = {}
+
+# The amount all hollow margins are set to initially
+const default_hollow_margin = 0.1
+
+# If true, this very onyx object is a hollow object, required to bypass certain checks.
+var is_hollow_object = false
 
 # BEVELS //////////////
 
@@ -54,6 +72,7 @@ var flip_uvs_vertically = false
 # SET/GETTERS
 
 func _get_property_list():
+	print("PROPERTY LIST GET")
 	var props = [
 		{
 			"name" : "uv_options/uv_scale",
@@ -68,36 +87,80 @@ func _get_property_list():
 		{
 			"name" : "uv_options/flip_uvs_vertically",
 			"type" : TYPE_BOOL,
-		}
+		},
+		
+		{
+			"name" : "hollow_mode/enable_hollow_mode",
+			"type" : TYPE_BOOL,
+		},
 	]
+	
+	# search through every handle and grab their names, then put them into a new property
+	for handle_name in hollow_margin_values.keys():
+		props.append(
+			{
+				"name" : "hollow_mode/" + handle_name + "_margin",
+				"type" : TYPE_REAL,
+			}
+		)
+	
 	return props
 
 func _set(property, value):
 	match property:
+		# UVs
 		"uv_options/uv_scale":
 			uv_scale = value
 		"uv_options/flip_uvs_horizontally":
 			flip_uvs_horizontally = value
 		"uv_options/flip_uvs_vertically":
 			flip_uvs_vertically = value
-			
+		
+		# Hollow Mode
+		"hollow_mode/enable_hollow_mode":
+			update_hollow_enable(value)
+			return
+	
+	# Hollow Mode Margins
+	if property.begins_with("hollow_mode/"):
+		var property_name = property.replace("hollow_mode/", "")
+		property_name = property_name.replace("_margin", "")
+		
+		hollow_margin_values[property_name] = value
+	
 	generate_geometry()
 
 
 func _get(property):
 	match property:
+		# UVs
 		"uv_options/uv_scale":
 			return uv_scale
 		"uv_options/flip_uvs_horizontally":
 			return flip_uvs_horizontally
 		"uv_options/flip_uvs_vertically":
 			return flip_uvs_vertically
+		
+		# Hollow Mode
+		"hollow_mode/enable_hollow_mode":
+			return hollow_enable
+	
+	# Hollow Mode Margins
+	if property.begins_with("hollow_mode/"):
+		var property_name = property.replace("hollow_mode/", "")
+		property_name = property_name.replace("_margin", "")
+		
+		return hollow_margin_values[property_name]
+
+
 
 # ////////////////////////////////////////////////////////////
 # FUNCTIONS
 
 # Global initialisation
 func _enter_tree():
+	
+	print("_ENTER_TREE...")
 	
 	# If this is being run in the editor, sort out the gizmo.
 	if Engine.editor_hint == true:
@@ -112,13 +175,17 @@ func _enter_tree():
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
+	
+	print("_READY...")
+	
 	if Engine.editor_hint == true:
 		if mesh == null:
+			print("building kit")
 			build_handles()
 			generate_geometry()
 			refresh_handle_data()
 		
-		# If we have an operation that ain't Addition, we need to render the preview mesh.
+		# If we have an operation that ain't Addition, we need to render the preview mesh so we need handles anyway.  wupwup.
 		elif operation != 0:
 			build_handles()
 			generate_geometry()
@@ -146,7 +213,7 @@ func _ready():
 # MESH BUILDING AND RENDERING
 
 func generate_geometry(fix_to_origin_setting = false):
-	print("nope!")
+	print("generate_geometry() - Override this function!")
 	pass
 
 func get_gizmo_mesh() -> Array:
@@ -164,6 +231,8 @@ func get_gizmo_mesh() -> Array:
 	return [array_mesh, material]
 
 func render_onyx_mesh():
+	
+	generate_hollow_shape()
 	
 	# Optional UV Modifications
 	var tf_vec = uv_scale
@@ -192,27 +261,103 @@ func render_onyx_mesh():
 	set_mesh(mesh)
 	
 
+# ////////////////////////////////////////////////////////////
+# HOLLOW MODE FUNCTIONS
 
+# The margin options available in Hollow mode, using a list of the control names to setup margins for
+func get_hollow_margins() -> Array:
+	return []
+
+# An override-able function used to determine how margins apply to handles
+func apply_hollow_margins(controls: Dictionary):
+	pass
+
+func generate_hollow_margins():
+	
+	hollow_margin_values.clear()
+	var handle_names = get_hollow_margins()
+	for handle_name in handle_names:
+		hollow_margin_values[handle_name] = default_hollow_margin
+		
+	
+func update_hollow_enable(value):
+	
+	# if true, get the current class and instance it 
+	if value == true:
+		# This workaround is used to get the exact sub-class of the current script for instancing.
+		var script_file_path = get_script().get_path()
+		hollow_onyx_object = load(script_file_path).new()
+		
+		print("assigning hollow object")
+		hollow_onyx_object.name == "Hollow Onyx Object"
+		hollow_onyx_object.is_hollow_object = true
+		add_child(hollow_onyx_object)
+		
+		print("performing setup")
+		print(hollow_onyx_object.handles)
+		hollow_onyx_object.operation = 2
+		hollow_onyx_object.build_handles()
+		hollow_onyx_object.generate_geometry()
+		hollow_onyx_object.refresh_handle_data()
+		
+		hollow_enable = true
+		
+		# build the margins and FORCE PROPERTY LIST UPDATES
+		generate_hollow_margins()
+		# ???
+		
+		# generate shape
+		generate_hollow_shape()
+	
+	# if not, remove object
+	else:
+		remove_child(hollow_onyx_object)
+		
+		if hollow_onyx_object != null:
+			hollow_onyx_object.queue_free()
+			
+		hollow_margin_values.clear()
+		hollow_enable = false
+
+func generate_hollow_shape():
+	
+	if hollow_enable == false:
+		return
+	
+	# duplicate and set control data so the shapes mimic each other
+	var parent_control_data = get_control_data()
+	hollow_onyx_object.set_control_data(parent_control_data)
+	
+	# Now modify the controls on an individual basis.
+	apply_hollow_margins(hollow_onyx_object.handles)
+	hollow_onyx_object.apply_handle_attributes()
+	hollow_onyx_object.generate_geometry()
 
 # ////////////////////////////////////////////////////////////
 # HANDLE GENERATION FUNCTIONS
 
 func update_origin_position(new_location = null):
+	print("update_origin_position() - Override this function!")
 	pass
 
 func build_handles():
+	print("build_handles() - Override this function!")
 	pass
 
 func refresh_handle_data():
+	print("refresh_handle_data() - Override this function!")
 	pass
 
 func update_handle_from_gizmo(control):
+	print("update_handle_from_gizmo(control) - Override this function!")
 	pass
 
 func apply_handle_attributes():
+	print("apply_handle_attributes() - Override this function!")
 	pass
 
 func balance_handles():
+	print("balance_handles() - Override this function!")
 	pass
 
 # ////////////////////////////////////////////////////////////
@@ -313,6 +458,11 @@ func restore_state(state):
 	balance_handles()
 	
 	generate_geometry()
+	
+#	if hollow_onyx_object != null:
+#		hollow_onyx_object.set_control_data(new_handles)
+#		hollow_onyx_object.apply_handle_attributes()
+#		hollow_onyx_object.set_translation(Vector3(0, 0, 0))
 	
 
 # ////////////////////////////////////////////////////////////

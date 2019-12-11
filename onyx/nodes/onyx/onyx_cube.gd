@@ -427,9 +427,9 @@ func generate_geometry(fix_to_origin_setting = false):
 # On initialisation, control points are built for transmitting and handling interactive points between the node and the node's gizmo.
 func build_handles():
 	
-#	print("ONYXCUBE build_handles")'
+	print("ONYXCUBE build_handles")
 	# If it's not selected, do not generate
-	if is_selected == false:
+	if is_selected == false && is_hollow_object == false:
 		return
 	
 	# Exit if not being run in the editor
@@ -481,7 +481,7 @@ func refresh_handle_data():
 	
 #	print("ONYXCUBE generate_handles")
 	# If it's not selected, do not generate
-	if is_selected == false:
+	if is_selected == false && is_hollow_object == false:
 		return
 	
 	# Exit if not being run in the editor
@@ -579,3 +579,44 @@ func balance_handles():
 			z_plus_position = diff_z
 			z_minus_position = 0
 		
+
+# ////////////////////////////////////////////////////////////
+# HOLLOW MODE FUNCTIONS
+
+# The margin options available in Hollow mode, identified by the control names that should have margins
+func get_hollow_margins() -> Array:
+	
+	var control_names = [
+		"x_minus",
+		"x_plus",
+		"y_minus",
+		"y_plus",
+		"z_minus",
+		"z_plus",
+	]
+	
+	return control_names
+
+# An override-able function used to determine how margins apply to handles
+func apply_hollow_margins(controls: Dictionary):
+	
+	for key in controls.keys():
+		var hollow_handle = controls[key]
+		var control_handle = handles[key]
+		var margin = hollow_margin_values[key]
+		
+		match key:
+			"x_minus":
+				hollow_handle.control_position.x = control_handle.control_position.x + margin
+			"x_plus":
+				hollow_handle.control_position.x = control_handle.control_position.x - margin
+			"y_minus":
+				hollow_handle.control_position.y = control_handle.control_position.y + margin
+			"y_plus":
+				hollow_handle.control_position.y = control_handle.control_position.y - margin
+			"z_minus":
+				hollow_handle.control_position.z = control_handle.control_position.z + margin
+			"z_plus":
+				hollow_handle.control_position.z = control_handle.control_position.z - margin
+	
+	return controls
