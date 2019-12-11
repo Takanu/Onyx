@@ -65,6 +65,14 @@ func redraw():
 			for handle_pos in handle_positions:
 				handles.push_back(handle_pos)
 	
+	# attempt to get a mesh from the spatial node
+	var mesh_result = node.call("get_gizmo_mesh")
+	if mesh_result is Array:
+		if mesh_result.size() == 2:
+			if mesh_result[0] != null:
+				add_mesh(mesh_result[0], false, null, load(mesh_result[1]))
+			
+	# Grabs handles
 	if handles.size() > 0:
 		add_handles(handles, handle_mat)
 	

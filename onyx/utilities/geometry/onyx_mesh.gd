@@ -167,7 +167,7 @@ func render_immediate_geometry(geom : ImmediateGeometry):
 
 # Renders available face geometry using SurfaceTool and returns a mesh.
 # Rendering as this type is good for static objects, it's just... easier.
-func render_surface_geometry(material : Material = null) -> SurfaceTool:
+func render_surface_geometry(material : Material = null, generate_normals = false) -> ArrayMesh:
 
 	var surface = SurfaceTool.new()
 	surface.begin(Mesh.PRIMITIVE_TRIANGLES)

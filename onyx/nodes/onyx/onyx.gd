@@ -17,6 +17,9 @@ var plugin
 # The face set script, used for managing geometric data.
 var onyx_mesh = OnyxMesh.new()
 
+# The last-created array mesh (used by the Gizmo for visualization)
+var array_mesh = null
+
 # The handle points that will be used to resize the mesh (NOT built in the format required by the gizmo)
 var handles : Dictionary = {}
 
@@ -115,6 +118,12 @@ func _ready():
 			generate_geometry()
 			refresh_handle_data()
 		
+		# If we have an operation that ain't Addition, we need to render the preview mesh.
+		elif operation != 0:
+			build_handles()
+			generate_geometry()
+			refresh_handle_data()
+		
 		# Ensure the old_handles variable match the current handles we have for undo/redo.
 		old_handle_data = get_control_data()
 
@@ -140,6 +149,20 @@ func generate_geometry(fix_to_origin_setting = false):
 	print("nope!")
 	pass
 
+func get_gizmo_mesh() -> Array:
+	
+	if operation == 0:
+		return []
+	
+	var material
+	
+	if operation == 1:
+		material = "res://addons/onyx/materials/wireframes/onyx_wireframe_int.material"
+	elif operation == 2:
+		material = "res://addons/onyx/materials/wireframes/onyx_wireframe_sub.material"
+	
+	return [array_mesh, material]
+
 func render_onyx_mesh():
 	
 	# Optional UV Modifications
@@ -159,7 +182,7 @@ func render_onyx_mesh():
 	onyx_mesh.multiply_uvs(tf_vec)
 	
 	# Create new mesh
-	var array_mesh = onyx_mesh.render_surface_geometry(material)
+	array_mesh = onyx_mesh.render_surface_geometry(material)
 	var helper = MeshDataTool.new()
 	var mesh = Mesh.new()
 	
@@ -296,13 +319,11 @@ func restore_state(state):
 # EDITOR SELECTION
 
 func editor_select():
-	print("EDITOR SELECTED")
 	is_selected = true
 	handle_build()
 	
 	
 func editor_deselect():
-	print("EDITOR DESELECTED")
 	is_selected = false
 	handle_clear()
 	
