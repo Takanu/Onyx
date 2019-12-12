@@ -184,6 +184,8 @@ func update_origin_type(new_value):
 # Updates the origin location when the corresponding property is changed.
 func update_origin_mode():
 	
+	print("OnyxCube ", self, " - update_origin_mode()")
+	
 	# Used to prevent the function from triggering when not inside the tree.
 	# This happens during duplication and replication and causes incorrect node placement.
 	if is_inside_tree() == false:
@@ -242,7 +244,7 @@ func update_origin_mode():
 # DOES NOT update the origin when the origin property has changed, for use with handle commits.
 func update_origin_position(new_location = null):
 	
-#	print("ONYXCUBE update_origin_position")
+	print("OnyxCube ", self, " - update_origin_position(new_location = null)")
 	
 	var new_loc = Vector3()
 	var global_tf = self.global_transform
@@ -419,6 +421,8 @@ func generate_geometry(fix_to_origin_setting = false):
 	refresh_handle_data()
 	update_gizmo()
 	
+	generate_hollow_shape()
+	
 
 
 # ////////////////////////////////////////////////////////////
@@ -427,7 +431,7 @@ func generate_geometry(fix_to_origin_setting = false):
 # On initialisation, control points are built for transmitting and handling interactive points between the node and the node's gizmo.
 func build_handles():
 	
-	print("ONYXCUBE build_handles")
+	print("OnyxCube ", self, " - build_handles()")
 	# If it's not selected, do not generate
 	if is_selected == false && is_hollow_object == false:
 		return
@@ -479,7 +483,7 @@ func build_handles():
 # Uses the current settings to refresh the control point positions.
 func refresh_handle_data():
 	
-#	print("ONYXCUBE generate_handles")
+	print("OnyxCube ", self, " - refresh_handle_data()")
 	# If it's not selected, do not generate
 	if is_selected == false && is_hollow_object == false:
 		return
@@ -515,6 +519,8 @@ func refresh_handle_data():
 # Changes the handle based on the given index and coordinates.
 func update_handle_from_gizmo(control):
 	
+	print("OnyxCube ", self, " - update_handle_from_gizmo(control)")
+	
 	var coordinate = control.control_position
 	
 	match control.control_name:
@@ -530,6 +536,8 @@ func update_handle_from_gizmo(control):
 
 # Applies the current handle values to the shape attributes
 func apply_handle_attributes():
+	
+	print("OnyxCube ", self, " - apply_handle_attributes()")
 	
 	x_minus_position = handles["x_minus"].control_position.x * -1
 	x_plus_position = handles["x_plus"].control_position.x
@@ -599,6 +607,9 @@ func get_hollow_margins() -> Array:
 
 # An override-able function used to determine how margins apply to handles
 func apply_hollow_margins(controls: Dictionary):
+	
+	# Because of the bullshit ways in which the save system works on nodes like this
+	# this can get triggered without 
 	
 	for key in controls.keys():
 		var hollow_handle = controls[key]

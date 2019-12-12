@@ -51,6 +51,8 @@ var hollow_margin_values = {}
 # The amount all hollow margins are set to initially
 const default_hollow_margin = 0.1
 
+const hollow_object_name = "Hollow Onyx Object"
+
 # If true, this very onyx object is a hollow object, required to bypass certain checks.
 var is_hollow_object = false
 
@@ -101,6 +103,7 @@ func _get_property_list():
 			{
 				"name" : "hollow_mode/" + handle_name + "_margin",
 				"type" : TYPE_REAL,
+				"usage" : PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
 			}
 		)
 	
@@ -179,11 +182,13 @@ func _ready():
 	print("_READY...")
 	
 	if Engine.editor_hint == true:
+		
 		if mesh == null:
 			print("building kit")
 			build_handles()
 			generate_geometry()
 			refresh_handle_data()
+		
 		
 		# If we have an operation that ain't Addition, we need to render the preview mesh so we need handles anyway.  wupwup.
 		elif operation != 0:
@@ -193,6 +198,8 @@ func _ready():
 		
 		# Ensure the old_handles variable match the current handles we have for undo/redo.
 		old_handle_data = get_control_data()
+		
+		load_hollow_data()
 
 # This was used, but there's no reason for it to be here.
 #func _notification(what):
@@ -232,8 +239,6 @@ func get_gizmo_mesh() -> Array:
 
 func render_onyx_mesh():
 	
-	generate_hollow_shape()
-	
 	# Optional UV Modifications
 	var tf_vec = uv_scale
 	if tf_vec.x == 0:
@@ -272,26 +277,68 @@ func get_hollow_margins() -> Array:
 func apply_hollow_margins(controls: Dictionary):
 	pass
 
+# Loads hollow data when the scene is loaded for the first time (_ready)
+func load_hollow_data():
+	
+	if hollow_margin_values.size() == 0:
+		generate_hollow_margins()
+		
+	var hollow = get_node(hollow_object_name)
+	if hollow != null:
+		hollow_onyx_object = hollow
+		hollow_enable = true
+
+# Reads the margins specified by the sub-class and turns them into usable data
 func generate_hollow_margins():
+	
+	if is_hollow_object == true || Engine.editor_hint == false:
+		return
+	
+	print("Onyx ", self, " - generate_hollow_margins()")
 	
 	hollow_margin_values.clear()
 	var handle_names = get_hollow_margins()
 	for handle_name in handle_names:
 		hollow_margin_values[handle_name] = default_hollow_margin
 		
-	
+
+# Updates the hollow_enable property.  This is also responsible for creating and destroying the hollow object.
 func update_hollow_enable(value):
+	
+	if is_hollow_object == true || Engine.editor_hint == false:
+		return
+	
+	# REMEMBER THAT SAVING A SCENE CAUSES PROPERTIES TO BE RE-APPLIED, INSURANCE POLICY
+	print(hollow_enable)
+	print(value)
+	if hollow_enable == value:
+		return
+	
+	print("Onyx ", self, " - update_hollow_enable()")
 	
 	# if true, get the current class and instance it 
 	if value == true:
+		
+		# REMEMBER THAT RE-SAVING A SCRIPT CAUSES IT TO BE RELOADED, MUST HAVE INSURANCE POLICY
+		if hollow_onyx_object != null:
+			return
+		
+		if has_node(hollow_object_name):
+			hollow_onyx_object = get_node(hollow_onyx_object)
+			return
+		
 		# This workaround is used to get the exact sub-class of the current script for instancing.
 		var script_file_path = get_script().get_path()
 		hollow_onyx_object = load(script_file_path).new()
 		
+		print("Onyx - Created new Hollow Object - ", hollow_onyx_object)
+		print(self.get_children())
+		
 		print("assigning hollow object")
-		hollow_onyx_object.name == "Hollow Onyx Object"
+		hollow_onyx_object.name == hollow_object_name
 		hollow_onyx_object.is_hollow_object = true
 		add_child(hollow_onyx_object)
+		print(self.get_children())
 		
 		print("performing setup")
 		print(hollow_onyx_object.handles)
@@ -301,10 +348,6 @@ func update_hollow_enable(value):
 		hollow_onyx_object.refresh_handle_data()
 		
 		hollow_enable = true
-		
-		# build the margins and FORCE PROPERTY LIST UPDATES
-		generate_hollow_margins()
-		# ???
 		
 		# generate shape
 		generate_hollow_shape()
@@ -319,10 +362,14 @@ func update_hollow_enable(value):
 		hollow_margin_values.clear()
 		hollow_enable = false
 
+# Updates the hollow object handles and mesh to follow the shape of the parent object,
+# while also calculating margin distances.
 func generate_hollow_shape():
 	
-	if hollow_enable == false:
+	if hollow_enable == false || is_hollow_object == true || Engine.editor_hint == false:
 		return
+		
+	print("Onyx ", self, " - generate_hollow_shape()")
 	
 	# duplicate and set control data so the shapes mimic each other
 	var parent_control_data = get_control_data()
@@ -381,13 +428,19 @@ func handle_clear():
 # Notifies the node that a handle has changed.
 func handle_change(control):
 	
+	print("********************************")
+	print("Onyx ", self, " - handle_change()")
+	
 	update_handle_from_gizmo(control)
 	generate_geometry()
+	print("********************************")
 	
 
 # Called when a handle has stopped being dragged.
 # NOTE - This should only finish committing information, restore_state will finalize movement and other opeirations.
 func handle_commit(control):
+	print("********************************")
+	print("Onyx ", self, " - handle_commit()")
 	
 	update_handle_from_gizmo(control)
 	apply_handle_attributes()
@@ -398,6 +451,8 @@ func handle_commit(control):
 	# store current handle points as the old ones, so they can be used later
 	# as an undo point before the next commit.
 	old_handle_data = get_control_data()
+	
+	print("********************************")
 
 func get_gizmo_control_points() -> Array:
 	return handles.values()
@@ -445,6 +500,8 @@ func get_gizmo_undo_state(control_point):
 # Restores the state of the shape to a previous given state.
 func restore_state(state):
 	
+	print("Onyx ", self, " - restore_state()")
+	
 	var new_handles = state[0]
 	var stored_location = state[1]
 	
@@ -459,10 +516,10 @@ func restore_state(state):
 	
 	generate_geometry()
 	
-#	if hollow_onyx_object != null:
-#		hollow_onyx_object.set_control_data(new_handles)
-#		hollow_onyx_object.apply_handle_attributes()
-#		hollow_onyx_object.set_translation(Vector3(0, 0, 0))
+	if hollow_onyx_object != null:
+		hollow_onyx_object.set_control_data(new_handles)
+		hollow_onyx_object.apply_handle_attributes()
+		hollow_onyx_object.set_translation(Vector3(0, 0, 0))
 	
 
 # ////////////////////////////////////////////////////////////
@@ -482,6 +539,8 @@ func editor_deselect():
 # ////////////////////////////////////////////////////////////
 # CHILD MANAGEMENT
 func translate_children(translation):
+	
+	print("Onyx ", self, " - translate_children()")
 	
 	for child in get_children():
 		child.global_translate(translation)
