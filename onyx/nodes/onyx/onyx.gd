@@ -39,11 +39,19 @@ var is_selected = false
 
 # HOLLOW MODE //////////////
 
+
+
 # Enables and disables hollow mode
 var hollow_enable = false
 
 # The object that if set, will be used to hollow out the main shape.
 var hollow_object : Node = null
+
+# Storage object for the hollow mesh, used during runtime.
+var hollow_mesh : Mesh
+
+# Hollow object material storage.
+var hollow_material : Material
 
 # The set of margins to be stored
 var hollow_margin_values = {}
@@ -96,6 +104,19 @@ func _get_property_list():
 			"name" : "hollow_mode/enable_hollow_mode",
 			"type" : TYPE_BOOL,
 		},
+		
+		{
+			"name" : "hollow_mode/hollow_material",
+			"type" : TYPE_OBJECT,
+			"hint": PROPERTY_HINT_RESOURCE_TYPE,
+			"hint_string": "Material"
+		},
+		
+		{
+			"name" : "hollow_mode/hollow_mesh",
+			"type" : TYPE_OBJECT,
+			"usage" : PROPERTY_USAGE_STORAGE,
+		}
 	]
 	
 	# search through every handle and grab their names, then put them into a new property
@@ -128,6 +149,13 @@ func _set(property, value):
 		"hollow_mode/enable_hollow_mode":
 			_update_hollow_enable(value)
 			return
+			
+		"hollow_mode/hollow_material":
+			_update_hollow_material(value)
+			return
+			
+		"hollow_mode/hollow_mesh":
+			return
 	
 	# Hollow Mode Margins
 	if property.begins_with("hollow_mode/"):
@@ -156,6 +184,10 @@ func _get(property):
 		# Hollow Mode
 		"hollow_mode/enable_hollow_mode":
 			return hollow_enable
+		"hollow_mode/hollow_material":
+			return hollow_material
+		"hollow_mode/hollow_mesh":
+			return hollow_mesh
 	
 	# Hollow Mode Margins
 	if property.begins_with("hollow_mode/"):
@@ -306,12 +338,22 @@ func _update_hollow_enable(value):
 	if hollow_enable == value:
 		return
 	
+	hollow_enable = value
+	
 	# if true, get the current class and instance it 
 	if value == true:
 		_create_hollow_data()
 	else:
 		_delete_hollow_data()
 		
+
+# Setter for hollow materials
+func _update_hollow_material(value):
+	
+	hollow_material = value
+	
+	if hollow_object != null:
+		hollow_object.material = value
 
 func _create_hollow_data():
 		
@@ -402,6 +444,8 @@ func generate_hollow_shape():
 	# duplicate and set control data so the shapes mimic each other
 	var parent_control_data = get_control_data()
 	hollow_object.set_control_data(parent_control_data)
+	
+	hollow_object.material = hollow_material
 	
 	# Now modify the controls on an individual basis.
 	apply_hollow_margins(hollow_object.handles)
