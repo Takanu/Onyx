@@ -48,6 +48,9 @@ var unwrap_method = UnwrapMethod.PROPORTIONAL_OVERLAP
 # Used to give the unwrap method a property category
 # If you're watching this Godot developers.... why.
 func _get_property_list():
+	
+	print("[OnyxCube] ", self.get_name(), " - _get_property_list()")
+	
 	var props = [
 		{	
 			# The usage here ensures this property isn't actually saved, as it's an intermediary
@@ -62,6 +65,8 @@ func _get_property_list():
 	return props
 
 func _set(property, value):
+	print("[OnyxCube] ", self.get_name(), " - _set() : ", property, " ", value)
+	
 	match property:
 		"uv_options/unwrap_method":
 			if value == "Proportional Overlap":
@@ -74,6 +79,8 @@ func _set(property, value):
 		
 
 func _get(property):
+	print("[OnyxCube] ", self.get_name(), " - _get() : ", property)
+	
 	match property:
 		"uv_options/unwrap_method":
 			return unwrap_method
@@ -91,7 +98,11 @@ func handle_set_catch(new_value):
 # Used when a handle variable changes in the properties panel.
 func update_x_plus(new_value):
 #	print('handles - ', handles)
-#	print("ONYXCUBE update_x_plus")
+	print("ONYXCUBE update_x_plus")
+	
+	print("TIME ~ TO ~ CHECK ~ INTERNALS")
+	print_property_status()
+	
 	if new_value < 0:
 		new_value = 0
 		
@@ -100,7 +111,7 @@ func update_x_plus(new_value):
 	
 	
 func update_x_minus(new_value):
-#	print("ONYXCUBE update_x_minus")
+	print("ONYXCUBE update_x_minus")
 	if new_value < 0 || origin_mode == OriginPosition.BASE_CORNER:
 		new_value = 0
 		
@@ -108,7 +119,7 @@ func update_x_minus(new_value):
 	generate_geometry()
 	
 func update_y_plus(new_value):
-#	print("ONYXCUBE update_y_plus")
+	print("ONYXCUBE update_y_plus")
 	if new_value < 0:
 		new_value = 0
 		
@@ -116,7 +127,7 @@ func update_y_plus(new_value):
 	generate_geometry()
 	
 func update_y_minus(new_value):
-#	print("ONYXCUBE update_y_minus")
+	print("ONYXCUBE update_y_minus")
 	if new_value < 0 && (origin_mode == OriginPosition.BASE_CORNER || origin_mode == OriginPosition.BASE) :
 		new_value = 0
 		
@@ -124,7 +135,7 @@ func update_y_minus(new_value):
 	generate_geometry()
 	
 func update_z_plus(new_value):
-#	print("ONYXCUBE update_z_plus")
+	print("ONYXCUBE update_z_plus")
 	if new_value < 0:
 		new_value = 0
 		
@@ -133,7 +144,7 @@ func update_z_plus(new_value):
 	
 	
 func update_z_minus(new_value):
-#	print("ONYXCUBE update_z_minus")
+	print("ONYXCUBE update_z_minus")
 	if new_value < 0 || origin_mode == OriginPosition.BASE_CORNER:
 		new_value = 0
 		
@@ -142,7 +153,7 @@ func update_z_minus(new_value):
 	
 	
 func update_subdivisions(new_value):
-#	print("ONYXCUBE update_subdivisions")
+	print("ONYXCUBE update_subdivisions")
 	if new_value.x < 1:
 		new_value.x = 1
 	if new_value.y < 1:
@@ -157,7 +168,7 @@ func update_subdivisions(new_value):
 	
 # Used to recalibrate both the origin point location and the position handles.
 func update_positions(new_value):
-#	print("ONYXCUBE update_positions")
+	print("ONYXCUBE update_positions")
 	update_origin_setting = true
 	update_origin_mode()
 	balance_handles()
@@ -166,7 +177,7 @@ func update_positions(new_value):
 
 # Changes the origin position relative to the shape and regenerates geometry and handles.
 func update_origin_type(new_value):
-#	print("ONYXCUBE update_origin_mode")
+	print("ONYXCUBE update_origin_mode")
 	if previous_origin_mode == new_value:
 		return
 	
@@ -184,7 +195,7 @@ func update_origin_type(new_value):
 # Updates the origin location when the corresponding property is changed.
 func update_origin_mode():
 	
-	print("OnyxCube ", self, " - update_origin_mode()")
+	print("[OnyxCube] ", self.get_name(), " - update_origin_mode()")
 	
 	# Used to prevent the function from triggering when not inside the tree.
 	# This happens during duplication and replication and causes incorrect node placement.
@@ -244,7 +255,7 @@ func update_origin_mode():
 # DOES NOT update the origin when the origin property has changed, for use with handle commits.
 func update_origin_position(new_location = null):
 	
-	print("OnyxCube ", self, " - update_origin_position(new_location = null)")
+	print("[OnyxCube] ", self.get_name(), " - update_origin_position(new_location = null)")
 	
 	var new_loc = Vector3()
 	var global_tf = self.global_transform
@@ -299,7 +310,7 @@ func generate_geometry(fix_to_origin_setting = false):
 	if is_inside_tree() == false:
 		return
 	
-#	print("!!! ONYXCUBE generate_geometry !!!")
+	print("[OnyxCube] ", self.get_name(), " - generate_geometry(fix_to_origin_setting = null)")
 	
 	var maxPoint = Vector3(x_plus_position, y_plus_position, z_plus_position)
 	var minPoint = Vector3(-x_minus_position, -y_minus_position, -z_minus_position)
@@ -431,10 +442,11 @@ func generate_geometry(fix_to_origin_setting = false):
 # On initialisation, control points are built for transmitting and handling interactive points between the node and the node's gizmo.
 func build_handles():
 	
-	print("OnyxCube ", self, " - build_handles()")
-	# If it's not selected, do not generate
-	if is_selected == false && is_hollow_object == false:
-		return
+	print("[OnyxCube] ", self.get_name(), " - build_handles()")
+	
+	# If it's not selected, do not generate. (hollow object's can be refreshed without selection)
+#	if is_selected == false && is_hollow_object == false:
+#		return
 	
 	# Exit if not being run in the editor
 	if Engine.editor_hint == false:
@@ -483,10 +495,11 @@ func build_handles():
 # Uses the current settings to refresh the control point positions.
 func refresh_handle_data():
 	
-	print("OnyxCube ", self, " - refresh_handle_data()")
-	# If it's not selected, do not generate
-	if is_selected == false && is_hollow_object == false:
-		return
+	print("[OnyxCube] ", self.get_name(), " - refresh_handle_data()")
+	
+	# If it's not selected, do not generate. (hollow object's can be refreshed without selection)
+#	if is_selected == false && is_hollow_object == false:
+#		return
 	
 	# Exit if not being run in the editor
 	if Engine.editor_hint == false:
@@ -519,7 +532,7 @@ func refresh_handle_data():
 # Changes the handle based on the given index and coordinates.
 func update_handle_from_gizmo(control):
 	
-	print("OnyxCube ", self, " - update_handle_from_gizmo(control)")
+	print("[OnyxCube] ", self.get_name(), " - update_handle_from_gizmo(control)")
 	
 	var coordinate = control.control_position
 	
@@ -537,7 +550,7 @@ func update_handle_from_gizmo(control):
 # Applies the current handle values to the shape attributes
 func apply_handle_attributes():
 	
-	print("OnyxCube ", self, " - apply_handle_attributes()")
+	print("[OnyxCube] ", self.get_name(), " - apply_handle_attributes()")
 	
 	x_minus_position = handles["x_minus"].control_position.x * -1
 	x_plus_position = handles["x_plus"].control_position.x
@@ -551,6 +564,8 @@ func apply_handle_attributes():
 # Calibrates the stored properties if they need to change before the origin is updated.
 # Only called during Gizmo movements for origin auto-updating.
 func balance_handles():
+	
+	print("[OnyxCube] ", self.get_name(), " - balance_handles()")
 	
 	var diff_x = abs(x_plus_position - -x_minus_position)
 	var diff_y = abs(y_plus_position - -y_minus_position)
@@ -594,6 +609,8 @@ func balance_handles():
 # The margin options available in Hollow mode, identified by the control names that should have margins
 func get_hollow_margins() -> Array:
 	
+	print("[OnyxCube] ", self.get_name(), " - get_hollow_margins()")
+	
 	var control_names = [
 		"x_minus",
 		"x_plus",
@@ -606,13 +623,14 @@ func get_hollow_margins() -> Array:
 	return control_names
 
 # An override-able function used to determine how margins apply to handles
-func apply_hollow_margins(controls: Dictionary):
+func apply_hollow_margins(hollow_controls: Dictionary):
 	
-	# Because of the bullshit ways in which the save system works on nodes like this
-	# this can get triggered without 
+	print("[OnyxCube] ", self.get_name(), " - apply_hollow_margins(controls)")
+	print("base onyx controls - ", handles)
+	print("hollow controls - ", hollow_controls)
 	
-	for key in controls.keys():
-		var hollow_handle = controls[key]
+	for key in hollow_controls.keys():
+		var hollow_handle = hollow_controls[key]
 		var control_handle = handles[key]
 		var margin = hollow_margin_values[key]
 		
@@ -630,4 +648,4 @@ func apply_hollow_margins(controls: Dictionary):
 			"z_plus":
 				hollow_handle.control_position.z = control_handle.control_position.z - margin
 	
-	return controls
+	return hollow_controls
