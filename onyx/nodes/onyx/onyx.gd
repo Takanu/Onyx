@@ -155,7 +155,7 @@ func _set(property, value):
 			return
 			
 		"hollow_mode/hollow_mesh":
-			return
+			hollow_mesh = value
 	
 	# Hollow Mode Margins
 	if property.begins_with("hollow_mode/"):
@@ -216,6 +216,11 @@ func _enter_tree():
 #		set_notify_local_transform(true)
 #		set_notify_transform(true)
 #		set_ignore_transform_notification(false)
+	
+	# Required to build hollow data before the scene loads
+	else:
+		_load_runtime_hollow_data()
+		
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
@@ -244,6 +249,7 @@ func _ready():
 		print("[Onyx] ", self.get_name() , "  Do we have handles? - ", handles)
 		
 		_load_hollow_data()
+	
 
 # This was used, but there's no reason for it to be here.
 #func _notification(what):
@@ -387,7 +393,7 @@ func _create_hollow_data():
 		hollow_enable = true
 		
 		# generate shape
-		generate_hollow_shape()
+		_generate_hollow_shape()
 
 func _delete_hollow_data():
 	
@@ -406,6 +412,8 @@ func _load_hollow_data():
 	
 	print("[Onyx] ", self.get_name() , " - _load_hollow_data()")
 	
+	
+	
 	if hollow_margin_values.size() == 0:
 		_generate_hollow_margins()
 	
@@ -413,7 +421,29 @@ func _load_hollow_data():
 		return
 	
 	_create_hollow_data()
+
+# Used specifically for when the game is running, as the node is not saved with the file.
+func _load_runtime_hollow_data():
 	
+	print("[Onyx] ", self.get_name() , " - _load_runtime_hollow_data()")
+	
+	if Engine.editor_hint == false:
+		if hollow_mesh != null:
+			
+			print("buildin dat hollow")
+			var script_file_path = get_script().get_path()
+			hollow_object = load(script_file_path).new()
+			
+			hollow_object.set_name(hollow_object_name)
+			hollow_object.is_hollow_object = true
+			add_child(hollow_object)
+			
+			hollow_object.operation = 2
+			hollow_object.mesh = hollow_mesh
+			hollow_object.material = hollow_material
+			
+			print("hollow baked")
+
 
 # Reads the margins specified by the sub-class and turns them into usable data
 func _generate_hollow_margins():
@@ -431,15 +461,15 @@ func _generate_hollow_margins():
 
 # Updates the hollow object handles and mesh to follow the shape of the parent object,
 # while also calculating margin distances.
-func generate_hollow_shape():
+func _generate_hollow_shape():
 	
-	if hollow_enable == false || is_hollow_object == true || Engine.editor_hint == false || is_inside_tree() == false:
+	if hollow_enable == false || is_hollow_object == true || is_inside_tree() == false:
 		return
 		
 	if hollow_object == null:
 		_create_hollow_data()
 		
-	print("[Onyx] ", self.get_name() , " - generate_hollow_shape()")
+	print("[Onyx] ", self.get_name() , " - _generate_hollow_shape()")
 	
 	# duplicate and set control data so the shapes mimic each other
 	var parent_control_data = get_control_data()
@@ -451,6 +481,8 @@ func generate_hollow_shape():
 	apply_hollow_margins(hollow_object.handles)
 	hollow_object.apply_handle_attributes()
 	hollow_object.generate_geometry()
+	
+	hollow_mesh = hollow_object.mesh
 
 # ////////////////////////////////////////////////////////////
 # HANDLE GENERATION FUNCTIONS

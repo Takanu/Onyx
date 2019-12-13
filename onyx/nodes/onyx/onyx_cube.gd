@@ -307,7 +307,7 @@ func generate_geometry(fix_to_origin_setting = false):
 #	print('trying to generate geometry...')
 	
 	# Prevents geometry generation if the node hasn't loaded yet
-	if is_inside_tree() == false:
+	if is_inside_tree() == false || Engine.editor_hint == false:
 		return
 	
 	print("[OnyxCube] ", self.get_name(), " - generate_geometry(fix_to_origin_setting = null)")
@@ -432,7 +432,7 @@ func generate_geometry(fix_to_origin_setting = false):
 	refresh_handle_data()
 	update_gizmo()
 	
-	generate_hollow_shape()
+	_generate_hollow_shape()
 	
 
 
