@@ -11,10 +11,10 @@ var ControlPoint = load("res://addons/onyx/gizmos/control_point.gd")
 
 # allows origin point re-orientation, for precise alignments and convenience.
 enum OriginPosition {CENTER, BASE, BASE_CORNER}
-export(OriginPosition) var origin_mode = OriginPosition.BASE setget update_origin_type
+export(OriginPosition) var origin_mode = OriginPosition.CENTER setget update_origin_type
 
 # used to keep track of how to move the origin point into a new position.
-var previous_origin_mode = OriginPosition.BASE
+var previous_origin_mode = OriginPosition.CENTER
 
 # used to force an origin update when using the sliders to adjust positions.
 export(bool) var update_origin_setting = true setget update_positions
@@ -53,8 +53,8 @@ export(bool) var smooth_normals = true setget update_smooth_normals
 #			# The usage here ensures this property isn't actually saved, as it's an intermediary
 #
 #			"name" : "uv_options/unwrap_method",
-#			"type" : TYPE_STRING,
-#			"usage": PROPERTY_USAGE_EDITOR,
+#			"type" : TYPE_INT,
+#			"usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
 #			"hint": PROPERTY_HINT_ENUM,
 #			"hint_string": "Direct Overlap, Proportional Overlap"
 #		},
@@ -62,17 +62,19 @@ export(bool) var smooth_normals = true setget update_smooth_normals
 #	return props
 
 func _set(property, value):
+#	print("[OnyxCube] ", self.get_name(), " - _set() : ", property, " ", value)
+	
 	match property:
 		"uv_options/unwrap_method":
-			if value == "Proportional Overlap":
-				unwrap_method = UnwrapMethod.PROPORTIONAL_OVERLAP
-			else:
-				unwrap_method = UnwrapMethod.DIRECT_OVERLAP
+			unwrap_method = value
+			
 			
 	generate_geometry()
 		
 
 func _get(property):
+#	print("[OnyxCube] ", self.get_name(), " - _get() : ", property)
+	
 	match property:
 		"uv_options/unwrap_method":
 			return unwrap_method
@@ -305,6 +307,8 @@ func generate_geometry(fix_to_origin_setting = false):
 	# focus of a handle operation are being updated\
 	refresh_handle_data()
 	update_gizmo()
+	
+	_generate_hollow_shape()
 
 
 # ////////////////////////////////////////////////////////////
@@ -432,3 +436,75 @@ func balance_handles():
 	
 	# There's no duality between handles for this type, no balancing needed.
 	pass
+
+
+# ////////////////////////////////////////////////////////////
+# HOLLOW MODE FUNCTIONS
+
+# The margin options available in Hollow mode, identified by the control names that should have margins
+func get_hollow_margins() -> Array:
+	
+#	print("[OnyxCube] ", self.get_name(), " - get_hollow_margins()")
+	
+	var control_names = [
+		"height",
+		"x_width",
+		"z_width",
+	]
+	
+	return control_names
+
+
+# Gets the current shape parameters not controlled by handles, to apply to the hollow shape
+func assign_hollow_properties():
+	
+	if hollow_object == null:
+		return
+	
+	if hollow_object.segments != self.segments:
+		hollow_object.segments = self.segments
+	
+	if hollow_object.rings != self.rings:
+		hollow_object.rings = self.rings
+	
+
+# Assigns the hollow object an origin point based on the origin mode of this Onyx type.
+# THIS DOES NOT MODIFY THE ORIGIN TYPE OF THE HOLLOW OBJECT
+func assign_hollow_origin():
+	
+	if hollow_object == null:
+		return
+	
+	match origin_mode:
+		OriginPosition.CENTER:
+			hollow_object.set_translation(Vector3(0, 0, 0))
+		OriginPosition.BASE:
+			hollow_object.set_translation(Vector3(0, height / 2, 0))
+		OriginPosition.BASE_CORNER:
+			hollow_object.set_translation(Vector3(x_width / 2, height / 2, z_width / 2))
+
+
+# An override-able function used to determine how margins apply to handles
+func apply_hollow_margins(hollow_controls: Dictionary):
+	
+	if hollow_object == null:
+		return
+	
+#	print("[OnyxCube] ", self.get_name(), " - apply_hollow_margins(controls)")
+#	print("base onyx controls - ", handles)
+#	print("hollow controls - ", hollow_controls)
+	
+	for key in hollow_controls.keys():
+		var hollow_handle = hollow_controls[key]
+		var control_handle = handles[key]
+		var margin = hollow_margin_values[key]
+		
+		match key:
+			"height":
+				hollow_handle.control_position.y = (height / 2) - margin
+			"x_width":
+				hollow_handle.control_position.x = (x_width / 2) - margin
+			"z_width":
+				hollow_handle.control_position.z = (z_width / 2) - margin
+	
+	return hollow_controls

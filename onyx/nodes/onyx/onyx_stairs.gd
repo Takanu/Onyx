@@ -46,8 +46,8 @@ func _get_property_list():
 			# The usage here ensures this property isn't actually saved, as it's an intermediary
 			
 			"name" : "uv_options/unwrap_method",
-			"type" : TYPE_STRING,
-			"usage": PROPERTY_USAGE_EDITOR,
+			"type" : TYPE_INT,
+			"usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
 			"hint": PROPERTY_HINT_ENUM,
 			"hint_string": "Proportional Overlap, Clamped Overlap"
 		},
@@ -55,18 +55,19 @@ func _get_property_list():
 	return props
 
 func _set(property, value):
+#	print("[OnyxCube] ", self.get_name(), " - _set() : ", property, " ", value)
+	
 	match property:
 		"uv_options/unwrap_method":
-			if value == "Proportional Overlap":
-				unwrap_method = UnwrapMethod.PROPORTIONAL_OVERLAP
-			else:
-				unwrap_method = UnwrapMethod.CLAMPED_OVERLAP
+			unwrap_method = value
 			
 			
 	generate_geometry()
 		
 
 func _get(property):
+#	print("[OnyxCube] ", self.get_name(), " - _get() : ", property)
+	
 	match property:
 		"uv_options/unwrap_method":
 			return unwrap_method

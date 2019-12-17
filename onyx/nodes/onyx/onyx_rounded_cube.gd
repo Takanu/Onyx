@@ -71,8 +71,8 @@ func _get_property_list():
 			# The usage here ensures this property isn't actually saved, as it's an intermediary
 			
 			"name" : "uv_options/unwrap_method",
-			"type" : TYPE_STRING,
-			"usage": PROPERTY_USAGE_EDITOR,
+			"type" : TYPE_INT,
+			"usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
 			"hint": PROPERTY_HINT_ENUM,
 			"hint_string": "Proportional Overlap, Clamped Overlap"
 		},
@@ -80,18 +80,19 @@ func _get_property_list():
 	return props
 
 func _set(property, value):
+#	print("[OnyxCube] ", self.get_name(), " - _set() : ", property, " ", value)
+	
 	match property:
 		"uv_options/unwrap_method":
-			if value == "Proportional Overlap":
-				unwrap_method = UnwrapMethod.PROPORTIONAL_OVERLAP
-			else:
-				unwrap_method = UnwrapMethod.CLAMPED_OVERLAP
+			unwrap_method = value
 			
 			
 	generate_geometry()
 		
 
 func _get(property):
+#	print("[OnyxCube] ", self.get_name(), " - _get() : ", property)
+	
 	match property:
 		"uv_options/unwrap_method":
 			return unwrap_method
@@ -390,6 +391,8 @@ func generate_geometry(fix_to_origin_setting = false):
 	refresh_handle_data()
 	update_gizmo()
 	
+	_generate_hollow_shape()
+	
 
 
 # ////////////////////////////////////////////////////////////
@@ -544,4 +547,79 @@ func balance_handles():
 			z_minus_position = 0
 		
 	
+# ////////////////////////////////////////////////////////////
+# HOLLOW MODE FUNCTIONS
 
+# The margin options available in Hollow mode, identified by the control names that should have margins
+func get_hollow_margins() -> Array:
+	
+#	print("[OnyxCube] ", self.get_name(), " - get_hollow_margins()")
+	
+	var control_names = [
+		"x_minus",
+		"x_plus",
+		"y_minus",
+		"y_plus",
+		"z_minus",
+		"z_plus",
+	]
+	
+	return control_names
+
+
+# Gets the current shape parameters not controlled by handles, to apply to the hollow shape
+func assign_hollow_properties():
+	
+	if hollow_object == null:
+		return
+	
+	if hollow_object.subdivisions != self.subdivisions:
+		hollow_object.subdivisions = self.subdivisions
+	
+	if hollow_object.corner_size != self.corner_size:
+		hollow_object.corner_size = self.corner_size
+	
+	if hollow_object.corner_iterations != self.corner_iterations:
+		hollow_object.corner_iterations = self.corner_iterations
+	
+
+# Assigns the hollow object an origin point based on the origin mode of this Onyx type.
+# THIS DOES NOT MODIFY THE ORIGIN TYPE OF THE HOLLOW OBJECT
+func assign_hollow_origin():
+	
+	if hollow_object == null:
+		return
+	
+	hollow_object.set_translation(Vector3(0, 0, 0))
+
+
+# An override-able function used to determine how margins apply to handles
+func apply_hollow_margins(hollow_controls: Dictionary):
+	
+	if hollow_object == null:
+		return
+	
+#	print("[OnyxCube] ", self.get_name(), " - apply_hollow_margins(controls)")
+#	print("base onyx controls - ", handles)
+#	print("hollow controls - ", hollow_controls)
+	
+	for key in hollow_controls.keys():
+		var hollow_handle = hollow_controls[key]
+		var control_handle = handles[key]
+		var margin = hollow_margin_values[key]
+		
+		match key:
+			"x_minus":
+				hollow_handle.control_position.x = control_handle.control_position.x + margin
+			"x_plus":
+				hollow_handle.control_position.x = control_handle.control_position.x - margin
+			"y_minus":
+				hollow_handle.control_position.y = control_handle.control_position.y + margin
+			"y_plus":
+				hollow_handle.control_position.y = control_handle.control_position.y - margin
+			"z_minus":
+				hollow_handle.control_position.z = control_handle.control_position.z + margin
+			"z_plus":
+				hollow_handle.control_position.z = control_handle.control_position.z - margin
+	
+	return hollow_controls

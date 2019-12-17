@@ -40,8 +40,8 @@ func _get_property_list():
 			# The usage here ensures this property isn't actually saved, as it's an intermediary
 			
 			"name" : "uv_options/unwrap_method",
-			"type" : TYPE_STRING,
-			"usage": PROPERTY_USAGE_EDITOR,
+			"type" : TYPE_INT,
+			"usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
 			"hint": PROPERTY_HINT_ENUM,
 			"hint_string": "Proportional Overlap, Direct Overlap"
 		},
@@ -49,18 +49,19 @@ func _get_property_list():
 	return props
 
 func _set(property, value):
+#	print("[OnyxCube] ", self.get_name(), " - _set() : ", property, " ", value)
+	
 	match property:
 		"uv_options/unwrap_method":
-			if value == "Proportional Overlap":
-				unwrap_method = UnwrapMethod.PROPORTIONAL_OVERLAP
-			else:
-				unwrap_method = UnwrapMethod.DIRECT_OVERLAP
+			unwrap_method = value
 			
 			
 	generate_geometry()
 		
 
 func _get(property):
+#	print("[OnyxCube] ", self.get_name(), " - _get() : ", property)
+	
 	match property:
 		"uv_options/unwrap_method":
 			return unwrap_method
@@ -346,6 +347,7 @@ func generate_geometry(fix_to_origin_setting = false):
 	refresh_handle_data()
 	update_gizmo()
 	
+	_generate_hollow_shape()
 
 
 # ////////////////////////////////////////////////////////////
@@ -431,3 +433,78 @@ func balance_handles():
 	
 	# balance handles here
 	pass
+
+# ////////////////////////////////////////////////////////////
+# HOLLOW MODE FUNCTIONS
+
+# The margin options available in Hollow mode, identified by the control names that should have margins
+func get_hollow_margins() -> Array:
+	
+#	print("[OnyxRamp] ", self.get_name(), " - get_hollow_margins()")
+	
+	var control_names = [
+		"x_plus",
+		"x_minus",
+		"y_plus",
+		"y_minus",
+		"ramp_start",
+		"ramp_end",
+	]
+	
+	return control_names
+
+# Gets the current shape parameters not controlled by handles, to apply to the hollow shape
+func assign_hollow_properties():
+	
+	if hollow_object == null:
+		return
+	
+	if hollow_object.horizontal_iterations != self.horizontal_iterations:
+		hollow_object.horizontal_iterations = self.horizontal_iterations
+	
+	if hollow_object.vertical_iterations != self.vertical_iterations:
+		hollow_object.vertical_iterations = self.vertical_iterations
+	
+
+# Assigns the hollow object an origin point based on the origin mode of this Onyx type.
+# THIS DOES NOT MODIFY THE ORIGIN TYPE OF THE HOLLOW OBJECT
+func assign_hollow_origin():
+	
+	if hollow_object == null:
+		return
+	
+#	print("[OnyxRamp] ", self.get_name(), " - assign_hollow_origin()")
+	
+	# Everything is done through the ramp-specific properties, baiii
+	return
+
+# An override-able function used to determine how margins apply to handles
+func apply_hollow_margins(hollow_controls: Dictionary):
+	
+	if hollow_object == null || hollow_margin_values.size() == 0:
+		return
+	
+#	print("[OnyxRamp] ", self.get_name(), " - apply_hollow_margins(controls)")
+#	print("base onyx controls - ", handles)
+#	print("hollow controls - ", hollow_controls)
+	
+	hollow_object.ramp_width = ramp_width - (hollow_margin_values["x_plus"] + hollow_margin_values["x_minus"])
+	hollow_object.ramp_depth = ramp_depth - (hollow_margin_values["y_plus"] + hollow_margin_values["y_minus"])
+	
+	var offset_position = Vector3(0, 0, 0)
+	offset_position.x = -(hollow_margin_values["x_plus"] - hollow_margin_values["x_minus"]) / 2
+	offset_position.y = -(hollow_margin_values["y_plus"] - hollow_margin_values["y_minus"]) / 2
+	
+	# At some point rotation will be included here, probably.
+	hollow_object.start_rotation = self.start_rotation
+	hollow_object.end_rotation = self.end_rotation
+	
+	# Z depth math fun times
+	var vector_unit = (hollow_object.end_position - hollow_object.start_position).normalized()
+	var start_offset = vector_unit * hollow_margin_values["ramp_start"]
+	var end_offset = vector_unit * -hollow_margin_values["ramp_end"]
+	
+	hollow_object.start_position = self.start_position + offset_position + start_offset
+	hollow_object.end_position = self.end_position + offset_position + end_offset
+	
+	return hollow_controls
