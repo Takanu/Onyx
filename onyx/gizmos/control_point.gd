@@ -373,12 +373,7 @@ func update_handle(index, camera, point):
 			if control_point_owner.plugin.snap_gizmo_enabled == true:
 				
 				var snap_increment = control_point_owner.plugin.snap_gizmo_increment
-				
-				# This is awful, you are awful.
-				var diff_gauge_x = round(new_position.x / snap_increment) * snap_increment
-				var diff_gauge_y = round(new_position.y / snap_increment) * snap_increment
-				var diff_gauge_z = round(new_position.z / snap_increment) * snap_increment
-				new_position = Vector3(diff_gauge_x, diff_gauge_y, diff_gauge_z)
+				new_position = snap_position(new_position, Vector3(snap_increment, snap_increment, snap_increment))
 				
 				control_position = new_position
 				control_point_owner.call(axis_update_callback, self)
@@ -401,6 +396,8 @@ func update_handle(index, camera, point):
 				0: target_axis_triangle = [Vector3(0.0, 1.0, 0.0), Vector3(0.0, 1.0, 1.0), Vector3(0.0, 0.0, 1.0)]
 				1: target_axis_triangle = [Vector3(1.0, 0.0, 0.0), Vector3(1.0, 0.0, 1.0), Vector3(0.0, 0.0, 1.0)]
 				2: target_axis_triangle = [Vector3(0.0, 1.0, 0.0), Vector3(1.0, 1.0, 0.0), Vector3(1.0, 0.0, 0.0)]
+				
+			#this has no use great job.
 			match index:
 				0: target_position = control_position + Vector3(handle_distance, 0, 0)
 				1: target_position = control_position + Vector3(0, handle_distance, 0)
@@ -414,6 +411,7 @@ func update_handle(index, camera, point):
 			
 			if new_position == null: 
 					return
+				
 			
 			# TODO : Remove when the projection system is fixed.
 			match index:
@@ -422,6 +420,11 @@ func update_handle(index, camera, point):
 				2: control_position.z = new_position.z
 			
 			control_position -= handle_offset
+			
+			# If snapping is enabled, we have stuff to do.
+			if control_point_owner.plugin.snap_gizmo_enabled == true:
+				var snap_increment = control_point_owner.plugin.snap_gizmo_increment
+				control_position = snap_position(control_position, Vector3(snap_increment, snap_increment, snap_increment))
 			
 			# Now we have a valid control_position, perform a callback.
 #			print("SETTING RAWR")
@@ -536,6 +539,15 @@ func make_planes(triangle, handle_loc):
 #	print("PLANE 2 : ", plane_2)
 	
 	return [plane_1, plane_2]
+
+# Takes a position and snap increment, and locks the position based on that increment.
+func snap_position(position: Vector3, increment: Vector3) -> Vector3:
+	
+	var new_position = Vector3()
+	new_position.x = round(position.x / increment.x) * increment.x
+	new_position.y = round(position.y / increment.y) * increment.y
+	new_position.z = round(position.z / increment.z) * increment.z
+	return new_position
 
 func mat_solid_color(red, green, blue):
 	var mat = SpatialMaterial.new()
