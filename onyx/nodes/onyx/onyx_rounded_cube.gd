@@ -74,7 +74,7 @@ func _get_property_list():
 			"type" : TYPE_INT,
 			"usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
 			"hint": PROPERTY_HINT_ENUM,
-			"hint_string": "Proportional Overlap, Clamped Overlap"
+			"hint_string": "Proportional Overlap, Face Projection"
 		},
 	]
 	return props

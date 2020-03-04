@@ -56,7 +56,7 @@ export(bool) var smooth_normals = true setget update_smooth_normals
 #			"type" : TYPE_INT,
 #			"usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
 #			"hint": PROPERTY_HINT_ENUM,
-#			"hint_string": "Direct Overlap, Proportional Overlap"
+#			"hint_string": "Face Projection, Proportional Overlap"
 #		},
 #	]
 #	return props

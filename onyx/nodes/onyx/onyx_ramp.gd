@@ -43,7 +43,7 @@ func _get_property_list():
 			"type" : TYPE_INT,
 			"usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
 			"hint": PROPERTY_HINT_ENUM,
-			"hint_string": "Proportional Overlap, Direct Overlap"
+			"hint_string": "Proportional Overlap, Face Projection"
 		},
 	]
 	return props
@@ -283,7 +283,7 @@ func generate_geometry(fix_to_origin_setting = false):
 			var top_uvs = []
 			var bottom_uvs = []
 			
-			# 0 - DIRECT OVERLAP
+			# 0 - Face Projection
 			if unwrap_method == UnwrapMethod.DIRECT_OVERLAP:
 				top_uvs = [Vector2(1.0, end_uv_z), Vector2(0.0, end_uv_z), Vector2(0.0, start_uv_z), Vector2(1.0, start_uv_z)]
 				bottom_uvs = top_uvs
@@ -314,7 +314,7 @@ func generate_geometry(fix_to_origin_setting = false):
 		var right_uvs = []
 		var left_uvs = []
 		
-		# 0 - DIRECT OVERLAP
+		# 0 - Face Projection
 		if unwrap_method == UnwrapMethod.DIRECT_OVERLAP:
 			right_uvs = [Vector2(1.0, end_uv_z), Vector2(0.0, end_uv_z), Vector2(0.0, start_uv_z), Vector2(1.0, start_uv_z)]
 			left_uvs = [Vector2(1.0, end_uv_z), Vector2(0.0, end_uv_z), Vector2(0.0, start_uv_z), Vector2(1.0, start_uv_z)]

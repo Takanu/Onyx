@@ -403,7 +403,7 @@ func build_rounded_rect(mesh: OnyxMesh, min_point, max_point, axis: String, corn
 			end_cap_uvs = start_cap_uvs.duplicate()
 		
 		
-		# 1 - Clamped Overlap
+		# 1 - Face Projection
 		if unwrap_mode == 1:
 			var diff = max_point - min_point
 			var clamped_vs = []
@@ -474,7 +474,7 @@ func build_rounded_rect(mesh: OnyxMesh, min_point, max_point, axis: String, corn
 				uvs = [Vector2(total_edge_length, 0.0), Vector2(total_edge_length + new_width, 0.0), 
 				Vector2(total_edge_length + new_width, height), Vector2(total_edge_length, height)]
 			
-			# 1 - Clamped Overlap
+			# 1 - Face Projection
 			elif unwrap_mode == 1:
 				uvs = [Vector2(0.0, 0.0), Vector2(1.0, 0.0), Vector2(1.0, 1.0), Vector2(0.0, 1.0)]
 			
@@ -689,7 +689,7 @@ func build_polygon_extrusion(mesh : OnyxMesh, points : Array, depth : float, rin
 				
 				total_edge_length += base_width
 				
-			# UNWRAP METHOD 0 - CLAMPED OVERLAP
+			# UNWRAP METHOD 0 - Face Projection
 			elif unwrap_method == 2:
 				uvs = [Vector2(0.0, 1.0), Vector2(0.0, 0.0), Vector2(1.0, 0.0), Vector2(1.0, 1.0)]
 				
@@ -737,7 +737,7 @@ func build_polygon_extrusion(mesh : OnyxMesh, points : Array, depth : float, rin
 			bottom_uvs.append(Vector2(vector.x, vector.z))
 			
 			
-	# UNWRAP METHOD - CLAMPED OVERLAP
+	# UNWRAP METHOD - Face Projection
 	elif unwrap_method == 2:
 		for vector in v_cap_top:
 			var uv = Vector2(vector.x / top_range.x, vector.z / top_range.z)
