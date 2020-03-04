@@ -80,11 +80,11 @@ func update_point_size(new_value):
 	if new_value < 0:
 		new_value = 0
 	point_width = new_value
-	generate_geometry(true)
+	generate_geometry()
 	
 func update_point_position(new_value):
 	point_position = new_value
-	generate_geometry(true)
+	generate_geometry()
 	
 func update_base_x_size(new_value):
 	if new_value < 0:
@@ -94,7 +94,7 @@ func update_base_x_size(new_value):
 		base_z_size = new_value
 		
 	base_x_size = new_value
-	generate_geometry(true)
+	generate_geometry()
 	
 func update_base_z_size(new_value):
 	if new_value < 0:
@@ -104,20 +104,20 @@ func update_base_z_size(new_value):
 		base_x_size = new_value
 		
 	base_z_size = new_value
-	generate_geometry(true)
+	generate_geometry()
 	
 func update_proportional_toggle(new_value):
 	keep_shape_proportional = new_value
 	update_origin_mode()
 	balance_handles()
-	generate_geometry(true)
+	generate_geometry()
 	
 # Used to recalibrate both the origin point location and the position handles.
 func update_positions(new_value):
 	update_origin_setting = true
 	update_origin_mode()
 	balance_handles()
-	generate_geometry(true)
+	generate_geometry()
 
 
 # Changes the origin position relative to the shape and regenerates geometry and handles.
@@ -129,7 +129,7 @@ func update_origin_type(new_value):
 	origin_mode = new_value
 	update_origin_mode()
 	balance_handles()
-	generate_geometry(true)
+	generate_geometry()
 	
 	# ensure the origin mode toggle is preserved, and ensure the adjusted handles are saved.
 	previous_origin_mode = origin_mode
@@ -137,19 +137,19 @@ func update_origin_type(new_value):
 
 func update_unwrap_method(new_value):
 	unwrap_method = new_value
-	generate_geometry(true)
+	generate_geometry()
 
 func update_uv_scale(new_value):
 	uv_scale = new_value
-	generate_geometry(true)
+	generate_geometry()
 
 func update_flip_uvs_horizontally(new_value):
 	flip_uvs_horizontally = new_value
-	generate_geometry(true)
+	generate_geometry()
 	
 func update_flip_uvs_vertically(new_value):
 	flip_uvs_vertically = new_value
-	generate_geometry(true)
+	generate_geometry()
 
 # Updates the origin during generate_geometry() as well as the currently defined handles, 
 # to ensure it's anchored where it needs to be.
@@ -261,7 +261,7 @@ func update_origin_position(new_location = null):
 # GEOMETRY GENERATION
 
 # Using the set handle points, geometry is generated and drawn.  The handles owned by the gizmo are also updated.
-func generate_geometry(fix_to_origin_setting = false):
+func generate_geometry():
 
 	# Prevents geometry generation if the node hasn't loaded yet
 	if is_inside_tree() == false:

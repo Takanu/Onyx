@@ -292,7 +292,7 @@ func update_origin_position(new_location = null):
 # GEOMETRY GENERATION
 
 # Using the set handle points, geometry is generated and drawn.  The handles owned by the gizmo are also updated.
-func generate_geometry(fix_to_origin_setting = false):
+func generate_geometry():
 	
 #	print('trying to generate geometry...')
 	
@@ -305,19 +305,19 @@ func generate_geometry(fix_to_origin_setting = false):
 	var maxPoint = Vector3(x_plus_position, y_plus_position, z_plus_position)
 	var minPoint = Vector3(-x_minus_position, -y_minus_position, -z_minus_position)
 	
-	if fix_to_origin_setting == true:
-		match origin_mode:
-			OriginPosition.BASE:
-				maxPoint = Vector3(x_plus_position, (y_plus_position + (-y_minus_position * -1)), z_plus_position)
-				minPoint = Vector3(-x_minus_position, 0, -z_minus_position)
-				
-			OriginPosition.BASE_CORNER:
-				maxPoint = Vector3(
-					(x_plus_position + (-x_minus_position * -1)), 
-					(y_plus_position + (-y_minus_position * -1)), 
-					(z_plus_position + (-z_minus_position * -1))
-					)
-				minPoint = Vector3(0, 0, 0)
+#	if fix_to_origin_setting == true:
+#		match origin_mode:
+#			OriginPosition.BASE:
+#				maxPoint = Vector3(x_plus_position, (y_plus_position + (-y_minus_position * -1)), z_plus_position)
+#				minPoint = Vector3(-x_minus_position, 0, -z_minus_position)
+#
+#			OriginPosition.BASE_CORNER:
+#				maxPoint = Vector3(
+#					(x_plus_position + (-x_minus_position * -1)), 
+#					(y_plus_position + (-y_minus_position * -1)), 
+#					(z_plus_position + (-z_minus_position * -1))
+#					)
+#				minPoint = Vector3(0, 0, 0)
 	
 	# Generate the geometry
 	var mesh_factory = OnyxMeshFactory.new()

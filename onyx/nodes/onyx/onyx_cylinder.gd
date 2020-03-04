@@ -87,14 +87,14 @@ func update_sides(new_value):
 	if new_value < 3:
 		new_value = 3
 	sides = new_value
-	generate_geometry(true)
+	generate_geometry()
 	
 	
 func update_rings(new_value):
 	if new_value < 1:
 		new_value = 1
 	rings = new_value
-	generate_geometry(true)
+	generate_geometry()
 	
 	
 func update_height_max(new_value):
@@ -102,14 +102,14 @@ func update_height_max(new_value):
 		new_value = 0
 		
 	height_max = new_value
-	generate_geometry(true)
+	generate_geometry()
 	
 func update_height_min(new_value):
 	if new_value < 0:
 		new_value = 0
 		
 	height_min = new_value
-	generate_geometry(true)
+	generate_geometry()
 	
 func update_x_width(new_value):
 	if new_value < 0:
@@ -119,7 +119,7 @@ func update_x_width(new_value):
 		z_width = new_value
 		
 	x_width = new_value
-	generate_geometry(true)
+	generate_geometry()
 	
 func update_z_width(new_value):
 	if new_value < 0:
@@ -129,20 +129,20 @@ func update_z_width(new_value):
 		x_width = new_value
 		
 	z_width = new_value
-	generate_geometry(true)
+	generate_geometry()
 	
 func update_proportional_toggle(new_value):
 	keep_width_proportional = new_value
 	update_origin_mode()
 	balance_handles()
-	generate_geometry(true)
+	generate_geometry()
 	
 # Used to recalibrate both the origin point location and the position handles.
 func update_positions(new_value):
 	update_origin_setting = true
 	update_origin_mode()
 	balance_handles()
-	generate_geometry(true)
+	generate_geometry()
 	
 # Changes the origin position relative to the shape and regenerates geometry and handles.
 func update_origin_type(new_value):
@@ -153,7 +153,7 @@ func update_origin_type(new_value):
 	origin_mode = new_value
 	update_origin_mode()
 	balance_handles()
-	generate_geometry(true)
+	generate_geometry()
 	
 	# ensure the origin mode toggle is preserved, and ensure the adjusted handles are saved.
 	previous_origin_mode = origin_mode
@@ -161,23 +161,23 @@ func update_origin_type(new_value):
 
 func update_unwrap_method(new_value):
 	unwrap_method = new_value
-	generate_geometry(true)
+	generate_geometry()
 
 func update_uv_scale(new_value):
 	uv_scale = new_value
-	generate_geometry(true)
+	generate_geometry()
 
 func update_flip_uvs_horizontally(new_value):
 	flip_uvs_horizontally = new_value
-	generate_geometry(true)
+	generate_geometry()
 	
 func update_flip_uvs_vertically(new_value):
 	flip_uvs_vertically = new_value
-	generate_geometry(true)
+	generate_geometry()
 	
 func update_smooth_normals(new_value):
 	smooth_normals = new_value
-	generate_geometry(true)
+	generate_geometry()
 	
 
 # Updates the origin during generate_geometry() as well as the currently defined handles, 
@@ -277,7 +277,7 @@ func update_origin_position(new_location = null):
 # GEOMETRY GENERATION
 
 # Using the set handle points, geometry is generated and drawn.  The handles owned by the gizmo are also updated.
-func generate_geometry(fix_to_origin_setting = false):
+func generate_geometry():
 	
 	# Prevents geometry generation if the node hasn't loaded yet
 	if is_inside_tree() == false:

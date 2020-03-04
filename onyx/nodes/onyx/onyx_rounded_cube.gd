@@ -107,7 +107,7 @@ func update_x_plus(new_value):
 		new_value = 0
 		
 	x_plus_position = new_value
-	generate_geometry(true)
+	generate_geometry()
 	
 	
 func update_x_minus(new_value):
@@ -115,35 +115,35 @@ func update_x_minus(new_value):
 		new_value = 0
 		
 	x_minus_position = new_value
-	generate_geometry(true)
+	generate_geometry()
 	
 func update_y_plus(new_value):
 	if new_value < 0:
 		new_value = 0
 		
 	y_plus_position = new_value
-	generate_geometry(true)
+	generate_geometry()
 	
 func update_y_minus(new_value):
 	if new_value < 0 || origin_mode == OriginPosition.BASE_CORNER || origin_mode == OriginPosition.BASE:
 		new_value = 0
 		
 	y_minus_position = new_value
-	generate_geometry(true)
+	generate_geometry()
 	
 func update_z_plus(new_value):
 	if new_value < 0:
 		new_value = 0
 		
 	z_plus_position = new_value
-	generate_geometry(true)
+	generate_geometry()
 	
 func update_z_minus(new_value):
 	if new_value < 0 || origin_mode == OriginPosition.BASE_CORNER:
 		new_value = 0
 		
 	z_minus_position = new_value
-	generate_geometry(true)
+	generate_geometry()
 	
 func update_corner_size(new_value):
 	if new_value <= 0:
@@ -172,22 +172,22 @@ func update_corner_size(new_value):
 				new_value = y_range
 		
 	corner_size = new_value
-	generate_geometry(true)
+	generate_geometry()
 	
 func update_corner_iterations(new_value):
 	if new_value <= 0:
 		new_value = 1
 		
 	corner_iterations = new_value
-	generate_geometry(true)
+	generate_geometry()
 	
 func update_corner_axis(new_value):
 	corner_axis = new_value
-	generate_geometry(true)
+	generate_geometry()
 
 #func update_subdivisions(new_value):
 #	subdivisions = new_value
-#	generate_geometry(true)
+#	generate_geometry()
 	
 #
 #func update_bevel_size(new_value):
@@ -195,11 +195,11 @@ func update_corner_axis(new_value):
 #		new_value = 0
 #
 #	bevel_size = new_value
-#	generate_geometry(true)
+#	generate_geometry()
 #
 #func update_bevel_target(new_value):
 #	bevel_target = new_value
-#	generate_geometry(true)
+#	generate_geometry()
 	
 	
 # Used to recalibrate both the origin point location and the position handles.
@@ -208,7 +208,7 @@ func update_positions(new_value):
 	update_origin_setting = true
 	update_origin_mode()
 	balance_handles()
-	generate_geometry(true)
+	generate_geometry()
 	
 
 
@@ -221,7 +221,7 @@ func update_origin_type(new_value):
 	origin_mode = new_value
 	update_origin_mode()
 	balance_handles()
-	generate_geometry(true)
+	generate_geometry()
 	
 	# ensure the origin mode toggle is preserved, and ensure the adjusted handles are saved.
 	previous_origin_mode = origin_mode
@@ -230,23 +230,23 @@ func update_origin_type(new_value):
 
 func update_unwrap_method(new_value):
 	unwrap_method = new_value
-	generate_geometry(true)
+	generate_geometry()
 
 func update_uv_scale(new_value):
 	uv_scale = new_value
-	generate_geometry(true)
+	generate_geometry()
 
 func update_flip_uvs_horizontally(new_value):
 	flip_uvs_horizontally = new_value
-	generate_geometry(true)
+	generate_geometry()
 	
 func update_flip_uvs_vertically(new_value):
 	flip_uvs_vertically = new_value
-	generate_geometry(true)
+	generate_geometry()
 	
 func update_smooth_normals(new_value):
 	smooth_normals = new_value
-	generate_geometry(true)
+	generate_geometry()
 	
 	
 
@@ -355,7 +355,7 @@ func update_origin_position(new_location = null):
 # GEOMETRY GENERATION
 
 # Using the set handle points, geometry is generated and drawn.  The handles owned by the gizmo are also updated.
-func generate_geometry(fix_to_origin_setting = false):
+func generate_geometry():
 	
 	# Prevents geometry generation if the node hasn't loaded yet
 	if is_inside_tree() == false:
@@ -363,20 +363,6 @@ func generate_geometry(fix_to_origin_setting = false):
 	
 	var maxPoint = Vector3(x_plus_position, y_plus_position, z_plus_position)
 	var minPoint = Vector3(-x_minus_position, -y_minus_position, -z_minus_position)
-	
-	if fix_to_origin_setting == true:
-		match origin_mode:
-			OriginPosition.BASE:
-				maxPoint = Vector3(x_plus_position, (y_plus_position + (y_minus_position * -1)), z_plus_position)
-				minPoint = Vector3(-x_minus_position, 0, -z_minus_position)
-				
-			OriginPosition.BASE_CORNER:
-				maxPoint = Vector3(
-					(x_plus_position + (-x_minus_position * -1)), 
-					(y_plus_position + (-y_minus_position * -1)), 
-					(z_plus_position + (-z_minus_position * -1))
-					)
-				minPoint = Vector3(0, 0, 0)
 	
 	# Generate the geometry
 	var mesh_factory = OnyxMeshFactory.new()

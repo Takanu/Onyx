@@ -271,7 +271,7 @@ func _ready():
 # ////////////////////////////////////////////////////////////
 # MESH BUILDING AND RENDERING
 
-func generate_geometry(fix_to_origin_setting = false):
+func generate_geometry():
 	print("generate_geometry() - Override this function!")
 	pass
 
@@ -408,6 +408,10 @@ func _create_hollow_data():
 		
 		# generate shape
 		_generate_hollow_shape()
+		
+		# If the parent has a material, let the child inherit it.
+		if material != null:
+			hollow_material = self.material
 
 func _delete_hollow_data():
 	
@@ -428,7 +432,9 @@ func _load_hollow_data():
 #	print("[Onyx] ", self.get_name() , " - _load_hollow_data()")
 	
 	if hollow_margin_values.size() == 0:
-		_generate_hollow_margins()
+		_generate_hollow_margin_data()
+	else:
+		_build_hollow_margin_data()
 	
 	if hollow_enable == false:
 		return
@@ -455,13 +461,13 @@ func _load_runtime_hollow_data():
 			hollow_object.material = hollow_material
 			hollow_object.mesh = hollow_mesh
 			
+			# FIXME | ERROR | HELP
 			# The mesh needs to be assigned last, assigning the material causes some kind of independent mesh generation.
 			# HMMM.
 #			print("hollow baked")
 
-
 # Reads the margins specified by the sub-class and turns them into usable data
-func _generate_hollow_margins():
+func _generate_hollow_margin_data():
 	
 	if is_hollow_object == true || Engine.editor_hint == false:
 		return
@@ -473,6 +479,28 @@ func _generate_hollow_margins():
 	for handle_name in handle_names:
 		hollow_margin_values[handle_name] = default_hollow_margin
 		
+
+# Takes the currently-saved hollow data and pairs it with the property data the current version of the node expects.
+# This is to prevent duplicate values and to ensure property name changes aren't destructive.
+func _build_hollow_margin_data():
+	
+	var handle_names = get_hollow_margins()
+	var new_hollow_margin_values = {}
+	
+	for handle_name in handle_names:
+		
+		# Used for future updates
+#		match handle_name:
+#			pass
+		
+		if new_hollow_margin_values[handle_name] == false:
+			if hollow_margin_values[handle_name] != null:
+				new_hollow_margin_values[handle_name] = hollow_margin_values[handle_name]
+			
+	
+	# Not sure if entirely necessary, just in case.
+	hollow_margin_values = new_hollow_margin_values.duplicate()
+	
 
 # Updates the hollow object handles and mesh to follow the shape of the parent object,
 # while also calculating margin distances.

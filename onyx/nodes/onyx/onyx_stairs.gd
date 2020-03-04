@@ -78,26 +78,26 @@ func _get(property):
 	
 func update_start_position(new_value):
 	start_position = new_value
-	generate_geometry(true)
+	generate_geometry()
 	
 	
 func update_end_position(new_value):
 	end_position = new_value
-	generate_geometry(true)
+	generate_geometry()
 	
 func update_stair_width(new_value):
 	if new_value < 0:
 		new_value = 0
 		
 	stair_width = new_value
-	generate_geometry(true)
+	generate_geometry()
 	
 func update_stair_depth(new_value):
 	if new_value < 0:
 		new_value = 0
 		
 	stair_depth = new_value
-	generate_geometry(true)
+	generate_geometry()
 	
 func update_stair_length_percentage(new_value):
 	if new_value.x < 0:
@@ -106,37 +106,37 @@ func update_stair_length_percentage(new_value):
 		new_value.y = 0
 		
 	stair_length_percentage = new_value
-	generate_geometry(true)
+	generate_geometry()
 	
 func update_stair_count(new_value):
 	if new_value < 1:
 		new_value = 1
 		
 	stair_count = new_value
-	generate_geometry(true)
+	generate_geometry()
 	
 func update_unwrap_method(new_value):
 	unwrap_method = new_value
-	generate_geometry(true)
+	generate_geometry()
 
 func update_uv_scale(new_value):
 	uv_scale = new_value
-	generate_geometry(true)
+	generate_geometry()
 
 func update_flip_uvs_horizontally(new_value):
 	flip_uvs_horizontally = new_value
-	generate_geometry(true)
+	generate_geometry()
 	
 func update_flip_uvs_vertically(new_value):
 	flip_uvs_vertically = new_value
-	generate_geometry(true)
+	generate_geometry()
 	
 
 # ////////////////////////////////////////////////////////////
 # GEOMETRY GENERATION
 
 # Using the set handle points, geometry is generated and drawn.  The handles owned by the gizmo are also updated.
-func generate_geometry(fix_to_origin_setting = false):
+func generate_geometry():
 	
 	# Prevents geometry generation if the node hasn't loaded yet
 	if is_inside_tree() == false:
