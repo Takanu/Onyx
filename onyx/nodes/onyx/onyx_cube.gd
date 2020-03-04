@@ -442,33 +442,29 @@ func build_handles():
 	if Engine.editor_hint == false:
 		return
 	
-	var triangle_x = [Vector3(0.0, 1.0, 0.0), Vector3(0.0, 1.0, 1.0), Vector3(0.0, 0.0, 1.0)]
-	var triangle_y = [Vector3(1.0, 0.0, 0.0), Vector3(1.0, 0.0, 1.0), Vector3(0.0, 0.0, 1.0)]
-	var triangle_z = [Vector3(0.0, 1.0, 0.0), Vector3(1.0, 1.0, 0.0), Vector3(1.0, 0.0, 0.0)]
-	
 	var x_minus = ControlPoint.new(self, "get_gizmo_undo_state", "get_gizmo_redo_state", "restore_state", "restore_state")
 	x_minus.control_name = 'x_minus'
-	x_minus.set_type_axis(false, "handle_change", "handle_commit", triangle_x)
+	x_minus.set_type_axis(false, "handle_change", "handle_commit", Vector3(-1, 0, 0))
 	
 	var x_plus = ControlPoint.new(self, "get_gizmo_undo_state", "get_gizmo_redo_state", "restore_state", "restore_state")
 	x_plus.control_name = 'x_plus'
-	x_plus.set_type_axis(false, "handle_change", "handle_commit", triangle_x)
+	x_plus.set_type_axis(false, "handle_change", "handle_commit", Vector3(1, 0, 0))
 	
 	var y_minus = ControlPoint.new(self, "get_gizmo_undo_state", "get_gizmo_redo_state", "restore_state", "restore_state")
 	y_minus.control_name = 'y_minus'
-	y_minus.set_type_axis(false, "handle_change", "handle_commit", triangle_y)
+	y_minus.set_type_axis(false, "handle_change", "handle_commit", Vector3(0, -1, 0))
 	
 	var y_plus = ControlPoint.new(self, "get_gizmo_undo_state", "get_gizmo_redo_state", "restore_state", "restore_state")
 	y_plus.control_name = 'y_plus'
-	y_plus.set_type_axis(false, "handle_change", "handle_commit", triangle_y)
+	y_plus.set_type_axis(false, "handle_change", "handle_commit", Vector3(0, 1, 0))
 	
 	var z_minus = ControlPoint.new(self, "get_gizmo_undo_state", "get_gizmo_redo_state", "restore_state", "restore_state")
 	z_minus.control_name = 'z_minus'
-	z_minus.set_type_axis(false, "handle_change", "handle_commit", triangle_z)
+	z_minus.set_type_axis(false, "handle_change", "handle_commit", Vector3(0, 0, -1))
 	
 	var z_plus = ControlPoint.new(self, "get_gizmo_undo_state", "get_gizmo_redo_state", "restore_state", "restore_state")
 	z_plus.control_name = 'z_plus'
-	z_plus.set_type_axis(false, "handle_change", "handle_commit", triangle_z)
+	z_plus.set_type_axis(false, "handle_change", "handle_commit", Vector3(0, 0, 1))
 	
 	# populate the dictionary
 	handles["x_minus"] = x_minus

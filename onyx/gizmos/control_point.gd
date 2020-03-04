@@ -48,7 +48,7 @@ enum HandleType {FREE, AXIS, TRANSLATE, ROTATE, SCALE, CLICK}
 var handle_type = HandleType.FREE
 
 # If HandleType.AXIS is used, this defines what axis the control point's movement is locked to.
-var axis_triangle = []
+var snap_axis = Vector3()
 
 # If TRANSLATE, ROTATE or SCALE is used, this determines how far the axis handles are from the point they control.
 var handle_distance: float = 0.5
@@ -151,7 +151,7 @@ func set_type_free(clear_all_callbacks : bool, update_callback : String, commit_
 	self.free_commit_callback = commit_callback
 
 
-func set_type_axis(clear_all_callbacks : bool, update_callback : String, commit_callback : String, axis_triangle : Array):
+func set_type_axis(clear_all_callbacks : bool, update_callback : String, commit_callback : String, snap_axis : Vector3):
 	
 	if clear_all_callbacks == true:
 		clear_callbacks()
@@ -159,7 +159,7 @@ func set_type_axis(clear_all_callbacks : bool, update_callback : String, commit_
 	self.handle_type = HandleType.AXIS
 	self.axis_update_callback = update_callback
 	self.axis_commit_callback = commit_callback
-	self.axis_triangle = axis_triangle
+	self.snap_axis = snap_axis
 
 func set_type_translate(clear_all_callbacks : bool, update_callback : String, commit_callback : String):
 	
@@ -358,9 +358,8 @@ func update_handle(index, camera, point):
 		
 		
 		HandleType.AXIS:
-#			print("Handling AXIS POINT")
-			#print("RAWR HANDLE MOVED: ", coord)
-			var new_position = project_point_to_axis(point, camera, control_position, world_matrix, axis_triangle)
+			print("Handling AXIS POINT")
+			var new_position = project_point_to_axis(point, camera, control_position, world_matrix, snap_axis)
 
 			if not new_position: 
 				return #sometimes the projection might fail
@@ -388,14 +387,14 @@ func update_handle(index, camera, point):
 		HandleType.TRANSLATE:
 #			print("Handling TRANSLATE POINT")
 			
-			var target_axis_triangle = []
+			var axis = Vector3()
 			var target_position
 			var handle_offset
 			
 			match index:
-				0: target_axis_triangle = [Vector3(0.0, 1.0, 0.0), Vector3(0.0, 1.0, 1.0), Vector3(0.0, 0.0, 1.0)]
-				1: target_axis_triangle = [Vector3(1.0, 0.0, 0.0), Vector3(1.0, 0.0, 1.0), Vector3(0.0, 0.0, 1.0)]
-				2: target_axis_triangle = [Vector3(0.0, 1.0, 0.0), Vector3(1.0, 1.0, 0.0), Vector3(1.0, 0.0, 0.0)]
+				0: axis = Vector3(1, 0, 0)
+				1: axis = Vector3(0, 1, 0)
+				2: axis = Vector3(0, 0, 1)
 				
 			#this has no use great job.
 			match index:
@@ -407,7 +406,7 @@ func update_handle(index, camera, point):
 				1: handle_offset = Vector3(0, handle_distance, 0)
 				2: handle_offset = Vector3(0, 0, handle_distance)
 				
-			var new_position = project_point_to_axis(point, camera, control_position, world_matrix, target_axis_triangle)
+			var new_position = project_point_to_axis(point, camera, control_position, world_matrix, axis)
 			
 			if new_position == null: 
 					return
@@ -476,78 +475,65 @@ func commit_handle(index, restore):
 
 # ////////////////////////////////////////////////////////////
 # HELPERS
-func project_point_to_axis(point, camera, target_position, world_matrix, axis_triangle):
-#	print("RAWR HANDLE MOVED: ", target_position)
-	var planes = make_planes(axis_triangle, target_position)
-#	print("PLANES: ", planes)
-
+func project_point_to_axis(point, camera, target_position, world_matrix, snap_axis):
+	
+	# Get the camera view axis.
+	var snap_axis_point = snap_axis + target_position
+	var camera_basis = camera.get_camera_transform().basis.z
+	
+	# If the camera basis and snapping axis are equal, quit early.
+	if camera_basis == snap_axis:
+#		print("camera basis equal to snap axis, leaving early")
+		return null
+	
+	# Rotate the new camera axis point around the snap axis 180º
+	var rotation_amount = 180/PI * 90
+	var camera_basis_rotated = camera_basis.rotated(snap_axis, rotation_amount)
+	
+	var axis_transform = Transform(snap_axis, camera_basis, camera_basis_rotated, target_position)
+	var projection_plane = Plane(snap_axis_point, target_position, camera_basis_rotated + target_position)
+	
+	# Setup the projection
 	var ray_origin = camera.project_ray_origin(point)
 	var ray_dir = camera.project_ray_normal(point)
 	ray_origin = world_matrix.xform_inv(ray_origin)
 	ray_dir = world_matrix.basis.xform_inv(ray_dir)
 	
-	# TODO - This system is busted, replace it with something better.
-	
-	var new_position = Vector3()
-	var intersect_pos = planes[0].intersects_ray(ray_origin, ray_dir)
+	# PROJECT
+	var intersect_pos = projection_plane.intersects_ray(ray_origin, ray_dir)
 	if not intersect_pos: 
+		print("no projection point found, returning early.")
 		return null
 	
-#	print('TARGET POSITION: ', target_position)
-#	print('INTERSECT POSITION: ', intersect_pos)
-		
-	if planes.size() > 1:
-		new_position = planes[1].project(intersect_pos)
+	# Transform the point and minus out the Z value
+	var projected_pos = axis_transform.xform_inv(intersect_pos)
+	projected_pos.z = 0
+	projected_pos.y = 0
 	
-#	print('NEW POSITION: ', new_position)
-	
-	return new_position
-	
-
-# Creates planes with which to lock the position of the handle to a single defined axis, if AXIS is used.
-func make_planes(triangle, handle_loc):
-	
-	if typeof(triangle) != TYPE_ARRAY:
-		print("(onyx_cube_gizmo : make_planes) No triangle set provided.")
-	
-	if triangle.size() < 3:
-		print("(onyx_cube_gizmo : make_planes) Not enough triangles given.")
-	
-#	print("~~~~~")
-#	print(triangle, handle_loc)
-#	print("~~~~~")
-	
-	# get the unit vector of the two vectors made from the triangle
-	var movement_vector =  handle_loc - triangle[0]
-	var vertex_1 = triangle[0] + movement_vector
-	var vertex_2 = triangle[1] + movement_vector
-	var vertex_3 = triangle[2] + movement_vector
-	
-	var vec_1 = (vertex_2 - vertex_1).normalized()
-	var vec_2 = (vertex_3 - vertex_1).normalized()
-	var cross = vec_1.cross(vec_2).normalized()
-	var vertex_4 = (cross * 2) + vertex_1
-	
-#	print("VECTORS: ", vec_1, vec_2, cross)
-#	print("FINAL VERTICES: ", vertex_1, vertex_2, vertex_3, vertex_4)
-	
-	# Build the planes
-	var plane_1 = Plane(vertex_1, vertex_2, vertex_4)
-	var plane_2 = Plane(vertex_1, vertex_3, vertex_4)
-	
-#	print("PLANE 1 : ", plane_1)
-#	print("PLANE 2 : ", plane_2)
-	
-	return [plane_1, plane_2]
+	var final_pos = axis_transform.xform(projected_pos)
+	return final_pos
 
 # Takes a position and snap increment, and locks the position based on that increment.
 func snap_position(position: Vector3, increment: Vector3) -> Vector3:
 	
-	var new_position = Vector3()
-	new_position.x = round(position.x / increment.x) * increment.x
-	new_position.y = round(position.y / increment.y) * increment.y
-	new_position.z = round(position.z / increment.z) * increment.z
-	return new_position
+	var return_input = Vector3()
+	
+	if control_point_owner.plugin.snap_gizmo_global_orientation == true:
+		var translated_input = position + control_point_owner.get_global_transform().origin 
+		
+		var snapped_input = Vector3()
+		snapped_input.x = round(translated_input.x / increment.x) * increment.x
+		snapped_input.y = round(translated_input.y / increment.y) * increment.y
+		snapped_input.z = round(translated_input.z / increment.z) * increment.z
+		
+		return_input = snapped_input - control_point_owner.get_global_transform().origin
+	
+	else:
+		return_input.x = round(position.x / increment.x) * increment.x
+		return_input.y = round(position.y / increment.y) * increment.y
+		return_input.z = round(position.z / increment.z) * increment.z
+	
+	return return_input
 
 func mat_solid_color(red, green, blue):
 	var mat = SpatialMaterial.new()

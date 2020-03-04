@@ -44,6 +44,10 @@ var snap_menu
 # User Interface Variables
 var snap_gizmo_enabled = false
 var snap_gizmo_increment = 1
+
+# If true, the snapping distances will be based on the object's global location, to compensate for automatic origin adjustment.
+var snap_gizmo_global_orientation = true
+
 var snap_gizmo_grid = false
 var snap_gizmo_slicer = false
 

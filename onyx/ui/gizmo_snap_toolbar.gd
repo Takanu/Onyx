@@ -2,8 +2,10 @@ tool
 extends Control
 
 const MENU_GIZMO_SNAP_ENABLE = 0
-const MENU_GIZMO_SHOW_GRID = 1
-const MENU_GIZMO_SHOW_SLICER = 2
+const MENU_GIZMO_GLOBAL_ORIENTATION = 1
+const MENU_GIZMO_SHOW_GRID = 2
+const MENU_GIZMO_SHOW_SLICER = 3
+
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
@@ -14,8 +16,10 @@ func _ready():
 	var snap_menu = get_node("snap_menu")
 	snap_menu.get_popup().clear()
 	snap_menu.get_popup().add_check_item("Enable Snapping", MENU_GIZMO_SNAP_ENABLE)
-	snap_menu.get_popup().add_check_item("Show Snap Grid", MENU_GIZMO_SHOW_GRID)
-	snap_menu.get_popup().add_check_item("Show Slicer", MENU_GIZMO_SHOW_SLICER)
+	snap_menu.get_popup().add_check_item("Snap on Global Orientation", MENU_GIZMO_GLOBAL_ORIENTATION)
+	snap_menu.get_popup().set_item_checked(MENU_GIZMO_GLOBAL_ORIENTATION, true)
+#	snap_menu.get_popup().add_check_item("Show Snap Grid", MENU_GIZMO_SHOW_GRID)
+#	snap_menu.get_popup().add_check_item("Show Slicer", MENU_GIZMO_SHOW_SLICER)
 	snap_menu.get_popup().connect("id_pressed", self, "snap_item_selected")
 	
 	# connect value box
@@ -43,6 +47,15 @@ func snap_item_selected(id):
 			else:
 				plugin.snap_gizmo_enabled = false
 				snap_menu.get_popup().set_item_checked(MENU_GIZMO_SNAP_ENABLE, false)
+		
+		MENU_GIZMO_GLOBAL_ORIENTATION:
+			
+			if plugin.snap_gizmo_global_orientation == false:
+				plugin.snap_gizmo_global_orientation = true
+				snap_menu.get_popup().set_item_checked(MENU_GIZMO_GLOBAL_ORIENTATION, true)
+			else:
+				plugin.snap_gizmo_global_orientation = false
+				snap_menu.get_popup().set_item_checked(MENU_GIZMO_GLOBAL_ORIENTATION, false)
 				
 		MENU_GIZMO_SHOW_GRID:
 			

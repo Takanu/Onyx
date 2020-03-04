@@ -231,11 +231,13 @@ func _ready():
 	
 	if Engine.editor_hint == true:
 		
+		# If this is null, we can assume this node was just created,
 		if mesh == null:
 #			print("building kit")
 			build_handles()
 			generate_geometry()
 			refresh_handle_data()
+			use_collision = true
 		
 		# If we have an operation that ain't Addition, we need to render the preview mesh so we need handles anyway.  wupwup.
 		else:
