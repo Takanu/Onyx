@@ -366,24 +366,21 @@ func build_handles():
 	if Engine.editor_hint == false:
 		return
 	
-	var triangle_x = [Vector3(0.0, 1.0, 0.0), Vector3(0.0, 1.0, 1.0), Vector3(0.0, 0.0, 1.0)]
-	var triangle_z = [Vector3(0.0, 1.0, 0.0), Vector3(1.0, 1.0, 0.0), Vector3(1.0, 0.0, 0.0)]
-	
 	var point_position = ControlPoint.new(self, "get_gizmo_undo_state", "get_gizmo_redo_state", "restore_state", "restore_state")
 	point_position.control_name = 'point_position'
 	point_position.set_type_translate(false, "handle_change", "handle_commit")
 	
 	var point_width = ControlPoint.new(self, "get_gizmo_undo_state", "get_gizmo_redo_state", "restore_state", "restore_state")
 	point_width.control_name = 'point_width'
-	point_width.set_type_axis(false, "handle_change", "handle_commit", triangle_x)
+	point_width.set_type_axis(false, "handle_change", "handle_commit", Vector3(1, 0, 0))
 	
 	var base_x_size = ControlPoint.new(self, "get_gizmo_undo_state", "get_gizmo_redo_state", "restore_state", "restore_state")
 	base_x_size.control_name = 'base_x_size'
-	base_x_size.set_type_axis(false, "handle_change", "handle_commit", triangle_x)
+	base_x_size.set_type_axis(false, "handle_change", "handle_commit", Vector3(1, 0, 0))
 	
 	var base_z_size = ControlPoint.new(self, "get_gizmo_undo_state", "get_gizmo_redo_state", "restore_state", "restore_state")
 	base_z_size.control_name = 'base_z_size'
-	base_z_size.set_type_axis(false, "handle_change", "handle_commit", triangle_z)
+	base_z_size.set_type_axis(false, "handle_change", "handle_commit", Vector3(0, 0, 1))
 	
 	# populate the dictionary
 	handles[point_position.control_name] = point_position

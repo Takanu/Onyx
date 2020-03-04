@@ -326,25 +326,21 @@ func build_handles():
 	if Engine.editor_hint == false:
 		return
 	
-	var triangle_x = [Vector3(0.0, 1.0, 0.0), Vector3(0.0, 1.0, 1.0), Vector3(0.0, 0.0, 1.0)]
-	var triangle_y = [Vector3(1.0, 0.0, 0.0), Vector3(1.0, 0.0, 1.0), Vector3(0.0, 0.0, 1.0)]
-	var triangle_z = [Vector3(0.0, 1.0, 0.0), Vector3(1.0, 1.0, 0.0), Vector3(1.0, 0.0, 0.0)]
-	
 	var height_max = ControlPoint.new(self, "get_gizmo_undo_state", "get_gizmo_redo_state", "restore_state", "restore_state")
 	height_max.control_name = 'height_max'
-	height_max.set_type_axis(false, "handle_change", "handle_commit", triangle_y)
+	height_max.set_type_axis(false, "handle_change", "handle_commit", Vector3(0, 1, 0))
 	
 	var height_min = ControlPoint.new(self, "get_gizmo_undo_state", "get_gizmo_redo_state", "restore_state", "restore_state")
 	height_min.control_name = 'height_min'
-	height_min.set_type_axis(false, "handle_change", "handle_commit", triangle_y)
+	height_min.set_type_axis(false, "handle_change", "handle_commit", Vector3(0, -1, 0))
 	
 	var x_width = ControlPoint.new(self, "get_gizmo_undo_state", "get_gizmo_redo_state", "restore_state", "restore_state")
 	x_width.control_name = 'x_width'
-	x_width.set_type_axis(false, "handle_change", "handle_commit", triangle_x)
+	x_width.set_type_axis(false, "handle_change", "handle_commit", Vector3(1, 0, 0))
 	
 	var z_width = ControlPoint.new(self, "get_gizmo_undo_state", "get_gizmo_redo_state", "restore_state", "restore_state")
 	z_width.control_name = 'z_width'
-	z_width.set_type_axis(false, "handle_change", "handle_commit", triangle_z)
+	z_width.set_type_axis(false, "handle_change", "handle_commit", Vector3(0, 0, 1))
 	
 	# populate the dictionary
 	handles["height_max"] = height_max

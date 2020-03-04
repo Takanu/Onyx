@@ -275,7 +275,6 @@ func build_handles():
 	if Engine.editor_hint == false:
 		return
 	
-	var triangle_z = [Vector3(0.0, 1.0, 0.0), Vector3(1.0, 1.0, 0.0), Vector3(1.0, 0.0, 0.0)]
 	
 	var start_position = ControlPoint.new(self, "get_gizmo_undo_state", "get_gizmo_redo_state", "restore_state", "restore_state")
 	start_position.control_name = 'start_position'
@@ -287,7 +286,7 @@ func build_handles():
 	
 	var stair_width = ControlPoint.new(self, "get_gizmo_undo_state", "get_gizmo_redo_state", "restore_state", "restore_state")
 	stair_width.control_name = 'stair_width'
-	stair_width.set_type_axis(false, "handle_change", "handle_commit", triangle_z)
+	stair_width.set_type_axis(false, "handle_change", "handle_commit", Vector3(1, 0, 0))
 	
 	# populate the dictionary
 	handles[start_position.control_name] = start_position

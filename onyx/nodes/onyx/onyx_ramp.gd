@@ -360,8 +360,6 @@ func build_handles():
 	if Engine.editor_hint == false:
 		return
 	
-	var triangle_z = [Vector3(0.0, 1.0, 0.0), Vector3(1.0, 1.0, 0.0), Vector3(1.0, 0.0, 0.0)]
-	
 	var start_ramp = ControlPoint.new(self, "get_gizmo_undo_state", "get_gizmo_redo_state", "restore_state", "restore_state")
 	start_ramp.control_name = 'start_position'
 	start_ramp.set_type_translate(false, "handle_change", "handle_commit")
@@ -372,7 +370,7 @@ func build_handles():
 	
 	var ramp_width = ControlPoint.new(self, "get_gizmo_undo_state", "get_gizmo_redo_state", "restore_state", "restore_state")
 	ramp_width.control_name = 'ramp_width'
-	ramp_width.set_type_axis(false, "handle_change", "handle_commit", triangle_z)
+	ramp_width.set_type_axis(false, "handle_change", "handle_commit", Vector3(1, 0, 0))
 	
 	# populate the dictionary
 	handles[start_ramp.control_name] = start_ramp
