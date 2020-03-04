@@ -16,9 +16,6 @@ export(OriginPosition) var origin_mode = OriginPosition.BASE setget update_origi
 # used to keep track of how to move the origin point into a new position.
 var previous_origin_mode = OriginPosition.BASE
 
-# used to force an origin update when using the sliders to adjust positions.
-export(bool) var update_origin_setting = true setget update_positions
-
 
 # ////////////////////////////////////////////////////////////
 # PROPERTIES
@@ -62,6 +59,13 @@ func _get_property_list():
 
 func _set(property, value):
 #	print("[OnyxCube] ", self.get_name(), " - _set() : ", property, " ", value)
+
+	# Same value catcher
+	var old_value = self.get(property)
+	if old_value != null:
+		if old_value == value:
+#			print("Same value assignment, BAIIIII")
+			return
 	
 	match property:
 		"uv_options/unwrap_method":
@@ -136,14 +140,7 @@ func update_proportional_toggle(new_value):
 	update_origin_mode()
 	balance_handles()
 	generate_geometry()
-	
-# Used to recalibrate both the origin point location and the position handles.
-func update_positions(new_value):
-	update_origin_setting = true
-	update_origin_mode()
-	balance_handles()
-	generate_geometry()
-	
+
 # Changes the origin position relative to the shape and regenerates geometry and handles.
 func update_origin_type(new_value):
 

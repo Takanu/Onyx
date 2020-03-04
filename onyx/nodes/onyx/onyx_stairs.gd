@@ -57,6 +57,13 @@ func _get_property_list():
 func _set(property, value):
 #	print("[OnyxCube] ", self.get_name(), " - _set() : ", property, " ", value)
 	
+	# Same value catcher
+	var old_value = self.get(property)
+	if old_value != null:
+		if old_value == value:
+#			print("Same value assignment, BAIIIII")
+			return
+	
 	match property:
 		"uv_options/unwrap_method":
 			unwrap_method = value

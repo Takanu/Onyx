@@ -358,7 +358,7 @@ func update_handle(index, camera, point):
 		
 		
 		HandleType.AXIS:
-			print("Handling AXIS POINT")
+#			print("Handling AXIS POINT")
 			var new_position = project_point_to_axis(point, camera, control_position, world_matrix, snap_axis)
 
 			if not new_position: 
@@ -502,7 +502,7 @@ func project_point_to_axis(point, camera, target_position, world_matrix, snap_ax
 	# PROJECT
 	var intersect_pos = projection_plane.intersects_ray(ray_origin, ray_dir)
 	if not intersect_pos: 
-		print("no projection point found, returning early.")
+#		print("no projection point found, returning early.")
 		return null
 	
 	# Transform the point and minus out the Z value

@@ -16,9 +16,6 @@ export(OriginPosition) var origin_mode = OriginPosition.BASE setget update_origi
 # used to keep track of how to move the origin point into a new position.
 var previous_origin_mode = OriginPosition.BASE
 
-# used to force an origin update when using the sliders to adjust positions.
-export(bool) var update_origin_setting = true setget update_positions
-
 
 # ////////////////////////////////////////////////////////////
 # PROPERTIES
@@ -67,12 +64,19 @@ func _get_property_list():
 func _set(property, value):
 #	print("[OnyxCube] ", self.get_name(), " - _set() : ", property, " ", value)
 	
+	# Same value catcher
+	var old_value = self.get(property)
+	if old_value != null:
+		if old_value == value:
+#			print("Same value assignment, BAIIIII")
+			return
+	
+	# ///// SETTERS /////
 	match property:
 		"uv_options/unwrap_method":
 			unwrap_method = value
-			
-			
-	generate_geometry()
+			generate_geometry()
+			return
 		
 
 func _get(property):
@@ -87,11 +91,6 @@ func _get(property):
 
 # Used when a handle variable changes in the properties panel.
 func update_x_plus(new_value):
-#	print('handles - ', handles)
-#	print("ONYXCUBE update_x_plus")
-	
-#	print("TIME ~ TO ~ CHECK ~ INTERNALS")
-#	print_property_status()
 	
 	if new_value < 0:
 		new_value = 0
@@ -102,6 +101,7 @@ func update_x_plus(new_value):
 	
 func update_x_minus(new_value):
 #	print("ONYXCUBE update_x_minus")
+
 	if new_value < 0 || origin_mode == OriginPosition.BASE_CORNER:
 		new_value = 0
 		
@@ -156,14 +156,6 @@ func update_subdivisions(new_value):
 	
 	
 	
-# Used to recalibrate both the origin point location and the position handles.
-func update_positions(new_value):
-#	print("ONYXCUBE update_positions")
-	update_origin_setting = true
-	update_origin_mode()
-	balance_handles()
-	generate_geometry()
-
 
 # Changes the origin position relative to the shape and regenerates geometry and handles.
 func update_origin_type(new_value):
@@ -305,20 +297,6 @@ func generate_geometry():
 	
 	var maxPoint = Vector3(x_plus_position, y_plus_position, z_plus_position)
 	var minPoint = Vector3(-x_minus_position, -y_minus_position, -z_minus_position)
-	
-#	if fix_to_origin_setting == true:
-#		match origin_mode:
-#			OriginPosition.BASE:
-#				maxPoint = Vector3(x_plus_position, (y_plus_position + (-y_minus_position * -1)), z_plus_position)
-#				minPoint = Vector3(-x_minus_position, 0, -z_minus_position)
-#
-#			OriginPosition.BASE_CORNER:
-#				maxPoint = Vector3(
-#					(x_plus_position + (-x_minus_position * -1)), 
-#					(y_plus_position + (-y_minus_position * -1)), 
-#					(z_plus_position + (-z_minus_position * -1))
-#					)
-#				minPoint = Vector3(0, 0, 0)
 	
 	# Generate the geometry
 	var mesh_factory = OnyxMeshFactory.new()
@@ -482,22 +460,24 @@ func build_handles():
 # Uses the current settings to refresh the control point positions.
 func refresh_handle_data():
 	
-#	print("[OnyxCube] ", self.get_name(), " - refresh_handle_data()")
-	
 	# If it's not selected, do not generate. (hollow object's can be refreshed without selection)
 #	if is_selected == false && is_hollow_object == false:
 #		return
 	
 	# Exit if not being run in the editor
 	if Engine.editor_hint == false:
+#		print("...attempted to refresh_handle_data()")
 		return
 	
 	# Failsafe for script reloads, BECAUSE I CURRENTLY CAN'T DETECT THEM.
 	if handles.size() == 0:
 		if gizmo != null:
+#			print("...attempted to refresh_handle_data(), rebuilding handles.")
 			gizmo.control_points.clear()
 			build_handles()
 			return
+	
+#	print("[OnyxCube] ", self.get_name(), " - refresh_handle_data()")
 	
 	var mid_x = (x_plus_position - x_minus_position) / 2
 	var mid_y = (y_plus_position - y_minus_position) / 2
@@ -616,6 +596,8 @@ func assign_hollow_properties():
 	if hollow_object == null:
 		return
 	
+#	print("[OnyxCube] ", self.get_name(), " - assign_hollow_properties()")
+	
 	if hollow_object.subdivisions != self.subdivisions:
 		hollow_object.subdivisions = self.subdivisions
 	
@@ -626,6 +608,8 @@ func assign_hollow_origin():
 	
 	if hollow_object == null:
 		return
+	
+#	print("[OnyxCube] ", self.get_name(), " - assign_hollow_origin()")
 	
 	hollow_object.set_translation(Vector3(0, 0, 0))
 

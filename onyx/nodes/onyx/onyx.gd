@@ -139,17 +139,46 @@ func _get_property_list():
 
 func _set(property, value):
 #	print("[Onyx] ", self.get_name() , " - _set() : ", property, " ", value)
+	
+	# Same-value catcher.
+	var old_value = self.get(property)
+	if old_value != null:
+		if old_value == value:
+#			print("Same value assignment, BAIIIII")
+			return
+	
 	match property:
 		
-		# Saved internal properties
+		# Super-class properties /////
+		"material":
+			material = value
+			generate_geometry()
+			return
 		
-		# UVs
+		"operation":
+			operation = value
+			generate_geometry()
+			return
+		
+		# Saved internal properties /////
+		
+		
+		# UVs /////
+		
 		"uv_options/uv_scale":
 			uv_scale = value
+			generate_geometry()
+			return
+			
 		"uv_options/flip_uvs_horizontally":
 			flip_uvs_horizontally = value
+			generate_geometry()
+			return
+			
 		"uv_options/flip_uvs_vertically":
 			flip_uvs_vertically = value
+			generate_geometry()
+			return
 		
 		# Hollow Mode
 		"hollow_mode/enable_hollow_mode":
@@ -164,14 +193,17 @@ func _set(property, value):
 			hollow_mesh = value
 			return
 	
-	# Hollow Mode Margins
+	# Hollow Mode Margins ////
+	
 	if property.begins_with("hollow_mode/"):
 		var property_name = property.replace("hollow_mode/", "")
 		property_name = property_name.replace("_margin", "")
 		
-		hollow_margin_values[property_name] = value
+		if hollow_margin_values[property_name] != null:
+			if hollow_margin_values[property_name] != value:
+				hollow_margin_values[property_name] = value
+				generate_geometry()
 	
-	generate_geometry()
 
 
 func _get(property):
@@ -211,7 +243,7 @@ func _get(property):
 # Global initialisation
 func _enter_tree():
 	
-	print("[Onyx] ", self.get_name() , " - _enter_tree()")
+#	print("[Onyx] ", self.get_name() , " - _enter_tree()")
 	
 	# If this is being run in the editor, sort out the gizmo.
 	if Engine.editor_hint == true:
@@ -242,7 +274,6 @@ func _ready():
 #			print("building kit")
 			build_handles()
 			generate_geometry()
-			refresh_handle_data()
 			use_collision = true
 		
 		# If we have an operation that ain't Addition, we need to render the preview mesh so we need handles anyway.  wupwup.
@@ -315,20 +346,19 @@ func render_onyx_mesh():
 # Used to create a node used for previewing the mesh when using a non-union boolean mode.
 func create_boolean_preview():
 	
-	if Engine.editor_hint == false:
+	if Engine.editor_hint == false || is_hollow_object == true:
 		return
 	
 	boolean_preview_node = MeshInstance.new()
 	boolean_preview_node.set_name(BOOLEAN_PREVIEW_NODE_NAME)
 	add_child(boolean_preview_node)
 	
-	# If the 
 	render_boolean_preview()
 
 # Used to render the boolean preview.
 func render_boolean_preview():
 	
-	if Engine.editor_hint == false:
+	if Engine.editor_hint == false || is_hollow_object == true:
 		return
 	
 	# If we have a boolean preview, decide what to do.
@@ -414,6 +444,9 @@ func _update_hollow_enable(value):
 # Setter for hollow materials
 func _update_hollow_material(value):
 	
+	if hollow_material == value:
+		return
+		
 	hollow_material = value
 	
 	if hollow_object != null:
@@ -441,12 +474,14 @@ func _create_hollow_data():
 		hollow_object.set_name(hollow_object_name)
 		hollow_object.is_hollow_object = true
 		add_child(hollow_object)
-		print(self.get_children())
+#		print(self.get_children())
 		
 		hollow_object.operation = 2
 		hollow_object.build_handles()
-		hollow_object.generate_geometry()
-		hollow_object.refresh_handle_data()
+		
+		# TEST COMMENT
+#		hollow_object.generate_geometry()
+#		hollow_object.refresh_handle_data()
 		
 		hollow_enable = true
 		
@@ -501,6 +536,7 @@ func _load_runtime_hollow_data():
 			hollow_object.is_hollow_object = true
 			add_child(hollow_object)
 			
+			# Triggering all the damn redraws
 			hollow_object.operation = 2
 			hollow_object.material = hollow_material
 			hollow_object.mesh = hollow_mesh
@@ -550,6 +586,8 @@ func _build_hollow_margin_data():
 # while also calculating margin distances.
 func _generate_hollow_shape():
 	
+#	print("attempting to _generate_hollow_shape()")
+	
 	if hollow_enable == false || is_hollow_object == true || is_inside_tree() == false:
 		return
 		
@@ -562,14 +600,16 @@ func _generate_hollow_shape():
 	var parent_control_data = get_control_data()
 	hollow_object.set_control_data(parent_control_data)
 	
-	hollow_object.material = hollow_material
-	
 	# Now modify the controls on an individual basis.
 	apply_hollow_margins(hollow_object.handles)
 	hollow_object.apply_handle_attributes()
-	hollow_object.generate_geometry()
+	
 	assign_hollow_properties()
 	assign_hollow_origin()
+	
+	# Set material and render
+	hollow_object.material = hollow_material
+	hollow_object.generate_geometry()
 	
 	hollow_mesh = hollow_object.mesh.duplicate()
 #	print("do we still exist?")
@@ -619,7 +659,7 @@ func handle_clear():
 	handles.clear()
 	
 
-# Notifies the node that a handle has changed.
+# Allows Control Points to notify the parent node that a handle has changed.
 func handle_change(control):
 	
 #	print("********************************")
@@ -630,7 +670,7 @@ func handle_change(control):
 #	print("********************************")
 	
 
-# Called when a handle has stopped being dragged.
+# Allows Control Points to notify the parent node that a handle has stopped being edited.
 # NOTE - This should only finish committing information, restore_state will finalize movement and other opeirations.
 func handle_commit(control):
 #	print("********************************")
@@ -656,7 +696,7 @@ func get_gizmo_control_points() -> Array:
 
 # Returns a list of handle data from each handle.
 func get_control_data() -> Dictionary:
-	
+#	print("[Onyx] ", self.get_name() , " - get_control_data()")
 	var result = {}
 	for control in handles.values():
 		result[control.control_name] = control.get_control_data()
@@ -665,10 +705,11 @@ func get_control_data() -> Dictionary:
 
 # Changes all current handle data with a previously set list of handle data.
 func set_control_data(data : Dictionary):
-	
+#	print("[Onyx] ", self.get_name() , " - set_control_data()")
 	for data_key in data.keys():
 		handles[data_key].set_control_data(data[data_key])
-		
+	
+#	print("Setting done!")
 
 # ////////////////////////////////////////////////////////////
 # UNDO/REDO STATES
