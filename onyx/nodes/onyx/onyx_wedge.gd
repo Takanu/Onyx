@@ -211,6 +211,7 @@ func update_origin_mode():
 	# set it
 	self.global_translate(new_translation)
 	translate_children(new_translation * -1)
+	boolean_preview_node.set_translation(Vector3(0, 0, 0))
 
 
 # Updates the origin position for the currently-active Origin Mode, either building a new one using properties or through a new position.
@@ -254,7 +255,7 @@ func update_origin_position(new_location = null):
 	# set it
 	global_translate(new_translation)
 	translate_children(new_translation * -1)
-
+	boolean_preview_node.set_translation(Vector3(0, 0, 0))
 
 
 # ////////////////////////////////////////////////////////////

@@ -20,6 +20,9 @@ var control_points = []
 # Used to preserve the state of the handle being operated on, if the operation is abruptly cancelled.
 var control_data_hold
 
+# TEMP
+var is_mesh_set = false
+
 
 # ////////////////////////////////////////////////////////////
 # INITIALIZATION
@@ -65,12 +68,12 @@ func redraw():
 			for handle_pos in handle_positions:
 				handles.push_back(handle_pos)
 	
-	# attempt to get a mesh from the spatial node
-	var mesh_result = node.call("get_gizmo_mesh")
-	if mesh_result is Array:
-		if mesh_result.size() == 2:
-			if mesh_result[0] != null:
-				add_mesh(mesh_result[0], false, null, load(mesh_result[1]))
+	# Don't add a mesh to a Gizmo, this is poorly optimized and designed.
+#	var mesh_result = node.call("get_gizmo_mesh")
+#	if mesh_result is Array:
+#		if mesh_result.size() == 2:
+#			if mesh_result[0] != null:
+#				add_mesh(mesh_result[0], false, null, load(mesh_result[1]))
 			
 	# Grabs handles
 	if handles.size() > 0:

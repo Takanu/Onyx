@@ -1,8 +1,6 @@
 tool
 extends CSGMesh
 
-class_name OnyxBase
-
 # ////////////////////////////////////////////////////////////
 # INFO
 # Base class for all Onyx-type nodes, provides fundamental functionality.
@@ -22,6 +20,12 @@ var onyx_mesh = OnyxMesh.new()
 # The last-created array mesh (used by the Gizmo for visualization)
 var array_mesh = null
 
+# A node created in edit-mode to visualize shapes involved in boolean operations.
+var boolean_preview_node = null
+
+# The name for the node used to preview non-union boolean modes.
+const BOOLEAN_PREVIEW_NODE_NAME = "Boolean Preview"
+
 # The handle points that will be used to resize the mesh (NOT built in the format required by the gizmo)
 var handles : Dictionary = {}
 
@@ -37,9 +41,9 @@ var local_tracked_pos = Vector3(0, 0, 0)
 # If true, this node is currently selected.
 var is_selected = false
 
+
+
 # HOLLOW MODE //////////////
-
-
 
 # Enables and disables hollow mode
 var hollow_enable = false
@@ -63,6 +67,8 @@ const hollow_object_name = "Hollow Onyx Object"
 
 # If true, this very onyx object is a hollow object, required to bypass certain checks.
 var is_hollow_object = false
+
+
 
 # BEVELS //////////////
 
@@ -246,6 +252,8 @@ func _ready():
 #			print("[Onyx] ", self.get_name() , "  Do we have handles? - ", handles)
 			update_gizmo()
 		
+		create_boolean_preview()
+		
 		# Ensure the old_handles variable match the current handles we have for undo/redo.
 		old_handle_data = get_control_data()
 		
@@ -275,20 +283,6 @@ func generate_geometry():
 	print("generate_geometry() - Override this function!")
 	pass
 
-func get_gizmo_mesh() -> Array:
-	
-	if operation == 0:
-		return []
-	
-	var material
-	
-	if operation == 1:
-		material = "res://addons/onyx/materials/wireframes/onyx_wireframe_int.material"
-	elif operation == 2:
-		material = "res://addons/onyx/materials/wireframes/onyx_wireframe_sub.material"
-	
-	return [array_mesh, material]
-
 func render_onyx_mesh():
 	
 	# Optional UV Modifications
@@ -298,8 +292,6 @@ func render_onyx_mesh():
 	if tf_vec.y == 0:
 		tf_vec.y = 0.0001
 	
-#	if self.invert_faces == true:
-#		tf_vec.x = tf_vec.x * -1.0
 	if flip_uvs_vertically == true:
 		tf_vec.y = tf_vec.y * -1.0
 	if flip_uvs_horizontally == true:
@@ -317,6 +309,58 @@ func render_onyx_mesh():
 	helper.commit_to_surface(mesh)
 	set_mesh(mesh)
 	
+	render_boolean_preview()
+	
+
+# Used to create a node used for previewing the mesh when using a non-union boolean mode.
+func create_boolean_preview():
+	
+	if Engine.editor_hint == false:
+		return
+	
+	boolean_preview_node = MeshInstance.new()
+	boolean_preview_node.set_name(BOOLEAN_PREVIEW_NODE_NAME)
+	add_child(boolean_preview_node)
+	
+	# If the 
+	render_boolean_preview()
+
+# Used to render the boolean preview.
+func render_boolean_preview():
+	
+	if Engine.editor_hint == false:
+		return
+	
+	# If we have a boolean preview, decide what to do.
+	if boolean_preview_node != null:
+		
+		if operation == 0:
+			boolean_preview_node.visible = false
+#			print("Boolean preview hidden")
+			return
+			
+		else:
+			boolean_preview_node.visible = true
+			var boolean_material = null
+			
+			if operation == 1:
+				boolean_material = load("res://addons/onyx/materials/wireframes/onyx_wireframe_int.material")
+			elif operation == 2:
+				boolean_material = load("res://addons/onyx/materials/wireframes/onyx_wireframe_sub.material")
+			
+			# Set the new mesh using the current mesh
+			var helper = MeshDataTool.new()
+			var boolean_mesh = Mesh.new()
+			helper.create_from_surface(mesh, 0)
+			helper.set_material(boolean_material)
+			helper.commit_to_surface(boolean_mesh)
+			
+			boolean_preview_node.set_mesh(boolean_mesh)
+			
+#			print("Boolean preview rendered")
+	
+
+
 
 # ////////////////////////////////////////////////////////////
 # HOLLOW MODE FUNCTIONS
