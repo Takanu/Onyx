@@ -572,7 +572,7 @@ func _generate_hollow_margin_data():
 # This is to prevent duplicate values and to ensure property name changes aren't destructive.
 func _build_hollow_margin_data():
 	
-	print("[Onyx] ", self.get_name() , " - _build_hollow_margin_data()")
+#	print("[Onyx] ", self.get_name() , " - _build_hollow_margin_data()")
 	
 	var handle_names = get_hollow_margins()
 	var new_hollow_margin_values = {}
@@ -590,7 +590,7 @@ func _build_hollow_margin_data():
 	
 	# Not sure if entirely necessary, just in case.
 	hollow_margin_values = new_hollow_margin_values.duplicate()
-	print("New Hollow Margins Copied - ", new_hollow_margin_values)
+#	print("New Hollow Margins Copied - ", new_hollow_margin_values)
 	
 
 # Updates the hollow object handles and mesh to follow the shape of the parent object,
@@ -605,7 +605,7 @@ func _generate_hollow_shape():
 	if hollow_object == null:
 		_create_hollow_data()
 		
-	print("[Onyx] ", self.get_name() , " - _generate_hollow_shape()")
+#	print("[Onyx] ", self.get_name() , " - _generate_hollow_shape()")
 	
 	# duplicate and set control data so the shapes mimic each other
 	var parent_control_data = get_control_data()
