@@ -46,7 +46,7 @@ var unwrap_method = UnwrapMethod.PROPORTIONAL_OVERLAP
 # If you're watching this Godot developers.... why.
 func _get_property_list():
 	
-#	print("[OnyxCube] ", self.get_name(), " - _get_property_list()")
+	print("[OnyxCube] ", self.get_name(), " - _get_property_list()")
 	
 	var props = [
 		{	
@@ -62,7 +62,7 @@ func _get_property_list():
 	return props
 
 func _set(property, value):
-#	print("[OnyxCube] ", self.get_name(), " - _set() : ", property, " ", value)
+	print("[OnyxCube] ", self.get_name(), " - _set() : ", property, " ", value)
 	
 	# Same value catcher
 	var old_value = self.get(property)
@@ -91,6 +91,7 @@ func _get(property):
 
 # Used when a handle variable changes in the properties panel.
 func update_x_plus(new_value):
+	print("ONYXCUBE update_x_plus")
 	
 	if new_value < 0:
 		new_value = 0
@@ -100,7 +101,7 @@ func update_x_plus(new_value):
 	
 	
 func update_x_minus(new_value):
-#	print("ONYXCUBE update_x_minus")
+	print("ONYXCUBE update_x_minus")
 
 	if new_value < 0 || origin_mode == OriginPosition.BASE_CORNER:
 		new_value = 0
@@ -109,7 +110,7 @@ func update_x_minus(new_value):
 	generate_geometry()
 	
 func update_y_plus(new_value):
-#	print("ONYXCUBE update_y_plus")
+	print("ONYXCUBE update_y_plus")
 	if new_value < 0:
 		new_value = 0
 		
@@ -117,7 +118,7 @@ func update_y_plus(new_value):
 	generate_geometry()
 	
 func update_y_minus(new_value):
-#	print("ONYXCUBE update_y_minus")
+	print("ONYXCUBE update_y_minus")
 	if new_value < 0 && (origin_mode == OriginPosition.BASE_CORNER || origin_mode == OriginPosition.BASE) :
 		new_value = 0
 		
@@ -125,7 +126,7 @@ func update_y_minus(new_value):
 	generate_geometry()
 	
 func update_z_plus(new_value):
-#	print("ONYXCUBE update_z_plus")
+	print("ONYXCUBE update_z_plus")
 	if new_value < 0:
 		new_value = 0
 		
@@ -134,7 +135,7 @@ func update_z_plus(new_value):
 	
 	
 func update_z_minus(new_value):
-#	print("ONYXCUBE update_z_minus")
+	print("ONYXCUBE update_z_minus")
 	if new_value < 0 || origin_mode == OriginPosition.BASE_CORNER:
 		new_value = 0
 		
@@ -143,7 +144,7 @@ func update_z_minus(new_value):
 	
 	
 func update_subdivisions(new_value):
-#	print("ONYXCUBE update_subdivisions")
+	print("ONYXCUBE update_subdivisions")
 	if new_value.x < 1:
 		new_value.x = 1
 	if new_value.y < 1:
@@ -159,7 +160,7 @@ func update_subdivisions(new_value):
 
 # Changes the origin position relative to the shape and regenerates geometry and handles.
 func update_origin_type(new_value):
-#	print("ONYXCUBE update_origin_mode")
+	print("ONYXCUBE update_origin_mode")
 	if previous_origin_mode == new_value:
 		return
 	
@@ -177,7 +178,7 @@ func update_origin_type(new_value):
 # Updates the origin location when the corresponding property is changed.
 func update_origin_mode():
 	
-#	print("[OnyxCube] ", self.get_name(), " - update_origin_mode()")
+	print("[OnyxCube] ", self.get_name(), " - update_origin_mode()")
 	
 	# Used to prevent the function from triggering when not inside the tree.
 	# This happens during duplication and replication and causes incorrect node placement.
@@ -238,7 +239,7 @@ func update_origin_mode():
 # DOES NOT update the origin when the origin property has changed, for use with handle commits.
 func update_origin_position(new_location = null):
 	
-#	print("[OnyxCube] ", self.get_name(), " - update_origin_position(new_location = null)")
+	print("[OnyxCube] ", self.get_name(), " - update_origin_position(new_location = null)")
 	
 	var new_loc = Vector3()
 	var global_tf = self.global_transform
@@ -293,7 +294,7 @@ func generate_geometry():
 	if is_inside_tree() == false || Engine.editor_hint == false:
 		return
 	
-#	print("[OnyxCube] ", self.get_name(), " - generate_geometry(fix_to_origin_setting = null)")
+	print("[OnyxCube] ", self.get_name(), " - generate_geometry(fix_to_origin_setting = null)")
 	
 	var maxPoint = Vector3(x_plus_position, y_plus_position, z_plus_position)
 	var minPoint = Vector3(-x_minus_position, -y_minus_position, -z_minus_position)
@@ -411,7 +412,7 @@ func generate_geometry():
 # On initialisation, control points are built for transmitting and handling interactive points between the node and the node's gizmo.
 func build_handles():
 	
-#	print("[OnyxCube] ", self.get_name(), " - build_handles()")
+	print("[OnyxCube] ", self.get_name(), " - build_handles()")
 	
 	# If it's not selected, do not generate. (hollow object's can be refreshed without selection)
 #	if is_selected == false && is_hollow_object == false:
