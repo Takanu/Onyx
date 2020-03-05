@@ -203,6 +203,9 @@ func _set(property, value):
 			if hollow_margin_values[property_name] != value:
 				hollow_margin_values[property_name] = value
 				generate_geometry()
+		else:
+			hollow_margin_values[property_name] = value
+			generate_geometry()
 	
 
 

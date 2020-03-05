@@ -551,9 +551,6 @@ func assign_hollow_properties():
 	if hollow_object == null:
 		return
 	
-	if hollow_object.subdivisions != self.subdivisions:
-		hollow_object.subdivisions = self.subdivisions
-	
 	if hollow_object.corner_size != self.corner_size:
 		hollow_object.corner_size = self.corner_size
 	

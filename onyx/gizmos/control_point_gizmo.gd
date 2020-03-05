@@ -47,7 +47,7 @@ func redraw():
 	
 	# If we have no control points, attempt to request some.
 	if control_points.size() == 0:
-		control_points = get_spatial_node().get_gizmo_control_points()
+		control_points = get_spatial_node().call("get_gizmo_control_points")
 	
 	# If we have a node we can generate a clickable collision mesh for, do it.
 	var collision_set
