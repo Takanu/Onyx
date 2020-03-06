@@ -431,7 +431,8 @@ static func push_array_order(array_input : Array, shift_amount : int) -> Array:
 	return results
 	
 	
-# "Loops" the variable to the max value if lower than the minimum, and vice-versa.  The difference determines how much it loops back or forward.
+# "Loops" the variable to the max value if lower than the minimum, and vice-versa.  
+# The difference determines how much it loops back or forward.
 static func loop_int(input : int, min_value : int, max_value : int) -> int:
 	
 	var result = input
@@ -456,3 +457,31 @@ static func bend_int(input : int, min_value : int, max_value: int) -> int:
 		result = max_value - diff
 	
 	return result
+
+# Projects a screen point onto a 3D plane positioned using plane_origin, plane_axis_x and plane_axis_y
+static func project_cursor_to_plane(camera : Camera, point : Vector2, world_matrix : Transform, plane_origin : Vector3, plane_axis_x : Vector3, plane_axis_y : Vector3):
+	
+	# Get the camera view axis.
+	var snap_axis_point = plane_axis_x + plane_origin
+	var camera_basis = camera.get_camera_transform().basis.z
+	
+	# If the camera basis and any plane axis are equal, quit early.
+	if camera_basis == plane_axis_x || camera_basis == plane_axis_y:
+#		print("camera basis equal to snap axis, leaving early")
+		return null
+	
+	var projection_plane = Plane(plane_axis_x + plane_origin, plane_origin, plane_axis_y + plane_origin)
+	
+	# Setup the projection
+	var ray_origin = camera.project_ray_origin(point)
+	var ray_dir = camera.project_ray_normal(point)
+	ray_origin = world_matrix.xform_inv(ray_origin)
+	ray_dir = world_matrix.basis.xform_inv(ray_dir)
+	
+	# PROJECT
+	var intersect_pos = projection_plane.intersects_ray(ray_origin, ray_dir)
+	if not intersect_pos: 
+#		print("no projection point found, returning early.")
+		return null
+	
+	return intersect_pos

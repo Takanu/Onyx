@@ -1,0 +1,47 @@
+[gd_scene load_steps=2 format=2]
+
+[ext_resource path="res://addons/onyx/ui/onyx_polygon_toolbar.gd" type="Script" id=4]
+
+[node name="toolbar" type="HBoxContainer"]
+margin_right = 189.0
+margin_bottom = 36.0
+script = ExtResource( 4 )
+__meta__ = {
+"_edit_use_anchors_": false
+}
+
+[node name="VSeparator" type="VSeparator" parent="."]
+margin_right = 4.0
+margin_bottom = 36.0
+
+[node name="move" type="Button" parent="."]
+margin_left = 8.0
+margin_right = 55.0
+margin_bottom = 36.0
+hint_tooltip = "Create a new handle point."
+toggle_mode = true
+text = "Move"
+flat = true
+
+[node name="add" type="Button" parent="."]
+margin_left = 59.0
+margin_right = 96.0
+margin_bottom = 36.0
+hint_tooltip = "Create a new handle point."
+toggle_mode = true
+text = "Add"
+flat = true
+
+[node name="delete" type="Button" parent="."]
+margin_left = 100.0
+margin_right = 155.0
+margin_bottom = 36.0
+hint_tooltip = "Create a new handle point."
+toggle_mode = true
+text = "Delete"
+flat = true
+
+[node name="VSeparator2" type="VSeparator" parent="."]
+margin_left = 159.0
+margin_right = 163.0
+margin_bottom = 36.0

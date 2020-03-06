@@ -253,16 +253,10 @@ func _enter_tree():
 	
 #	print("[Onyx] ", self.get_name() , " - _enter_tree()")
 	
-	# If this is being run in the editor, sort out the gizmo.
+	# If this is being run in the editor, load the plugin.
 	if Engine.editor_hint == true:
-		
-		# load plugin
 		plugin = get_node("/root/EditorNode/Onyx")
 		
-		# this used to mean something, not anymore though
-#		set_notify_local_transform(true)
-#		set_notify_transform(true)
-#		set_ignore_transform_notification(false)
 	
 	# Required to build hollow data before the scene loads
 	else:
@@ -299,6 +293,12 @@ func _ready():
 #		print("[Onyx] ", self.get_name() , "  Do we have handles? - ", handles)
 		_load_hollow_data()
 	
+
+# Used to perform some basic deallocation where necessary
+func _exit_tree():
+	
+	# Trigger this to ensure nothing is left behind.
+	editor_deselect()
 
 # This was used, but there's no reason for it to be here.
 #func _notification(what):
@@ -354,7 +354,7 @@ func render_onyx_mesh():
 # Used to create a node used for previewing the mesh when using a non-union boolean mode.
 func create_boolean_preview():
 	
-	if Engine.editor_hint == false || is_hollow_object == true:
+	if Engine.editor_hint == false || is_hollow_object == true || is_inside_tree() == false:
 		return
 	
 	boolean_preview_node = MeshInstance.new()
@@ -366,7 +366,7 @@ func create_boolean_preview():
 # Used to render the boolean preview.
 func render_boolean_preview():
 	
-	if Engine.editor_hint == false || is_hollow_object == true:
+	if Engine.editor_hint == false || is_hollow_object == true || is_inside_tree() == false :
 		return
 	
 	# If we have a boolean preview, decide what to do.

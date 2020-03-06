@@ -10,6 +10,11 @@ extends Resource
 
 
 # ////////////////////////////////////////////////////////////
+# DEPENDENCIES
+var VectorUtils = load("res://addons/onyx/utilities/vector_utils.gd")
+
+
+# ////////////////////////////////////////////////////////////
 # PROPERTIES
 
 # An optional name of the control point, used for sorting purposes.
@@ -36,6 +41,7 @@ var is_control_visible: bool = true
 # The representation and interaction types that a control point can have.
 # FREE - A single handle that can be dragged and moved freely in 3D space, with respect to the camera projection.
 # AXIS - A single handle that aligns it's movement to a specific set of axes.
+# PLANE - A single handle that aligns it's movement to an infinite plane in 3D space.
 # TRANSLATE - A set of three handles that manipulate the class translation in all three global axes.
 # ROTATE - A set of three handles that manipulate the class rotation in all three global axes.
 # SCALE - A set of three handles that manipulate the class scale in all three global axes.
@@ -44,11 +50,16 @@ var is_control_visible: bool = true
 # (ones I want to add later)
 # TRANSLATE_SPLIT (has two handles instead of three, with one handle being constrained to two axes)
 
-enum HandleType {FREE, AXIS, TRANSLATE, ROTATE, SCALE, CLICK}
+enum HandleType {FREE, AXIS, PLANE, TRANSLATE, ROTATE, SCALE, CLICK}
 var handle_type = HandleType.FREE
 
 # If HandleType.AXIS is used, this defines what axis the control point's movement is locked to.
 var snap_axis = Vector3()
+
+# If HandleType.AXIS is used, this defines what axis the control point's movement is locked to.
+var plane_origin = Vector3()
+var plane_x_axis = Vector3()
+var plane_y_axis = Vector3()
 
 # If TRANSLATE, ROTATE or SCALE is used, this determines how far the axis handles are from the point they control.
 var handle_distance: float = 0.5
@@ -83,6 +94,12 @@ var free_commit_callback: String = ""
 var axis_update_callback: String = ""
 
 # (AXIS MODE) The method called on the owner when the handle has finished translated.
+var plane_commit_callback: String = ""
+
+# (PLANE MODE) The method called on the owner when the handle is being translated.
+var plane_update_callback: String = ""
+
+# (PLANE MODE) The method called on the owner when the handle has finished translated.
 var axis_commit_callback: String = ""
 
 # (TRANSLATE MODE) The method called on the owner when the handle is being translated.
@@ -127,6 +144,8 @@ func clear_callbacks():
 	free_commit_callback = ""
 	axis_update_callback = ""
 	axis_commit_callback = ""
+	plane_update_callback = ""
+	plane_commit_callback = ""
 	translate_update_callback = ""
 	translate_commit_callback = ""
 	
@@ -160,6 +179,18 @@ func set_type_axis(clear_all_callbacks : bool, update_callback : String, commit_
 	self.axis_update_callback = update_callback
 	self.axis_commit_callback = commit_callback
 	self.snap_axis = snap_axis
+
+func set_type_plane(clear_all_callbacks : bool, update_callback : String, commit_callback : String, plane_origin : Vector3, plane_x : Vector3, plane_y : Vector3):
+	
+	if clear_all_callbacks == true:
+		clear_callbacks()
+	
+	self.handle_type = HandleType.PLANE
+	self.plane_update_callback = update_callback
+	self.plane_commit_callback = commit_callback
+	self.plane_origin = plane_origin
+	self.plane_x_axis = plane_x
+	self.plane_y_axis = plane_y
 
 func set_type_translate(clear_all_callbacks : bool, update_callback : String, commit_callback : String):
 	
@@ -216,6 +247,9 @@ func get_handle_positions():
 			
 		HandleType.AXIS:
 			return [control_position]
+		
+		HandleType.PLANE:
+			return [control_position]
 			
 		HandleType.TRANSLATE:
 			var handle_x = control_position + Vector3(handle_distance, 0, 0)
@@ -262,7 +296,10 @@ func get_handle_count():
 			
 		HandleType.AXIS:
 			return 1
-			
+		
+		HandleType.PLANE:
+			return 1
+		
 		HandleType.TRANSLATE:
 			return 3
 		
@@ -326,41 +363,23 @@ func update_handle(index, camera, point):
 	
 	match handle_type:
 		
-		HandleType.FREE:
-#			print("Handling FREE POINT")
+		HandleType.FREE, HandleType.AXIS, HandleType.PLANE:
 			
-			# Apply the current coordinate to world and camera space
-			var world_space_coord = world_matrix.xform(control_position)
-			var cam_space_coord = camera_matrix.xform_inv(world_space_coord)
+			var new_position = Vector3()
 			
-			# Create a screen plane using the points switched coordinate-space Z-axis.
-			# Create a ray that points from the point we're provided to the camera.
-			# Create an origin using the new point we have.
-			var project_plane = Plane(0,0,1, cam_space_coord.z)
-			var ray_dir = camera.project_local_ray_normal(point)
-			var ray_origin = camera_matrix.xform_inv(camera.project_ray_origin(point))
-				
-				
-			# Get a 3D coordinate we can use based on a ray intersection of the 2D point.
-			# Sometimes the projection might fail so we need to return if that's the case.
-			var new_position = project_plane.intersects_ray(ray_origin, ray_dir)
-			if not new_position: 
-				return 
+			# NEW POSITION GETTERS
+			if handle_type == HandleType.FREE:
+				var camera_x_basis = camera.get_camera_transform().basis.x
+				var camera_y_basis = camera.get_camera_transform().basis.y
+				new_position = VectorUtils.project_cursor_to_plane(camera, point, world_matrix, control_position, camera_x_basis, camera_y_basis)
 			
-			# If it worked, configure and apply it.
-			new_position = camera_matrix.xform(new_position)
-			new_position = world_matrix.xform_inv(new_position)
+			elif handle_type == HandleType.AXIS:
+				new_position = project_point_to_axis(point, camera, control_position, world_matrix, snap_axis)
 			
-			# Now we have a valid control_position, perform a callback.
-			var control_position = new_position
-			if free_update_callback != "":
-				control_point_owner.call(free_update_callback, self)
-		
-		
-		HandleType.AXIS:
-#			print("Handling AXIS POINT")
-			var new_position = project_point_to_axis(point, camera, control_position, world_matrix, snap_axis)
-
+			elif handle_type == HandleType.PLANE:
+				new_position = VectorUtils.project_cursor_to_plane(camera, point, world_matrix, plane_origin, plane_x_axis, plane_y_axis)
+			
+			# POSITION PROPERTY HANDLERS
 			if not new_position: 
 				return #sometimes the projection might fail
 			
@@ -368,20 +387,31 @@ func update_handle(index, camera, point):
 					control_transform_hold["position"] = new_position
 					continue
 			
-			# If snapping is enabled, we have stuff to do.
+			
+			# SNAPPING ENABLED
 			if control_point_owner.plugin.snap_gizmo_enabled == true:
 				
 				var snap_increment = control_point_owner.plugin.snap_gizmo_increment
 				new_position = snap_position(new_position, Vector3(snap_increment, snap_increment, snap_increment))
 				
 				control_position = new_position
-				control_point_owner.call(axis_update_callback, self)
-				return
 			
+			# SNAPPING DISABLED
 			else:
 				control_position = new_position
-				if axis_update_callback != "":
-					control_point_owner.call(axis_update_callback, self)
+			
+			# CALLBACK
+			match handle_type:
+					HandleType.FREE:
+						if free_update_callback != "" && control_point_owner.has_method(free_update_callback):
+							control_point_owner.call(free_update_callback, self)
+					HandleType.AXIS:
+						if axis_update_callback != "" && control_point_owner.has_method(axis_update_callback):
+							control_point_owner.call(axis_update_callback, self)
+					HandleType.PLANE:
+						if plane_update_callback != "" && control_point_owner.has_method(plane_update_callback):
+							control_point_owner.call(plane_update_callback, self)
+		
 		
 		
 		HandleType.TRANSLATE:
@@ -455,6 +485,10 @@ func commit_handle(index, restore):
 		HandleType.AXIS:
 			if axis_commit_callback != "":
 				control_point_owner.call(axis_commit_callback, self)
+				
+		HandleType.PLANE:
+			if axis_commit_callback != "":
+				control_point_owner.call(plane_commit_callback, self)
 		
 		HandleType.TRANSLATE:
 			if translate_commit_callback != "":

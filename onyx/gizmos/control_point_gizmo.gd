@@ -45,9 +45,8 @@ func redraw():
 	# Clear the old draw data.
 	clear()
 	
-	# If we have no control points, attempt to request some.
-	if control_points.size() == 0:
-		control_points = get_spatial_node().call("get_gizmo_control_points")
+	# Get new control points every time to ensure we have the ones we need (changed since OnyxPolygon)
+	control_points = get_spatial_node().call("get_gizmo_control_points")
 	
 	# If we have a node we can generate a clickable collision mesh for, do it.
 	var collision_set
@@ -63,6 +62,7 @@ func redraw():
 		
 	for control in control_points:
 		var handle_positions = control.get_handle_positions()
+		print(handle_positions)
 		
 		if handle_positions is Array:
 			for handle_pos in handle_positions:

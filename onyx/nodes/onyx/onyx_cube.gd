@@ -645,3 +645,12 @@ func apply_hollow_margins(hollow_controls: Dictionary):
 				hollow_handle.control_position.z = control_handle.control_position.z - margin
 	
 	return hollow_controls
+
+# ////////////////////////////////////////////////////////////
+# BASE UI FUNCTIONS
+
+func editor_select():
+	print("EDITOR SELECT")
+
+func editor_deselect():
+	print("EDITOR DESELECT")
