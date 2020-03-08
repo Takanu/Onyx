@@ -294,9 +294,9 @@ func generate_geometry():
 	var total_angle_size = 0.0
 	
 	while i != size:
-		var index_a = VectorUtils.loop_int(i, 0, size - 1)
-		var index_b = VectorUtils.loop_int(i + 1, 0, size - 1)
-		var index_c = VectorUtils.loop_int(i + 2, 0, size - 1)
+		var index_a = VectorUtils.clamp_int(i, 0, size - 1)
+		var index_b = VectorUtils.clamp_int(i + 1, 0, size - 1)
+		var index_c = VectorUtils.clamp_int(i + 2, 0, size - 1)
 		total_angle_size += VectorUtils.get_signed_angle(polygon_points[index_a], polygon_points[index_b], polygon_points[index_c])
 		
 		i += 1
@@ -313,8 +313,8 @@ func generate_geometry():
 	# Build the tube
 	while i != size:
 		
-		var index_a = VectorUtils.loop_int(i, 0, size - 1)
-		var index_b = VectorUtils.loop_int(i + 1, 0, size - 1)
+		var index_a = VectorUtils.clamp_int(i, 0, size - 1)
+		var index_b = VectorUtils.clamp_int(i + 1, 0, size - 1)
 		var position_a = convert_plane_point_to_vector3(polygon_points[index_a])
 		var position_b = convert_plane_point_to_vector3(polygon_points[index_b])
 		
@@ -337,129 +337,27 @@ func generate_geometry():
 	var bottom_cap = []
 	var top_cap = []
 	
-	var polygon_candidates = {}
-	i = 0
-	for point in polygon_points:
-		polygon_candidates[i] = point
-		i += 1
+	var top_poly_points = polygon_points.duplicate()
+	var bottom_poly_points = polygon_points.duplicate()
+	var vector_mask = 0
 	
-	var sorted_points = {}
-	var found_sets = []
+	if is_positively_orientated == true:
+		top_poly_points.invert()
+	else:
+		bottom_poly_points.invert()
 	
-	i = 0
-	while polygon_candidates.size() != 0:
-		
-		var p_size = polygon_candidates.size()
-		
-		# sort them out first
-		for index in polygon_candidates.keys():
-			
-			var index_a = VectorUtils.loop_int(index - 1, 0, p_size - 1)
-			var index_b = VectorUtils.loop_int(index, 0, p_size - 1)
-			var index_c = VectorUtils.loop_int(index + 1, 0, p_size - 1)
-			var point_a = polygon_candidates[index_a]
-			var point_b = polygon_candidates[index_b]
-			var point_c = polygon_candidates[index_c]
-			var signed_angle = VectorUtils.get_signed_angle(point_a, point_b, point_c)
-			
-			if (signed_angle >= 0 && is_positively_orientated) || (signed_angle < 0 && is_positively_orientated == false):
-				sorted_points[index] = {"value": point_b, "aligned": true}
-			else:
-				sorted_points[index] = {"value": point_b, "aligned": false}
-		
-		print("SORTED POINTS - ", sorted_points.values())
-		
-		var sort_index = 0
-		var sort_size = sorted_points.size()
-		
-		while sort_index < sort_size:
-			
-			# If we've already nabbed this index, continue
-			if sorted_points.has(sort_index) == false:
-				sort_index += 1
-				continue
-			
-			var index_2 = VectorUtils.loop_int(sort_index + 1, 0, sort_size - 1)
-			var index_3 = VectorUtils.loop_int(sort_index + 2, 0, sort_size - 1)
-			
-			# We need two contiguous points, skip if not
-			if !sorted_points.has(index_2) ||  !sorted_points.has(index_3):
-				sort_index += 1
-				continue
-			
-			var point_1 = sorted_points[sort_index]
-			var point_2 = sorted_points[index_2]
-			var point_3 = sorted_points[index_3]
-			var match_found = false
-			
-			# If this is an unaligned point, we just need the next point to be aligned to match
-			if point_1["aligned"] == false:
-				if point_2["aligned"] == true:
-					match_found = true
-					
-			# Otherwise you only have one match condition
-			elif (point_2["aligned"] == true && point_3["aligned"] == true):
-				match_found = true
-			
-			if match_found:
-				found_sets.append({"middle_index" : index_2, "points" : [point_1["value"], point_2["value"], point_3["value"]]})
-				sorted_points.erase(sort_index);  sorted_points.erase(index_2);  sorted_points.erase(index_3)
-				sort_index += 3
-				continue
-			
-			else:
-				sort_index += 1
-				continue
-			
-
-		# For every set we found, add them to the array and remove the middle vertex from the equation
-		# (unless we only have three vertices left, in which case we're done!')
-		print("FOUND MATCHES - ", found_sets)
-		if found_sets.size() == 0:
-			print("OH SHIT WE FOUND NONE BYE!")
-			break
-
-		for set in found_sets:
-			var points = set["points"]
-			var p_1 = points[0];  var p_2 = points[1];  var p_3 = points[2];
-			var vec_1 = convert_plane_point_to_vector3(p_1)
-			var vec_2 = convert_plane_point_to_vector3(p_2)
-			var vec_3 = convert_plane_point_to_vector3(p_3)
-
-			if is_positively_orientated:
-				top_cap.append([vec_1 + extrude_vector, vec_2 + extrude_vector, vec_3 + extrude_vector])
-				bottom_cap.append([vec_1, vec_3, vec_2])
-			else:
-				bottom_cap.append([vec_1, vec_2, vec_3])
-				top_cap.append([vec_1 + extrude_vector, vec_3 + extrude_vector, vec_2 + extrude_vector])
-
-			# Remove the middle point from the candidate list
-			polygon_candidates.erase(set["middle_index"])
-
-		# If we're not down the the magic number, prepare for the next.
-		print("LEFTOVER POINT CANDIDATES - ", polygon_candidates.keys())
-		
-		sorted_points.clear()
-		found_sets.clear()
-
-		if polygon_candidates.size() >= 3:
-			var unsorted_polygon_candidates = polygon_candidates.duplicate()
-			polygon_candidates.clear()
-
-			i = 0
-			for point in unsorted_polygon_candidates.values():
-				polygon_candidates[i] = point
-				i += 1
-			print("NEXT POINT CANDIDATES - ", polygon_candidates.keys())
-
-		# If we are, CLEAR AND LEAVE
-		else:
-			break
+	match point_plane:
+		PointPlane.X_Z:
+			vector_mask = 1
+		PointPlane.X_Y:
+			vector_mask = 2
+		PointPlane.Z_Y:
+			vector_mask = 0
 	
-	for set in bottom_cap:
-		onyx_mesh.add_tri(set, [], [], [], [])
-	for set in top_cap:
-		onyx_mesh.add_tri(set, [], [], [], [])
+	# submit it to the new OnyxMesh polygon triangulator.
+	onyx_mesh.add_unsorted_ngon(top_poly_points, [], [], [], [], vector_mask, depth)
+	onyx_mesh.add_unsorted_ngon(bottom_poly_points, [], [], [], [], vector_mask, 0)
+	
 	
 	# RENDER THE MESH
 	render_onyx_mesh()

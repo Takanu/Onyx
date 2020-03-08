@@ -210,6 +210,20 @@ static func do_vector_bounds_intersect(a : Array, b : Array) -> bool:
 	
 	return a[0].x <= b[1].x && a[1].x >= b[0].x && a[0].y <= b[1].y && a[1].y >= b[0].y
 
+# Checks if a single point lies inside a triangle.  Specifically orientated to Barycentric coordinates.
+# From http://totologic.blogspot.se/2014/01/accurate-point-in-triangle-test.html
+# Also from https://www.habrador.com/tutorials/math/9-useful-algorithms/
+static func is_point_on_triangle(p1: Vector2, p2: Vector2, p3: Vector2, point: Vector2):
+	
+	var denominator = ((p2.y - p3.y) * (p1.x - p3.x) + (p3.x - p2.x) * (p1.y - p3.y))
+	
+	var a = ((p2.y - p3.y) * (point.x - p3.x) + (p3.x - p2.x) * (point.y - p3.y)) / denominator
+	var b = ((p3.y - p1.y) * (point.x - p3.x) + (p1.x - p3.x) * (point.y - p3.y)) / denominator
+	var c = 1 - a - b
+	
+	return (a > 0.0 && a < 1.0 && b > 0.0 && b < 1.0 && c > 0.0 && c < 1.0)
+	
+
 # Checks if a single point lies on a segment.
 static func is_point_on_segment(seg_start : Vector2, seg_end : Vector2, point : Vector2, error_margin : float) -> bool:
 	
@@ -292,7 +306,7 @@ static func find_polygon_2d_intersection(points : Array):
 	var segments = {}
 	var i = 0
 	while i != points_pool.size():
-		var i_2 = loop_int(i + 1, 0, points_pool.size() - 1)
+		var i_2 = clamp_int(i + 1, 0, points_pool.size() - 1)
 		segments[i] = [points_pool[i], points_pool[i_2]]
 		i += 1
 	
@@ -332,7 +346,8 @@ static func find_polygon_2d_intersection(points : Array):
 		segments.erase(i)
 		i += 1
 	
-	return find_segment_array_intersection(segments)
+#	return find_segment_array_intersection(segments.values())
+	return false
 
 # Get the maximum and minimum range on a set of Vector3 values.
 static func get_vector3_ranges(vectors : Array) -> Dictionary:
@@ -576,7 +591,7 @@ static func push_array_order(array_input : Array, shift_amount : int) -> Array:
 	
 # "Loops" the variable to the max value if lower than the minimum, and vice-versa.  
 # The difference determines how much it loops back or forward.
-static func loop_int(input : int, min_value : int, max_value : int) -> int:
+static func clamp_int(input : int, min_value : int, max_value : int) -> int:
 	
 	var result = input
 	if result < min_value:
@@ -589,7 +604,7 @@ static func loop_int(input : int, min_value : int, max_value : int) -> int:
 	return result
 	
 # "Bends" the variable above or below either bound by the amount it breached said bounds.
-static func bend_int(input : int, min_value : int, max_value: int) -> int:
+static func reflect_int(input : int, min_value : int, max_value: int) -> int:
 	
 	var result = input
 	if result < min_value:

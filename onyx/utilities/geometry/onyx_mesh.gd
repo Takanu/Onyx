@@ -16,7 +16,6 @@ class_name OnyxMesh
 # DEPENDENCIES
 var VectorUtils = load("res://addons/onyx/utilities/vector_utils.gd")
 
-
 # ////////////////////////////////////////////////////////////
 # PROPERTIES
 
@@ -113,6 +112,237 @@ func add_ngon(vertices : Array, colors : Array, tangents : Array, uvs : Array, n
 
 		a += 1
 		b += 1
+
+# Adds an ngon with vertices unordered.  FUN!
+# Adapted from - https://www.habrador.com/tutorials/math/10-triangulation/
+func add_unsorted_ngon(vertices: Array, colors: Array, tangents: Array, uvs: Array, normals: Array, vector_mask: int, mask_value: float) -> void:
+	
+	var stored_vertices = {}
+	var ear_vertices = {}
+	
+	if vertices.size() < 2 || vertices == null:
+		print("ONYXMESH : add_unsorted_ngon : ERROR - Too few or no vertices provided for an ngon.  Returning.")
+		return
+	
+	# If we only have 3 vertices, who cares!
+	if vertices.size() == 3:
+		add_tri(vertices, colors, tangents, uvs, normals)
+		return
+	
+	# //////////////////////////////////////
+	# ORIENTATION
+	# Check the initial orientation, so we know how to render and sort them later.
+	var is_orient_pos = false
+	var total_angle_size = 0.0
+	var i = 0
+	while i != vertices.size():
+		var index_a = VectorUtils.clamp_int(i, 0, vertices.size() - 1)
+		var index_b = VectorUtils.clamp_int(i + 1, 0, vertices.size() - 1)
+		var index_c = VectorUtils.clamp_int(i + 2, 0, vertices.size() - 1)
+		total_angle_size += VectorUtils.get_signed_angle(vertices[index_a], vertices[index_b], vertices[index_c])
+		
+		i += 1
+	
+#	print("TOTAL ANGLE - ", total_angle_size)
+	if total_angle_size >= 0:
+		is_orient_pos = true
+	
+	
+	# //////////////////////////////////////
+	# DATA SETUP
+	# Iterate through and find some basic info
+	i = 0
+	for vertex in vertices:
+		var index_0 = VectorUtils.clamp_int(i - 1, 0, vertices.size() - 1)
+		var index_2 = VectorUtils.clamp_int(i + 1, 0, vertices.size() - 1)
+		var vec_0 = vertices[index_0]
+		var vec_2 = vertices[index_2]
+		
+		var vertex_info = {
+			"value" : vertex,
+			"index" : i,
+			"is_convex" : _is_relative_tri_orientation_positive(vec_0, vertex, vec_2, is_orient_pos),
+			"ear_vertex" : false,
+		}
+		
+		stored_vertices[i] = vertex_info
+		
+		i += 1
+	
+	# Iterate through them again to generate the "next" and "prev" properties
+	i = 0
+	for vertex in stored_vertices.values():
+		var index_0 = VectorUtils.clamp_int(i - 1, 0, stored_vertices.size() - 1)
+		var index_2 = VectorUtils.clamp_int(i + 1, 0, stored_vertices.size() - 1)
+		var vec_0 = stored_vertices[index_0]
+		var vec_2 = stored_vertices[index_2]
+		
+		vertex["prev"] = vec_0
+		vertex["next"] = vec_2
+		i += 1
+	
+	
+	# //////////////////////////////////////
+	# DOG EARS
+	# Check all vertices for dog ears
+	for vertex in stored_vertices.values():
+		if _check_dog_ear(vertex, stored_vertices):
+			vertex["ear_vertex"] = true
+			ear_vertices[vertex["index"]] = vertex
+	
+	
+	# //////////////////////////////////////
+	# DATA BUILD
+	i = 0
+	var loop_limit = stored_vertices.size() * 2
+	# Now we can B U I L D
+	while true:
+		
+		# If we have three left, build the last triangle and break.
+		if stored_vertices.size() == 3:
+			i += 1
+			var a_i = stored_vertices.values()[0]["prev"]["index"]
+			var b_i = stored_vertices.values()[0]["index"]
+			var c_i = stored_vertices.values()[0]["next"]["index"]
+			
+			# Check the orientation, as it could be either way
+			var vec = []; var col = []; var tng = [];  var nuv = [];  var nor = [];
+			var v_1 = Vector3();  var v_2 = Vector3();  var v_3 = Vector3()
+			
+			if _is_relative_tri_orientation_positive(vertices[a_i], vertices[b_i], vertices[c_i], is_orient_pos):
+				v_1 = vertices[a_i];  v_2 = vertices[c_i];  v_3 = vertices[b_i];
+			else:
+				v_1 = vertices[a_i];  v_2 = vertices[b_i];  v_3 = vertices[c_i];
+			
+			match vector_mask:
+				0:
+					# This ones inverted because of OnyxPolygon, you need to rewrite your geometry stack anyway.
+					vec = [Vector3(mask_value, v_1.y, v_1.x), Vector3(mask_value, v_2.y, v_2.x), Vector3(mask_value, v_3.y, v_3.x)]
+				1:
+					vec = [Vector3(v_1.x, mask_value, v_1.y), Vector3(v_2.x, mask_value, v_2.y), Vector3(v_3.x, mask_value, v_3.y)]
+				2:
+					vec = [Vector3(v_1.x, v_1.y, mask_value), Vector3(v_2.x, v_2.y, mask_value), Vector3(v_2.x, v_2.y, mask_value)]
+			
+			if colors.size() != 0:
+				col = [colors[a_i], colors[b_i], colors[c_i]]
+			if tangents.size() != 0:
+				tng = [tangents[a_i], tangents[b_i], tangents[c_i]]
+			if uvs.size() != 0:
+				nuv = [uvs[a_i], uvs[b_i], uvs[c_i]]
+			if normals.size() != 0:
+				nor = [normals[a_i], normals[b_i], normals[c_i]]
+			
+			tris.append([ vec, col, tng, nuv, nor ])
+			break
+		
+		# Get the first ear vertex
+		print("NEW CYCLE - ", ear_vertices.keys())
+		print("VERTICES LEFT - ", stored_vertices.keys())
+		var ear_vertex = ear_vertices[ear_vertices.keys()[0]]
+		var ear_vertex_prev = ear_vertex["prev"]
+		var ear_vertex_next = ear_vertex["next"]
+		
+		# Make a new triangle with it.
+		var ear_ai = ear_vertex["index"]
+		var ear_bi = ear_vertex_prev["index"]
+		var ear_ci = ear_vertex_next["index"]
+		
+		var vec = []; var col = []; var tng = [];  var nuv = [];  var nor = [];
+		var v_1 = vertices[ear_ai];  var v_2 = vertices[ear_bi];  var v_3 = vertices[ear_ci]
+		
+		match vector_mask:
+			0:
+				# This ones inverted because of OnyxPolygon, you need to rewrite your geometry stack anyway.
+				vec = [Vector3(mask_value, v_1.y, v_1.x), Vector3(mask_value, v_2.y, v_2.x), Vector3(mask_value, v_3.y, v_3.x)]
+			1:
+				vec = [Vector3(v_1.x, mask_value, v_1.y), Vector3(v_2.x, mask_value, v_2.y), Vector3(v_3.x, mask_value, v_3.y)]
+			2:
+				vec = [Vector3(v_1.x, v_1.y, mask_value), Vector3(v_2.x, v_2.y, mask_value), Vector3(v_2.x, v_2.y, mask_value)]
+		
+		if colors.size() != 0:
+			col = [colors[ear_ai], colors[ear_bi], colors[ear_ci]]
+		if tangents.size() != 0:
+			tng = [tangents[ear_ai], tangents[ear_bi], tangents[ear_ci]]
+		if uvs.size() != 0:
+			nuv = [uvs[ear_ai], uvs[ear_bi], uvs[ear_ci]]
+		if normals.size() != 0:
+			nor = [normals[ear_ai], normals[ear_bi], normals[ear_ci]]
+		
+		tris.append([ vec, col, tng, nuv, nor ])
+		
+		# Remove the vertex from the list
+		ear_vertices.erase(ear_vertex["index"])
+		stored_vertices.erase(ear_vertex["index"])
+		
+		# Change the indexes assigned to the previous and next vertexes
+		ear_vertex_prev["next"] = ear_vertex_next
+		ear_vertex_next["prev"] = ear_vertex_prev
+		
+		# Re-check their convex status
+		var prev_v0 = ear_vertex_prev["prev"]["value"]
+		var prev_v1 = ear_vertex_prev["value"]
+		var prev_v2 = ear_vertex_next["value"]
+		ear_vertex_prev["is_convex"] = _is_relative_tri_orientation_positive(prev_v0, prev_v1, prev_v2, is_orient_pos)
+		
+		var next_v0 = ear_vertex_prev["value"]
+		var next_v1 = ear_vertex_next["value"]
+		var next_v2 = ear_vertex_next["next"]["value"]
+		ear_vertex_next["is_convex"] = _is_relative_tri_orientation_positive(next_v0, next_v1, next_v2, is_orient_pos)
+		
+		if ear_vertices.has(ear_vertex_prev["index"]):
+			ear_vertices.erase(ear_vertex_prev["index"])
+		if ear_vertices.has(ear_vertex_next["index"]):
+			ear_vertices.erase(ear_vertex_next["index"])
+		
+		# Re-check their dog ear status
+		if _check_dog_ear(ear_vertex_prev, stored_vertices):
+			ear_vertex_prev["ear_vertex"] = true
+			ear_vertices[ear_vertex_prev["index"]] = ear_vertex_prev
+		if _check_dog_ear(ear_vertex_next, stored_vertices):
+			ear_vertex_next["ear_vertex"] = true
+			ear_vertices[ear_vertex_next["index"]] = ear_vertex_next
+		
+		# Infinite loop protection
+		i += 1
+		if i > loop_limit:
+			print("you fucked up, lol")
+			return
+		
+
+func _is_relative_tri_orientation_positive(p1 : Vector2, p2 : Vector2, p3 : Vector2, is_polygon_positive : bool):
+	
+	var s_angle = VectorUtils.get_signed_angle(p1, p2, p3)
+	if (s_angle >= 0 && is_polygon_positive == true) || (s_angle < 0 && is_polygon_positive == false):
+		return true
+	else:
+		return false
+
+# A helper function designed for add_unsorted_ngon.
+func _check_dog_ear(target : Dictionary, vertices : Dictionary):
+	
+	# If the vertex isn't convex, it can't be a dog ear.
+	if target["is_convex"] == false:
+		return false
+	
+	# Do the same to identify if any of them are "dog ears"
+	var a = target["prev"]["value"]
+	var b = target["value"]
+	var c = target["next"]["value"]
+#	print(a, b, c)
+	var has_point_inside = false
+	
+	for found_vertex in vertices.values():
+		if found_vertex["index"] != target["index"]:
+			if found_vertex["is_convex"] != true:
+#				print(found_vertex["value"])
+				if VectorUtils.is_point_on_triangle(a, b, c, found_vertex["value"]):
+					has_point_inside = true
+					break
+	
+	if has_point_inside == false:
+		return true
+	
+	return false
 
 
 

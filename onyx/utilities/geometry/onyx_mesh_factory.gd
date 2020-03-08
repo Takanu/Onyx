@@ -173,8 +173,8 @@ func build_sphere(height, x_width, z_width, segments, height_segments, position,
 #					phi2 = 0
 				
 #				if ring == 0 || ring == height_segments:
-#					theta0 = VectorUtils.loop_int( (theta1 + PI), 0, PI * 2)
-#					theta3 = VectorUtils.loop_int( (theta2 + PI), 0, PI * 2)
+#					theta0 = VectorUtils.clamp_int( (theta1 + PI), 0, PI * 2)
+#					theta3 = VectorUtils.clamp_int( (theta2 + PI), 0, PI * 2)
 					
 #				print("phis - ", phi0, " ", phi1, " ", phi2, " ", phi3)
 				
@@ -432,7 +432,7 @@ func build_rounded_rect(mesh: OnyxMesh, min_point, max_point, axis: String, corn
 		var v_1 = 0
 		while v_1 < start_cap.size():
 			
-			var v_2 = VectorUtils.loop_int( (v_1 + 1), 0, (start_cap.size() - 1) )
+			var v_2 = VectorUtils.clamp_int( (v_1 + 1), 0, (start_cap.size() - 1) )
 			
 			var b_1 = start_cap[v_1]
 			var b_2 = start_cap[v_2]
@@ -443,8 +443,8 @@ func build_rounded_rect(mesh: OnyxMesh, min_point, max_point, axis: String, corn
 			
 			# SMOOTH SHADING
 			if smooth_normals == true:
-				var v_0 = VectorUtils.loop_int( (v_1 - 1), 0, (start_cap.size() - 1) )
-				var v_3 = VectorUtils.loop_int( (v_2 + 1), 0, (start_cap.size() - 1) )
+				var v_0 = VectorUtils.clamp_int( (v_1 - 1), 0, (start_cap.size() - 1) )
+				var v_3 = VectorUtils.clamp_int( (v_2 + 1), 0, (start_cap.size() - 1) )
 				
 				var b_0 = start_cap[v_0]
 				var b_3 = start_cap[v_3]
@@ -638,9 +638,9 @@ func build_polygon_extrusion(mesh : OnyxMesh, points : Array, depth : float, rin
 			# X--------X  b_1   b_2
 			
 			# Get positions ahead and behind the set we plan on looking at for smooth normals
-			var v_0 = VectorUtils.loop_int(v_1 - 1, 0, base_vertices.size() - 1)
-			var v_2 = VectorUtils.loop_int(v_1 + 1, 0, base_vertices.size() - 1)
-			var v_3 = VectorUtils.loop_int(v_1 + 2, 0, base_vertices.size() - 1)
+			var v_0 = VectorUtils.clamp_int(v_1 - 1, 0, base_vertices.size() - 1)
+			var v_2 = VectorUtils.clamp_int(v_1 + 1, 0, base_vertices.size() - 1)
+			var v_3 = VectorUtils.clamp_int(v_1 + 2, 0, base_vertices.size() - 1)
 
 			var b_0 = base_vertices[v_0]
 			var b_1 = base_vertices[v_1]

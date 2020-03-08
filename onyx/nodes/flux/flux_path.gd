@@ -126,8 +126,8 @@ func generate_geometry():
 		onyx_mesh.add_tri([point_1, point_2, point_2], [], [], [], [])
 		
 		path_size -= 1
-		i_1 = loop_int(i_1 + 1, 0, path_size - 1)
-		i_2 = loop_int(i_2 + 1, 0, path_size - 1)
+		i_1 = clamp_int(i_1 + 1, 0, path_size - 1)
+		i_2 = clamp_int(i_2 + 1, 0, path_size - 1)
 	
 	# hnnng too tired right now.
 	onyx_mesh.render_wireframe(volume_geom, plugin.WireframeUtility_Selected)
@@ -176,8 +176,8 @@ func build_location_array():
 		distances.append(segment_distance)
 		
 		path_size -= 1
-		i_1 = loop_int(i_1 + 1, 0, path_size - 1)
-		i_2 = loop_int(i_2 + 1, 0, path_size - 1)
+		i_1 = clamp_int(i_1 + 1, 0, path_size - 1)
+		i_2 = clamp_int(i_2 + 1, 0, path_size - 1)
 	
 	
 
