@@ -7,6 +7,9 @@ var VectorUtils = load("res://addons/onyx/utilities/vector_utils.gd")
 var ControlPoint = load("res://addons/onyx/gizmos/control_point.gd")
 
 
+
+
+
 # ////////////////////////////////////////////////////////////
 # TOOL ENUMS
 
@@ -27,14 +30,25 @@ export(PointPlane) var point_plane = PointPlane.X_Z setget update_point_plane
 # Exported variables representing all usable handles for re-shaping the mesh, in order.
 # All functions that manipulate this list must also manupulate the internal Handles list.
 export(Array) var polygon_points = [] setget update_polygon_points
+export(float) var depth = 1.0 setget update_depth
 
+const POLYGON_CONTROL_NAME = "polygon_control_"
+const BEVEL_CONTROL_NAME = "bevel_control_"
+
+
+# ////////////////////////////////////////////////////////////
 # UVS
 enum UnwrapMethod {PROPORTIONAL_OVERLAP, CLAMPED_OVERLAP}
 var unwrap_method = UnwrapMethod.PROPORTIONAL_OVERLAP
 
+
+
+
 # ////////////////////////////////////////////////////////////
 # UI
 var edit_toolbar : Control
+
+
 
 
 # ////////////////////////////////////////////////////////////
@@ -89,11 +103,14 @@ func _get(property):
 
 # Used when a handle variable changes in the properties panel.
 func update_polygon_points(new_value):
-		
-	polygon_points = new_value
-	# USING THIS CAUSES A RECURSION LOOP NOT YET
-#	generate_geometry()
 	
+	polygon_points = new_value
+	build_handles()
+
+func update_depth(new_value):
+	
+	depth = new_value
+	generate_geometry()
 
 # Changes the origin position relative to the shape and regenerates geometry and handles.
 func update_origin_type(new_value):
@@ -122,20 +139,16 @@ func update_point_plane(new_value):
 # Updates the origin location when the corresponding property is changed.
 func update_origin_mode():
 	
-#	print("[OnyxCube] ", self.get_name(), " - update_origin_mode()")
-	
 	# Used to prevent the function from triggering when not inside the tree.
 	# This happens during duplication and replication and causes incorrect node placement.
 	if is_inside_tree() == false:
 		return
 	
-	#print("ONYXCUBE update_origin")
 	
 	# Re-add once handles are a thing, otherwise this breaks the origin stuff.
 	if handles.size() == 0:
 		return
 	
-#	print("ONYXCUBE update_origin")
 #
 #	# based on the current position and properties, work out how much to move the origin.
 #	var diff = Vector3(0, 0, 0)
@@ -182,7 +195,6 @@ func update_origin_mode():
 # DOES NOT update the origin when the origin property has changed, for use with handle commits.
 func update_origin_position(new_location = null):
 	
-#	print("[OnyxCube] ", self.get_name(), " - update_origin_position(new_location = null)")
 	pass
 #
 #	var new_loc = Vector3()
@@ -234,15 +246,221 @@ func generate_geometry():
 	
 #	print('trying to generate geometry...')
 	
+	# ////////////////////////////////////////
+	# VALIDITY CHECKS
+	
 	# Prevents geometry generation if the node hasn't loaded yet
 	if is_inside_tree() == false || Engine.editor_hint == false:
 		return
 	
-	# NOT READY YET
-	return
+	var mesh_factory = OnyxMeshFactory.new()
+	onyx_mesh.clear()
 	
-	# This is where you somehow render something.
+	# If the polygon isnt valid, return early and clear the mesh.
+	if VectorUtils.find_polygon_2d_intersection(polygon_points) == true:
+		mesh = null
+		refresh_handle_data()
+		update_gizmo()
+		return
+	
+	# If we don't have three points, return early
+	if polygon_points.size() < 3:
+		mesh = null
+		refresh_handle_data()
+		update_gizmo()
+		return
+	
+	# ////////////////////////////////////////
+	# EXTRUDE VECTOR
+	
+	var extrude_vector = Vector3()
+	match point_plane:
+		PointPlane.X_Z:
+			extrude_vector = Vector3(0, depth, 0)
+		PointPlane.X_Y:
+			extrude_vector = Vector3(0, 0, depth)
+		PointPlane.Z_Y:
+			extrude_vector = Vector3(depth, 0, 0)
+	
+	var i = 0
+	var size = handles.size()
+	
+	
+	# ////////////////////////////////////////
+	# POLYGON ORIENTATION
+	
+	# Add up all the signed angles and see if the average is positive or negative
+	var is_positively_orientated = false
+	var total_angle_size = 0.0
+	
+	while i != size:
+		var index_a = VectorUtils.loop_int(i, 0, size - 1)
+		var index_b = VectorUtils.loop_int(i + 1, 0, size - 1)
+		var index_c = VectorUtils.loop_int(i + 2, 0, size - 1)
+		total_angle_size += VectorUtils.get_signed_angle(polygon_points[index_a], polygon_points[index_b], polygon_points[index_c])
+		
+		i += 1
+	
+#	print("TOTAL ANGLE - ", total_angle_size)
+	if total_angle_size >= 0:
+		is_positively_orientated = true
+	
+	# ////////////////////////////////////////
+	# TUBE BUILDER
+	
+	i = 0
+	
+	# Build the tube
+	while i != size:
+		
+		var index_a = VectorUtils.loop_int(i, 0, size - 1)
+		var index_b = VectorUtils.loop_int(i + 1, 0, size - 1)
+		var position_a = convert_plane_point_to_vector3(polygon_points[index_a])
+		var position_b = convert_plane_point_to_vector3(polygon_points[index_b])
+		
+		var base_1 = position_a
+		var base_2 = position_b
+		var extr_1 = position_a + extrude_vector
+		var extr_2 = position_b + extrude_vector
+		
+		if (depth < 0 && is_positively_orientated) || (depth >= 0 && is_positively_orientated == false):
+			onyx_mesh.add_ngon([base_1, extr_1, extr_2, base_2], [], [], [], [])
+		else:
+			onyx_mesh.add_ngon([base_1, base_2, extr_2, extr_1], [], [], [], [])
+		
+		i += 1
+	
+	
+	# ////////////////////////////////////////
+	# POLYGON CAP SOLVER
+	
+	var bottom_cap = []
+	var top_cap = []
+	
+	var polygon_candidates = {}
+	i = 0
+	for point in polygon_points:
+		polygon_candidates[i] = point
+		i += 1
+	
+	var sorted_points = {}
+	var found_sets = []
+	
+	i = 0
+	while polygon_candidates.size() != 0:
+		
+		var p_size = polygon_candidates.size()
+		
+		# sort them out first
+		for index in polygon_candidates.keys():
+			
+			var index_a = VectorUtils.loop_int(index - 1, 0, p_size - 1)
+			var index_b = VectorUtils.loop_int(index, 0, p_size - 1)
+			var index_c = VectorUtils.loop_int(index + 1, 0, p_size - 1)
+			var point_a = polygon_candidates[index_a]
+			var point_b = polygon_candidates[index_b]
+			var point_c = polygon_candidates[index_c]
+			var signed_angle = VectorUtils.get_signed_angle(point_a, point_b, point_c)
+			
+			if (signed_angle >= 0 && is_positively_orientated) || (signed_angle < 0 && is_positively_orientated == false):
+				sorted_points[index] = {"value": point_b, "aligned": true}
+			else:
+				sorted_points[index] = {"value": point_b, "aligned": false}
+		
+		print("SORTED POINTS - ", sorted_points.values())
+		
+		var sort_index = 0
+		var sort_size = sorted_points.size()
+		
+		while sort_index < sort_size:
+			
+			# If we've already nabbed this index, continue
+			if sorted_points.has(sort_index) == false:
+				sort_index += 1
+				continue
+			
+			var index_2 = VectorUtils.loop_int(sort_index + 1, 0, sort_size - 1)
+			var index_3 = VectorUtils.loop_int(sort_index + 2, 0, sort_size - 1)
+			
+			# We need two contiguous points, skip if not
+			if !sorted_points.has(index_2) ||  !sorted_points.has(index_3):
+				sort_index += 1
+				continue
+			
+			var point_1 = sorted_points[sort_index]
+			var point_2 = sorted_points[index_2]
+			var point_3 = sorted_points[index_3]
+			var match_found = false
+			
+			# If this is an unaligned point, we just need the next point to be aligned to match
+			if point_1["aligned"] == false:
+				if point_2["aligned"] == true:
+					match_found = true
+					
+			# Otherwise you only have one match condition
+			elif (point_2["aligned"] == true && point_3["aligned"] == true):
+				match_found = true
+			
+			if match_found:
+				found_sets.append({"middle_index" : index_2, "points" : [point_1["value"], point_2["value"], point_3["value"]]})
+				sorted_points.erase(sort_index);  sorted_points.erase(index_2);  sorted_points.erase(index_3)
+				sort_index += 3
+				continue
+			
+			else:
+				sort_index += 1
+				continue
+			
 
+		# For every set we found, add them to the array and remove the middle vertex from the equation
+		# (unless we only have three vertices left, in which case we're done!')
+		print("FOUND MATCHES - ", found_sets)
+		if found_sets.size() == 0:
+			print("OH SHIT WE FOUND NONE BYE!")
+			break
+
+		for set in found_sets:
+			var points = set["points"]
+			var p_1 = points[0];  var p_2 = points[1];  var p_3 = points[2];
+			var vec_1 = convert_plane_point_to_vector3(p_1)
+			var vec_2 = convert_plane_point_to_vector3(p_2)
+			var vec_3 = convert_plane_point_to_vector3(p_3)
+
+			if is_positively_orientated:
+				top_cap.append([vec_1 + extrude_vector, vec_2 + extrude_vector, vec_3 + extrude_vector])
+				bottom_cap.append([vec_1, vec_3, vec_2])
+			else:
+				bottom_cap.append([vec_1, vec_2, vec_3])
+				top_cap.append([vec_1 + extrude_vector, vec_3 + extrude_vector, vec_2 + extrude_vector])
+
+			# Remove the middle point from the candidate list
+			polygon_candidates.erase(set["middle_index"])
+
+		# If we're not down the the magic number, prepare for the next.
+		print("LEFTOVER POINT CANDIDATES - ", polygon_candidates.keys())
+		
+		sorted_points.clear()
+		found_sets.clear()
+
+		if polygon_candidates.size() >= 3:
+			var unsorted_polygon_candidates = polygon_candidates.duplicate()
+			polygon_candidates.clear()
+
+			i = 0
+			for point in unsorted_polygon_candidates.values():
+				polygon_candidates[i] = point
+				i += 1
+			print("NEXT POINT CANDIDATES - ", polygon_candidates.keys())
+
+		# If we are, CLEAR AND LEAVE
+		else:
+			break
+	
+	for set in bottom_cap:
+		onyx_mesh.add_tri(set, [], [], [], [])
+	for set in top_cap:
+		onyx_mesh.add_tri(set, [], [], [], [])
+	
 	# RENDER THE MESH
 	render_onyx_mesh()
 	
@@ -259,30 +477,74 @@ func generate_geometry():
 # On initialisation, control points are built for transmitting and handling interactive points between the node and the node's gizmo.
 func build_handles():
 	
-	# > handles are not build from secondary data sets, no build required.
-	pass
+	# Exit if not being run in the editor
+	if Engine.editor_hint == false:
+		return
+	
+	var plane_info = get_plane_info()
+	handles.clear()
+	
+	if polygon_points.size() == 0:
+		return
+	
+	var i = 0
+	for point in polygon_points:
+		var new_control = ControlPoint.new(self, "get_gizmo_undo_state", "get_gizmo_redo_state", "restore_state", "restore_state")
+		new_control.control_position = convert_plane_point_to_vector3(point)
+		new_control.control_name = POLYGON_CONTROL_NAME + str(i)
+		new_control.set_type_plane(false, "handle_change", "handle_commit", plane_info["origin"], plane_info["x_up"], plane_info["y_up"])
+		
+		handles[new_control.control_name] = new_control
+		i += 1
+	
+	# need to give it positions in the case of a duplication or scene load.
+	refresh_handle_data()
 	
 
-# Uses the current settings to refresh the control point positions.
+# Uses the current shape properties to refresh the control point data.
 func refresh_handle_data():
 	
-	# > the handle data is the only input data, no refresh needed.
-	pass
+	# Exit if not being run in the editor
+	if Engine.editor_hint == false:
+#		print("...attempted to refresh_handle_data()")
+		return
 	
+	# Failsafe for script reloads, BECAUSE I CURRENTLY CAN'T DETECT THEM.
+	if handles.size() == 0:
+		if gizmo != null:
+#			print("...attempted to refresh_handle_data(), rebuilding handles.")
+			gizmo.control_points.clear()
+			build_handles()
+			return
+	
+	var i = 0
+	for control in handles.values():
+		control.control_position = convert_plane_point_to_vector3(polygon_points[i])
+		i += 1
+		
 
-# Changes the handle based on the given index and coordinates.
+# Changes the control and associated property data based on the given index and coordinates.
 func update_handle_from_gizmo(control):
 	
-#	# > the handle data is the only input data, no update needed.
-	pass
+	if handles.has(control.control_name) == null:
+		print("update_handle_from_gizmo() - no handle found, whoops.")
+		return
+	
+	var index = int(control.control_name.replace(POLYGON_CONTROL_NAME, ""))
+	if index != null:
+		polygon_points[index] = convert_vector3_to_plane_point(control.control_position)
+	
+	refresh_handle_data()
 	
 
-# Applies the current handle values to the shape attributes
+# Applies the current control values to the shape attributes
 func apply_handle_attributes():
-	pass
-#	print("[OnyxPolygon] ", self.get_name(), " - apply_handle_attributes()")
 	
-#	# > the handle data is the only input data, no apply needed.
+	var i = 0
+	for control in handles.values():
+		polygon_points[i] = convert_vector3_to_plane_point(control.control_position)
+		i += 1
+	
 	pass
 	
 
@@ -302,15 +564,15 @@ func add_control_point(position : Vector3):
 	
 	var plane_info = get_plane_info()
 	
-	var new_point = ControlPoint.new(self, "get_gizmo_undo_state", "get_gizmo_redo_state", "restore_state", "restore_state")
-	new_point.control_position = position
-	new_point.control_name = 'control_point_' + str(polygon_points.size() + 1)
-	new_point.set_type_plane(false, "handle_change", "handle_commit", plane_info["origin"], plane_info["x_up"], plane_info["y_up"])
+	var new_control = ControlPoint.new(self, "get_gizmo_undo_state", "get_gizmo_redo_state", "restore_state", "restore_state")
+	new_control.control_position = position
+	new_control.control_name = POLYGON_CONTROL_NAME + str(polygon_points.size())
+	new_control.set_type_plane(false, "handle_change", "handle_commit", plane_info["origin"], plane_info["x_up"], plane_info["y_up"])
 	
-	var plane_point = mask_3d_vector_to_plane(position)
+	var plane_point = convert_vector3_to_plane_point(position)
 	
 	polygon_points.append(plane_point)
-	handles[new_point.control_name] = new_point
+	handles[new_control.control_name] = new_control
 	
 	generate_geometry()
 	update_gizmo()
@@ -318,27 +580,45 @@ func add_control_point(position : Vector3):
 # Deletes the control point with the specified control.
 func delete_control_point(control):
 	
-	if handles.has(control) == false:
+	print("Attempting deletion! - ", control)
+	
+	var index = int(control.control_name.replace(POLYGON_CONTROL_NAME, ""))
+	if handles.has(control.control_name) == false || polygon_points.size() <= index:
+		print("nope. - ", index, "handle - ", control.control_name)
 		return
 	
-	polygon_points.erase(control)
-	handles.erase(control)
+	polygon_points.remove(index)
+	handles.erase(control.control_name)
+	
+	print("Leftover points - ", polygon_points)
+	print("Leftover controls - ", handles.keys())
 	
 	rename_control_points()
 	generate_geometry()
-	update_gizmo()
 
-# Used after a deletion to rename all other control points
+# Used after a deletion to rename all other control points to be sequential
 func rename_control_points():
 	
-	# Rename the polygon point array first.
-	var i = 1
-	for control in polygon_points:
-		polygon_points.control_name = 'control_point_' + str(i)
+	if handles.size() == 0:
+		return
 	
+	# We also need to change the keys...
+	var old_handle_stack = handles.duplicate()
 	handles.clear()
-	for control in polygon_points:
+	
+	var i = 0
+	for control in old_handle_stack.values():
+		control.control_name = POLYGON_CONTROL_NAME + str(i)
 		handles[control.control_name] = control
+		i += 1
+	
+	print("Renamed points - ", polygon_points)
+	print("Renamed controls - ", handles.keys())
+	
+
+# Used to check if the polygon shape we have is free of intersections.
+func is_polgon_valid() -> bool:
+	return false
 
 # ////////////////////////////////////////////////////////////
 # SNAP PLANE FUNCTIONS
@@ -363,7 +643,7 @@ func get_plane_info() -> Dictionary:
 	return details
 
 # Converts a 3D vector to a 2D vector that fits along the current plane.
-func mask_3d_vector_to_plane(vector : Vector3) -> Vector2:
+func convert_vector3_to_plane_point(vector : Vector3) -> Vector2:
 	
 	match point_plane:
 		PointPlane.X_Z:
@@ -375,6 +655,20 @@ func mask_3d_vector_to_plane(vector : Vector3) -> Vector2:
 	
 	# idk failsafe lol
 	return Vector2()
+
+
+# Converts a 2D point on the current snap plane to a 3D object space vector.
+func convert_plane_point_to_vector3(point : Vector2) -> Vector3:
+	match point_plane:
+		PointPlane.X_Z:
+			return Vector3(point.x, 0, point.y)
+		PointPlane.X_Y:
+			return Vector3(point.x, point.y, 0)
+		PointPlane.Z_Y:
+			return Vector3(0, point.y, point.x)
+	
+	# idk failsafe lol
+	return Vector3()
 
 # ???
 # Don't know if i need a function for moving a newly made control point to the cursor yet.
@@ -504,13 +798,13 @@ func _change_edit_mode(old_edit_mode, new_edit_mode):
 	
 	# If the old edit mode is Delete, switch the handle type to Free
 	if old_edit_mode == 3:
-		for control in polygon_points:
+		for control in handles.values():
 			control.set_type_free(true, "handle_change", "handle_commit")
 	
 	# If the new edit mode is Delete, switch the handle type to Delete
 	elif new_edit_mode == 3:
-		for control in polygon_points:
-			control.set_type_click(true, "handle_change")
+		for control in handles.values():
+			control.set_type_click(true, "delete_control_point")
 
 
 func _receive_input_add_mode(camera, event):

@@ -7,67 +7,67 @@ extends Node
 
 
 # Returns the AABB of any given node.  May return nothing if the node provided has no data to extrapolate bounds from.
-static func get_aabb(node):
+static func get_aabb(node : Node):
 	
 	# //////////////
 	# MESH NODES
-	if node is Mesh:
+	if node.is_class("Mesh"):
 		return get_mesh_aabb(node)
 		
-	elif node is MultiMesh:
+	elif node.is_class("MultiMesh"):
 		return node.get_aabb()
 		
-	elif node is MeshInstance:
+	elif node.is_class("MeshInstance"):
 		return get_mesh_aabb(node.get_mesh())
 		
-	elif node is ImmediateGeometry:
+	elif node.is_class("ImmediateGeometry"):
 		print("VectorUtils.get_aabb(node) cannot obtain data from ImmediateGeometry, provide a face_dictionary instead.")
-		return
+		return null
 		
 	# //////////////
 	# CSG NODES
-	elif node is CSGBox:
+	elif node.is_class("CSGBox"):
 		var ub = Vector3(node.width / 2, node.height / 2, node.depth / 2)
 		var lb = ub * -1
 		return AABB(lb, ub)
 		
-	elif node is CSGCylinder:
+	elif node.is_class("CSGCylinder"):
 		var ub = Vector3(node.radius / 2, node.height / 2, node.radius / 2)
 		var lb = ub * -1
 		return AABB(lb, ub)
 		
-	elif node is CSGPolygon:
+	elif node.is_class("CSGPolygon"):
 		print("VectorUtils.get_aabb(node) cannot obtain data from CSGPolygon, im just not going to go there right now.")
-		return
+		return null
 		
-	elif node is CSGSphere:
+	elif node.is_class("CSGSphere"):
 		var ub = Vector3(node.radius / 2, node.radius / 2, node.radius / 2)
 		var lb = ub * -1
 		return AABB(lb, ub)
 		
-	elif node is CSGTorus:
+	elif node.is_class("CSGTorus"):
 		var ub = Vector3(node.outer_radius / 2, node.outer_radius / 2, node.outer_radius / 2)
 		var lb = ub * -1
 		return AABB(lb, ub)
 	
-	elif node is CSGMesh:
+	elif node.is_class("CSGMesh"):
 		return get_mesh_aabb(node.get_mesh())
 		
-	elif node is CSGShape:
+	elif node.is_class("CSGShape"):
 		print("VectorUtils.get_aabb(node) cannot obtain data from CSGShape, provide a different CSG or node type")
-		return
+		return null
 		
 	# //////////////
 	# OTHER NODES
-	elif node is SpriteBase3D:
+	elif node.is_class("SpriteBase3D"):
 		print("SpriteBase3D not yet available for use with VectorUtils.get_aabb(node).")
-		return
+		return null
 	
-	elif node is CollisionPolygon:
+	elif node.is_class("CollisionPolygon"):
 		print("VectorUtils.get_aabb(node) refuses to use a CollisionPolygon as it wont be used at runtime, use a CollisionShape or literally anything else :D")
-		return
+		return null
 		
-	elif node is CollisionShape:
+	elif node.is_class("CollisionShape"):
 		var shape = node.shape()
 		
 		if shape is BoxShape:
@@ -81,10 +81,10 @@ static func get_aabb(node):
 			return AABB(lb, ub)
 		
 		elif shape is ConcavePolygonShape:
-			return get_vertex_aabb(shape.get_faces())
+			return get_vertex_pool_aabb(shape.get_faces())
 			
 		elif shape is ConvexPolygonShape:
-			return get_vertex_aabb(shape.get_points())
+			return get_vertex_pool_aabb(shape.get_points())
 			
 		elif shape is CylinderShape:
 			var ub = Vector3(shape.radius, shape.height / 2, shape.radius)
@@ -141,8 +141,22 @@ static func get_mesh_aabb(mesh):
 	else:
 		return null
 
+# Get an AABB from a line segment.	
+static func get_2d_segment_aabb(start : Vector2, end : Vector2) -> Array:
+	var lb = start
+	var ub = end
+	
+	if start.x > end.x:
+		lb.x = end.x
+		ub.x = start.x
+	if start.y > end.y:
+		lb.y = end.y
+		ub.y = start.y
+		
+	return([lb, ub])
+
 # Get an AABB from any vertex pool.	
-static func get_vertex_aabb(vertex_pool):
+static func get_vertex_pool_aabb(vertex_pool):
 	
 	var v_size = vertex_pool.size()
 	
@@ -190,7 +204,136 @@ static func get_aabb_boundary_points(aabb: AABB) -> Array:
 	
 	return [x_minus, x_plus, y_minus, y_plus, z_minus, z_plus]
 	
+
+# Checks if two Vector2 types have their bounding boxes intersect.
+static func do_vector_bounds_intersect(a : Array, b : Array) -> bool:
 	
+	return a[0].x <= b[1].x && a[1].x >= b[0].x && a[0].y <= b[1].y && a[1].y >= b[0].y
+
+# Checks if a single point lies on a segment.
+static func is_point_on_segment(seg_start : Vector2, seg_end : Vector2, point : Vector2, error_margin : float) -> bool:
+	
+	var x_end = Vector2(seg_end.x - seg_start.x, seg_end.y - seg_start.y)
+	var point_idk = Vector2(point.x - seg_start.x, point.y - seg_start.y)
+	
+	var result = x_end.cross(point_idk)
+	return abs(result) < error_margin # the margin of error, 0 = perfect touch
+
+# Checks if the point is on the right of the given segment.
+static func is_point_right_of_segment(seg_start : Vector2, seg_end : Vector2, point: Vector2) -> bool:
+	
+	var x_end = Vector2(seg_end.x - seg_start.x, seg_end.y - seg_start.y)
+	var point_idk = Vector2(point.x - seg_start.x, point.y - seg_start.y)
+	
+	return x_end.cross(point_idk) < 0
+
+# Checks if the first segment (interpreted as a ray) intersects the second segment
+static func check_ray_segment_intersection(segment_as_ray : Array, ray_2 : Array):
+	
+	var a_on_line = is_point_on_segment(segment_as_ray[0], segment_as_ray[1], ray_2[0], 0.001)
+	var b_on_line = is_point_on_segment(segment_as_ray[0], segment_as_ray[1], ray_2[1], 0.001)
+	var a_check = is_point_right_of_segment(segment_as_ray[0], segment_as_ray[1], ray_2[0])
+	var b_check = is_point_right_of_segment(segment_as_ray[0], segment_as_ray[1], ray_2[1])
+	
+	return a_on_line || b_on_line || (a_check != b_check) 
+	
+
+
+# Checks to see if two segments intersect with each other.  
+# True if yes, False if no.
+static func check_segment_intersection(line_1 : Array, line_2 : Array) -> bool:
+	var aabb_1 = get_2d_segment_aabb(line_1[0], line_1[1])
+	var aabb_2 = get_2d_segment_aabb(line_2[0], line_2[1])
+	
+	var bounds_check = do_vector_bounds_intersect(aabb_1, aabb_2)
+	if bounds_check == false:
+		return false
+		
+	var ray_check_1 = check_ray_segment_intersection(line_1, line_2)
+	var ray_check_2 = check_ray_segment_intersection(line_2, line_1)
+	
+	return (bounds_check && ray_check_1 && ray_check_2)
+	
+
+
+
+
+# Checks to see if a collection of segments intersect with each other.
+# If any one of them does, returns true.  Otherwise returns false
+static func find_segment_array_intersection(segments : Array):
+	
+	# gotta have some altered functions to compensate for the fact that each segment
+	# connects to each other
+	
+	var segments_pool = segments.duplicate()
+	
+	while segments_pool.size() > 1:
+		
+		var segment_target = segments_pool[0]
+		var other_segments = segments_pool.duplicate()
+		other_segments.remove(0)
+		
+		for segment_match in other_segments:
+			
+			if check_segment_intersection(segment_target, segment_match):
+				return true
+		
+		segments_pool.remove(0)
+	
+	return false
+
+# Checks to see if the polygon vectors provided intersect with each other.
+# If any one of them does, returns true.  Otherwise returns false
+static func find_polygon_2d_intersection(points : Array):
+	
+	var points_pool = points.duplicate()
+	
+	# This is just a convenience function, sort the points into segment sets
+	var segments = {}
+	var i = 0
+	while i != points_pool.size():
+		var i_2 = loop_int(i + 1, 0, points_pool.size() - 1)
+		segments[i] = [points_pool[i], points_pool[i_2]]
+		i += 1
+	
+	# Walk through them like normal segments, apart from ones that are attached to the target.
+	i = 0
+	while segments.size() > 2:
+		
+		var segment_target = segments[i]
+		var other_segments = segments.duplicate()
+		other_segments.erase(i)
+		
+		for segment_match_index in other_segments.keys():
+			var segment_match = other_segments[segment_match_index]
+			var result = false
+			
+			# If we're in the first match, we need to avoid their shared point from being matched
+			if segment_match_index == i + 1:
+				var left_line_check = is_point_on_segment(segment_target[0], segment_target[1], segment_match[1], 0.001)
+				var right_line_check = is_point_on_segment(segment_match[0], segment_match[1], segment_target[0], 0.001)
+				
+				if left_line_check and right_line_check:
+					result = true
+				
+			elif ((segment_match_index == segments.size() - 1) && i == 0):
+				var left_line_check = is_point_on_segment(segment_target[0], segment_target[1], segment_match[0], 0.001)
+				var right_line_check = is_point_on_segment(segment_match[0], segment_match[1], segment_target[1], 0.001)
+				
+				if left_line_check and right_line_check:
+					result = true
+				
+			else:
+				result = check_segment_intersection(segment_target, segment_match)
+				
+			if result:
+				return true
+		
+		segments.erase(i)
+		i += 1
+	
+	return find_segment_array_intersection(segments)
+
 # Get the maximum and minimum range on a set of Vector3 values.
 static func get_vector3_ranges(vectors : Array) -> Dictionary:
 	
@@ -485,3 +628,14 @@ static func project_cursor_to_plane(camera : Camera, point : Vector2, world_matr
 		return null
 	
 	return intersect_pos
+
+# Gets the signed angle between three points (AKA two vectors)
+static func get_signed_angle(point_1 : Vector2, point_2 : Vector2, point_3 : Vector2) -> float:
+		var vec_a = (point_2 - point_1).normalized()
+		var vec_b = (point_3 - point_2).normalized()
+		
+		var dot = vec_a.dot(vec_b)
+		var cross = (vec_a.x * vec_b.y) - (vec_a.y * vec_b.x)
+		return atan2(cross, dot)
+
+

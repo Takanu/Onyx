@@ -352,11 +352,6 @@ func get_redo_data():
 # Depending on the mode set, the handle will be updated in different ways.
 func update_handle(index, camera, point):
 	
-	# If the handle type is click, we don't need to calculate any matrices.  Just get it over with.
-	if handle_type == HandleType.CLICK:
-		control_point_owner.call(click_callback, self)
-		return
-	
 	# Get some matrices and coordinates
 	var world_matrix = control_point_owner.global_transform
 	var camera_matrix = camera.global_transform
@@ -467,6 +462,9 @@ func update_handle(index, camera, point):
 		HandleType.SCALE:
 			pass
 		
+		HandleType.CLICK:
+			pass
+		
 
 # Receives the commit call from the Gizmo, to be handled in different ways depending on the ControlPoint mode.
 func commit_handle(index, restore):
@@ -502,8 +500,8 @@ func commit_handle(index, restore):
 			if scale_commit_callback != "":
 				control_point_owner.call(scale_commit_callback, self)
 		
-#		HandleType.CLICK:
-#			control_point_owner.call(click_commit_callback, self)
+		HandleType.CLICK:
+			control_point_owner.call(click_callback, self)
 	
 
 

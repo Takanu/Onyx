@@ -53,7 +53,8 @@ func redraw():
 	var node = get_spatial_node()
 	
 	if node is CSGMesh:
-		collision_set = node.mesh.generate_triangle_mesh()
+		if node.mesh != null:
+			collision_set = node.mesh.generate_triangle_mesh()
 	
 	
 	# Go through all the handles available
@@ -62,7 +63,6 @@ func redraw():
 		
 	for control in control_points:
 		var handle_positions = control.get_handle_positions()
-		print(handle_positions)
 		
 		if handle_positions is Array:
 			for handle_pos in handle_positions:
