@@ -385,9 +385,9 @@ func update_handle(index, camera, point):
 			
 			# SNAPPING ENABLED
 			if control_point_owner.get_plugin().snap_gizmo_enabled == true:
-				
-				var snap_increment = control_point_owner.get_plugin().snap_gizmo_increment
-				new_position = snap_position(new_position, Vector3(snap_increment, snap_increment, snap_increment))
+				var snap_inc = control_point_owner.get_plugin().snap_gizmo_increment
+				var snap_t = control_point_owner.get_global_transform()
+				new_position = VectorUtils.snap_position(new_position, Vector3(snap_inc, snap_inc, snap_inc), snap_t)
 				
 				control_position = new_position
 			
@@ -447,8 +447,9 @@ func update_handle(index, camera, point):
 			
 			# If snapping is enabled, we have stuff to do.
 			if control_point_owner.get_plugin().snap_gizmo_enabled == true:
-				var snap_increment = control_point_owner.get_plugin().snap_gizmo_increment
-				control_position = snap_position(control_position, Vector3(snap_increment, snap_increment, snap_increment))
+				var snap_inc = control_point_owner.get_plugin().snap_gizmo_increment
+				var snap_t = control_point_owner.get_global_transform()
+				control_position = VectorUtils.snap_position(control_position, Vector3(snap_inc, snap_inc, snap_inc), snap_t)
 			
 			# Now we have a valid control_position, perform a callback.
 #			print("SETTING RAWR")
@@ -544,28 +545,6 @@ func project_point_to_axis(point, camera, target_position, world_matrix, snap_ax
 	
 	var final_pos = axis_transform.xform(projected_pos)
 	return final_pos
-
-# Takes a position and snap increment, and locks the position based on that increment.
-func snap_position(position: Vector3, increment: Vector3) -> Vector3:
-	
-	var return_input = Vector3()
-	
-	if control_point_owner.get_plugin().snap_gizmo_global_orientation == true:
-		var translated_input = position + control_point_owner.get_global_transform().origin 
-		
-		var snapped_input = Vector3()
-		snapped_input.x = round(translated_input.x / increment.x) * increment.x
-		snapped_input.y = round(translated_input.y / increment.y) * increment.y
-		snapped_input.z = round(translated_input.z / increment.z) * increment.z
-		
-		return_input = snapped_input - control_point_owner.get_global_transform().origin
-	
-	else:
-		return_input.x = round(position.x / increment.x) * increment.x
-		return_input.y = round(position.y / increment.y) * increment.y
-		return_input.z = round(position.z / increment.z) * increment.z
-	
-	return return_input
 
 func mat_solid_color(red, green, blue):
 	var mat = SpatialMaterial.new()

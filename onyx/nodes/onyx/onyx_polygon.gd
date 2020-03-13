@@ -33,7 +33,7 @@ const BEVEL_CONTROL_NAME = "bevel_control_"
 # ////////////////////////////////////////////////////////////
 # UVS
 enum UnwrapMethod {PROPORTIONAL_OVERLAP, PER_FACE_MAPPING}
-var unwrap_method = UnwrapMethod.PER_FACE_MAPPING setget update_unwrap_method
+var unwrap_method = UnwrapMethod.PROPORTIONAL_OVERLAP setget update_unwrap_method
 
 
 # ////////////////////////////////////////////////////////////
@@ -131,106 +131,19 @@ func update_unwrap_method(new_value):
 	generate_geometry()
 
 # Updates the origin location when the corresponding property is changed.
+# NOTE - Used to work out the difference between the current node position and where it should be now.
 func update_origin_mode():
 	
-	# Used to prevent the function from triggering when not inside the tree.
-	# This happens during duplication and replication and causes incorrect node placement.
-	if is_inside_tree() == false:
-		return
-	
-	
-	# Re-add once handles are a thing, otherwise this breaks the origin stuff.
-	if handles.size() == 0:
-		return
-	
-#
-#	# based on the current position and properties, work out how much to move the origin.
-#	var diff = Vector3(0, 0, 0)
-#
-#	match previous_origin_mode:
-#
-#		OriginPosition.CENTER:
-#			match origin_mode:
-#
-#				OriginPosition.BASE:
-#					diff = Vector3(0, -y_minus_position, 0)
-#				OriginPosition.BASE_CORNER:
-#					diff = Vector3(-x_minus_position, -y_minus_position, -z_minus_position)
-#
-#		OriginPosition.BASE:
-#			match origin_mode:
-#
-#				OriginPosition.CENTER:
-#					diff = Vector3(0, y_plus_position / 2, 0)
-#				OriginPosition.BASE_CORNER:
-#					diff = Vector3(-x_minus_position, 0, -z_minus_position)
-#
-#		OriginPosition.BASE_CORNER:
-#			match origin_mode:
-#
-#				OriginPosition.BASE:
-#					diff = Vector3(x_plus_position / 2, 0, z_plus_position / 2)
-#				OriginPosition.CENTER:
-#					diff = Vector3(x_plus_position / 2, y_plus_position / 2, z_plus_position / 2)
-#
-#	# Get the difference
-#	var new_loc = self.global_transform.xform(self.translation + diff)
-#	var old_loc = self.global_transform.xform(self.translation)
-#	var new_translation = new_loc - old_loc
-#	#print("MOVING LOCATION: ", old_loc, " -> ", new_loc)
-#	#print("TRANSLATION: ", new_translation)
-	
-	# set it
-#	global_translate(new_translation)
-#	translate_children(new_translation * -1)
-#	boolean_preview_node.set_translation(Vector3(0, 0, 0))
+	# Polygon point numerical modification requires a static origin point.
+	pass
+
 
 # Updates the origin position for the currently-active Origin Mode, either building a new one using properties or through a new position.
-# DOES NOT update the origin when the origin property has changed, for use with handle commits.
+# NOTE - For use with handle commits.
 func update_origin_position(new_location = null):
 	
+	# Polygon point numerical modification requires a static origin point.
 	pass
-#
-#	var new_loc = Vector3()
-#	var global_tf = self.global_transform
-#	var global_pos = self.global_transform.origin
-#
-#	if new_location == null:
-#
-#		# Find what the current location should be
-#		var diff = Vector3()
-#		var mid_x = (x_plus_position - x_minus_position) / 2
-#		var mid_y = (y_plus_position - y_minus_position) / 2
-#		var mid_z = (z_plus_position - z_minus_position) / 2
-#
-#		var diff_x = abs(x_plus_position - -x_minus_position)
-#		var diff_y = abs(y_plus_position - -y_minus_position)
-#		var diff_z = abs(z_plus_position - -z_minus_position)
-#
-#		match origin_mode:
-#			OriginPosition.CENTER:
-#				diff = Vector3(mid_x, mid_y, mid_z)
-#
-#			OriginPosition.BASE:
-#				diff = Vector3(mid_x, -y_minus_position, mid_z)
-#
-#			OriginPosition.BASE_CORNER:
-#				diff = Vector3(-x_minus_position, -y_minus_position, -z_minus_position)
-#
-#		new_loc = global_tf.xform(diff)
-#
-#	else:
-#		new_loc = new_location
-#
-#	# Get the difference
-#	var old_loc = global_pos
-#	var new_translation = new_loc - old_loc
-#
-#
-#	# set it
-#	global_translate(new_translation)
-#	translate_children(new_translation * -1)
-#	boolean_preview_node.set_translation(Vector3(0, 0, 0))
 
 # ////////////////////////////////////////////////////////////
 # GEOMETRY GENERATION
@@ -265,17 +178,9 @@ func generate_geometry():
 		return
 	
 	# ////////////////////////////////////////
-	# EXTRUDE VECTOR
+	# EXTRUDE VECTOR + MESH OFFSET
 	
-	var extrude_vector = Vector3()
-	match point_plane:
-		PointPlane.X_Z:
-			extrude_vector = Vector3(0, depth, 0)
-		PointPlane.X_Y:
-			extrude_vector = Vector3(0, 0, depth)
-		PointPlane.Z_Y:
-			extrude_vector = Vector3(depth, 0, 0)
-	
+	var extrude_vector = get_plane_depth_vector()
 	var i = 0
 	var size = handles.size()
 	
@@ -284,20 +189,7 @@ func generate_geometry():
 	# POLYGON ORIENTATION
 	
 	# Add up all the signed angles and see if the average is positive or negative
-	var is_positively_orientated = false
-	var total_angle_size = 0.0
-	
-	while i != size:
-		var index_a = VectorUtils.clamp_int(i, 0, size - 1)
-		var index_b = VectorUtils.clamp_int(i + 1, 0, size - 1)
-		var index_c = VectorUtils.clamp_int(i + 2, 0, size - 1)
-		total_angle_size += VectorUtils.get_signed_angle(polygon_points[index_a], polygon_points[index_b], polygon_points[index_c])
-		
-		i += 1
-	
-#	print("TOTAL ANGLE - ", total_angle_size)
-	if total_angle_size >= 0:
-		is_positively_orientated = true
+	var is_positively_orientated = VectorUtils.find_polygon_2d_orientation(polygon_points)
 	
 	# ////////////////////////////////////////
 	# TUBE BUILDER
@@ -326,6 +218,7 @@ func generate_geometry():
 		
 		if unwrap_method == UnwrapMethod.PER_FACE_MAPPING:
 			uvs = [Vector2(0.0, 1.0), Vector2(1.0, 1.0), Vector2(1.0, 0.0), Vector2(0.0, 0.0)]
+		
 		elif unwrap_method == UnwrapMethod.PROPORTIONAL_OVERLAP:
 			var b_1 = Vector2(total_unwrap_distance, 0)
 			var b_2 = Vector2(total_unwrap_distance + quad_length, 0)
@@ -496,14 +389,23 @@ func balance_handles():
 # Adds a control point using a 3D position
 func add_control_point(position : Vector3):
 	
+	var modified_position = position
+	
+	# If we have snapping enabled, modify the position.
+	if get_plugin().snap_gizmo_enabled == true:
+		var snap_inc = get_plugin().snap_gizmo_increment
+		var snap_t = get_global_transform()
+		modified_position = VectorUtils.snap_position(position, Vector3(snap_inc, snap_inc, snap_inc), snap_t)
+		
+	
 	var plane_info = get_plane_info()
 	
 	var new_control = ControlPoint.new(self, "get_gizmo_undo_state", "get_gizmo_redo_state", "restore_state", "restore_state")
-	new_control.control_position = position
+	new_control.control_position = modified_position
 	new_control.control_name = POLYGON_CONTROL_NAME + str(polygon_points.size())
 	new_control.set_type_plane(false, "handle_change", "handle_commit", plane_info["origin"], plane_info["x_up"], plane_info["y_up"])
 	
-	var plane_point = convert_vector3_to_plane_point(position)
+	var plane_point = convert_vector3_to_plane_point(modified_position)
 	
 	polygon_points.append(plane_point)
 	handles[new_control.control_name] = new_control
@@ -575,6 +477,26 @@ func get_plane_info() -> Dictionary:
 			details["y_up"] = Vector3(0, 1, 0)
 	
 	return details
+
+# Returns the depth of the plane as a vector.
+func get_plane_depth_vector():
+	match point_plane:
+		PointPlane.X_Z:
+			return Vector3(0, depth, 0)
+		PointPlane.X_Y:
+			return Vector3(0, 0, depth)
+		PointPlane.Z_Y:
+			return Vector3(depth, 0, 0)
+
+# Returns the AABB of the shape (lil convenience function)
+func get_polygon_aabb() -> AABB:
+	var vector_array = []
+	for point in polygon_points:
+		var new_vector = convert_plane_point_to_vector3(point)
+		vector_array.append(new_vector)
+		vector_array.append(new_vector + get_plane_depth_vector())
+	
+	return VectorUtils.get_vertex_pool_aabb(PoolVector3Array(vector_array))
 
 # Converts a 3D vector to a 2D vector that fits along the current plane.
 func convert_vector3_to_plane_point(vector : Vector3) -> Vector2:
@@ -657,7 +579,6 @@ func apply_hollow_margins(hollow_controls: Dictionary):
 #		var control_handle = handles[key]
 #		var margin = hollow_margin_values[key]
 		
-		
 #		match key:
 #			"x_minus":
 #				hollow_handle.control_position.x = control_handle.control_position.x + margin
@@ -680,7 +601,6 @@ func apply_hollow_margins(hollow_controls: Dictionary):
 
 var is_mouse_down = false
 
-
 # ////////////////////////////////////////////////////////////
 # BASE UI FUNCTIONS
 
@@ -701,15 +621,20 @@ func editor_select():
 		
 #		plugin.add_control_to_backup(EditorPlugin.CONTAINER_SPATIAL_EDITOR_BOTTOM, edit_toolbar, "ONYX_POLYGON_TOOLBAR")
 
+
 func editor_deselect():
 	print("EDITOR DESELECT")
-	get_plugin().remove_toolbar(EditorPlugin.CONTAINER_SPATIAL_EDITOR_BOTTOM, "onyx_polygon_toolbar")
+	get_plugin().remove_toolbar(owner, EditorPlugin.CONTAINER_SPATIAL_EDITOR_BOTTOM, "onyx_polygon_toolbar")
 	
 	if edit_toolbar != null:
 		edit_toolbar.disconnect("edit_mode_changed", self, "_change_edit_mode")
 		edit_toolbar.queue_free()
 		edit_toolbar = null
-	
+
+# called by Onyx when a toolbar of this node is being removed.
+func deallocate_toolbar(toolbar):
+	edit_toolbar.disconnect("edit_mode_changed", self, "_change_edit_mode")
+	edit_toolbar.queue_free()
 
 func receive_gui_input(camera, event):
 	

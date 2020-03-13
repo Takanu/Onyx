@@ -103,10 +103,14 @@ func _enter_tree():
 # Used to tell Godot that we want to handle these objects when they're selected.
 func handles(incoming_object):
 	
-	print("ONYX handles")
+	print("ONYX handles() - ", incoming_object)
+	
+	if incoming_object.get_class() == "MultiNodeEdit":
+		return false
 	
 	for handled_object in NodeHandlerList:
 		if incoming_object is handled_object:
+			print(incoming_object, currently_selected_node)
 			
 			# Handle editor selections and deselections here
 			if currently_selected_node != incoming_object:
@@ -164,10 +168,13 @@ func add_toolbar(container, control_target, control_key):
 	
 	
 # Removes a toolbar to the spatial toolbar area.
-func remove_toolbar(container, control_key):
+func remove_toolbar(toolbar_owner, container, control_key):
 	if backup_control_list.has(control_key):
 		var control_target = backup_control_list[control_key][0]
 		remove_control_from_container(container, control_target)
+		
+		if toolbar_owner.has_method("deallocate_toolbar"):
+			toolbar_owner.deallocate_toolbar(control_target)
 
 
 # Removes all currently held custom controls in ta

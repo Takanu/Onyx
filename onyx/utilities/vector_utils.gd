@@ -238,9 +238,12 @@ static func do_vector_bounds_intersect(a : Array, b : Array) -> bool:
 # Checks if a single point lies inside a triangle.  Specifically orientated to Barycentric coordinates.
 # From http://totologic.blogspot.se/2014/01/accurate-point-in-triangle-test.html
 # Also from https://www.habrador.com/tutorials/math/9-useful-algorithms/
+# This is not 100% accurate, just accurate enough
 static func is_point_on_triangle(p1: Vector2, p2: Vector2, p3: Vector2, point: Vector2):
 	
 	var denominator = ((p2.y - p3.y) * (p1.x - p3.x) + (p3.x - p2.x) * (p1.y - p3.y))
+	if denominator == 0:
+		return false
 	
 	var a = ((p2.y - p3.y) * (point.x - p3.x) + (p3.x - p2.x) * (point.y - p3.y)) / denominator
 	var b = ((p3.y - p1.y) * (point.x - p3.x) + (p1.x - p3.x) * (point.y - p3.y)) / denominator
@@ -295,8 +298,6 @@ static func check_segment_intersection(line_1 : Array, line_2 : Array) -> bool:
 	
 
 
-
-
 # Checks to see if a collection of segments intersect with each other.
 # If any one of them does, returns true.  Otherwise returns false
 static func find_segment_array_intersection(segments : Array):
@@ -321,11 +322,32 @@ static func find_segment_array_intersection(segments : Array):
 	
 	return false
 
+
+# Finds the orientation of the polygon provided (the rotation direction of the points in sequence).
+static func find_polygon_2d_orientation(points : Array):
+	
+	var is_positively_orientated = false
+	var total_angle_size = 0.0
+	var i = 0
+	while i != points.size():
+		var index_a = clamp_int(i, 0, points.size() - 1)
+		var index_b = clamp_int(i + 1, 0, points.size() - 1)
+		var index_c = clamp_int(i + 2, 0, points.size() - 1)
+		total_angle_size += get_signed_angle(points[index_a], points[index_b], points[index_c])
+		
+		i += 1
+	
+	if total_angle_size >= 0:
+		is_positively_orientated = true
+	
+	return is_positively_orientated
+
 # Checks to see if the polygon vectors provided intersect with each other.
 # If any one of them does, returns true.  Otherwise returns false
 static func find_polygon_2d_intersection(points : Array):
 	
 	var points_pool = points.duplicate()
+	var is_positively_orientated = find_polygon_2d_orientation(points_pool)
 	
 	# This is just a convenience function, sort the points into segment sets
 	var segments = {}
@@ -335,31 +357,36 @@ static func find_polygon_2d_intersection(points : Array):
 		segments[i] = [points_pool[i], points_pool[i_2]]
 		i += 1
 	
+	var other_segments = segments.duplicate()
+	
 	# Walk through them like normal segments, apart from ones that are attached to the target.
 	i = 0
 	while segments.size() > 2:
 		
 		var segment_target = segments[i]
-		var other_segments = segments.duplicate()
 		other_segments.erase(i)
 		
 		for segment_match_index in other_segments.keys():
 			var segment_match = other_segments[segment_match_index]
 			var result = false
 			
+			var is_next_segment = (segment_match_index == clamp_int(i + 1, 0, points.size() - 1))
+			var is_previous_segment = (segment_match_index == clamp_int(i - 1, 0, points.size() - 1))
+			
 			# If we're in the first match, we need to avoid their shared point from being matched
-			if segment_match_index == i + 1:
-				var left_line_check = is_point_on_segment(segment_target[0], segment_target[1], segment_match[1], 0.001)
-				var right_line_check = is_point_on_segment(segment_match[0], segment_match[1], segment_target[0], 0.001)
+			if is_next_segment || is_previous_segment:
+				var left_line_check = false
+				var right_line_check = false
 				
-				if left_line_check and right_line_check:
-					result = true
+				if is_positively_orientated && is_previous_segment:
+					left_line_check = is_point_on_segment(segment_target[0], segment_target[1], segment_match[0], 0.001)
+					right_line_check = is_point_on_segment(segment_match[0], segment_match[1], segment_target[1], 0.001)
+						
+				elif !is_positively_orientated && is_next_segment:
+					left_line_check = is_point_on_segment(segment_target[0], segment_target[1], segment_match[1], 0.001)
+					right_line_check = is_point_on_segment(segment_match[0], segment_match[1], segment_target[0], 0.001)
 				
-			elif ((segment_match_index == segments.size() - 1) && i == 0):
-				var left_line_check = is_point_on_segment(segment_target[0], segment_target[1], segment_match[0], 0.001)
-				var right_line_check = is_point_on_segment(segment_match[0], segment_match[1], segment_target[1], 0.001)
-				
-				if left_line_check and right_line_check:
+				if left_line_check == true and right_line_check == true:
 					result = true
 				
 			else:
@@ -613,7 +640,29 @@ static func push_array_order(array_input : Array, shift_amount : int) -> Array:
 	
 	return results
 	
+# Clamps the position to a specified grid increment.
+static func snap_position(position: Vector3, increment: Vector3, transform) -> Vector3:
 	
+	var return_input = Vector3()
+	
+	if transform != null:
+		var translated_input = position + transform.origin
+		
+		var snapped_input = Vector3()
+		snapped_input.x = round(translated_input.x / increment.x) * increment.x
+		snapped_input.y = round(translated_input.y / increment.y) * increment.y
+		snapped_input.z = round(translated_input.z / increment.z) * increment.z
+		
+		return_input = snapped_input - transform.origin
+	
+	else:
+		return_input.x = round(position.x / increment.x) * increment.x
+		return_input.y = round(position.y / increment.y) * increment.y
+		return_input.z = round(position.z / increment.z) * increment.z
+	
+	return return_input
+
+
 # "Loops" the variable to the max value if lower than the minimum, and vice-versa.  
 # The difference determines how much it loops back or forward.
 static func clamp_int(input : int, min_value : int, max_value : int) -> int:
