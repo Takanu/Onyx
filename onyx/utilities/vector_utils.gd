@@ -155,6 +155,31 @@ static func get_2d_segment_aabb(start : Vector2, end : Vector2) -> Array:
 		
 	return([lb, ub])
 
+# Returns two vectors that list the maximum and minimum bounds of a series of 2D vectors.
+# First value - Lower Bounds
+static func get_vertex2_array_aabb(vertex_array):
+	var v_size = vertex_array.size()
+	
+	if v_size == 0:
+		return [Vector2(0, 0), Vector2(0, 0)]
+		
+	#var i = 0
+	var lb = Vector2(0, 0)
+	var ub = Vector2(0, 0)
+		
+	for vertex in vertex_array:
+		if vertex.x < lb.x:
+			lb.x = vertex.x
+		if vertex.y < lb.y:
+			lb.y = vertex.y
+			
+		if vertex.x > ub.x:
+			ub.x = vertex.x
+		if vertex.y > ub.y:
+			ub.y = vertex.y
+	
+	return [lb, ub-lb]
+
 # Get an AABB from any vertex pool.	
 static func get_vertex_pool_aabb(vertex_pool):
 	

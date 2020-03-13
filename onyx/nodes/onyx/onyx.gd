@@ -11,8 +11,8 @@ extends CSGMesh
 
 # CORE //////////////
 
-# The plugin this node belongs to
-var plugin
+## The plugin this node belongs to
+#var plugin
 
 # The face set script, used for managing geometric data.
 var onyx_mesh = OnyxMesh.new()
@@ -243,7 +243,12 @@ func _get(property):
 		else:
 			return
 
-
+# Used to prevent weird "disappearances" of the plugin.  smh...
+func get_plugin():
+	if Engine.editor_hint == true:
+		return get_node("/root/EditorNode/Onyx")
+	else:
+		return null
 
 # ////////////////////////////////////////////////////////////
 # FUNCTIONS
@@ -254,12 +259,12 @@ func _enter_tree():
 #	print("[Onyx] ", self.get_name() , " - _enter_tree()")
 	
 	# If this is being run in the editor, load the plugin.
-	if Engine.editor_hint == true:
-		plugin = get_node("/root/EditorNode/Onyx")
+#	if Engine.editor_hint == true:
+#		plugin = get_node("/root/EditorNode/Onyx")
 		
 	
 	# Required to build hollow data before the scene loads
-	else:
+	if Engine.editor_hint == false:
 		_load_runtime_hollow_data()
 		
 
@@ -793,7 +798,7 @@ func translate_children(translation):
 
 func print_property_status():
 	print("************************")
-	print("PLUGIN - ", plugin)
+	print("PLUGIN - ", get_plugin())
 	print("ONYX MESH - ", onyx_mesh)
 	print("ARRAY MESH - ", array_mesh)
 	print("HANDLES - ", handles)

@@ -33,7 +33,7 @@ export(Vector2) var stair_length_percentage = Vector2(1, 1) setget update_stair_
 #export(BevelTarget) var bevel_target = BevelTarget.Y_AXIS setget update_bevel_target
 
 # UVS
-enum UnwrapMethod {PROPORTIONAL_OVERLAP, CLAMPED_OVERLAP}
+enum UnwrapMethod {PROPORTIONAL_OVERLAP, PER_FACE_MAPPING}
 var unwrap_method = UnwrapMethod.PROPORTIONAL_OVERLAP setget update_unwrap_method
 
 # ////////////////////////////////////////////////////////////
@@ -49,7 +49,7 @@ func _get_property_list():
 			"type" : TYPE_INT,
 			"usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
 			"hint": PROPERTY_HINT_ENUM,
-			"hint_string": "Proportional Overlap, Face Projection"
+			"hint_string": "Proportional Overlap, Per-Face Mapping"
 		},
 	]
 	return props
@@ -201,7 +201,7 @@ func generate_geometry():
 	var z_minus_uv = [];  var z_plus_uv = []
 	
 	# UNWRAP 0 : 1:1 Overlap
-	if unwrap_method == UnwrapMethod.CLAMPED_OVERLAP:
+	if unwrap_method == UnwrapMethod.PER_FACE_MAPPING:
 		var wrap = [Vector2(0.0, 1.0), Vector2(0.0, 0.0), Vector2(1.0, 0.0), Vector2(1.0, 1.0)]
 		x_minus_uv = wrap;  x_plus_uv = wrap;
 		y_minus_uv = wrap;  y_plus_uv = wrap;

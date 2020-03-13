@@ -6,12 +6,9 @@ extends "res://addons/onyx/nodes/onyx/onyx.gd"
 var VectorUtils = load("res://addons/onyx/utilities/vector_utils.gd")
 var ControlPoint = load("res://addons/onyx/gizmos/control_point.gd")
 
-
-
-
-
 # ////////////////////////////////////////////////////////////
-# TOOL ENUMS
+# PROPERTIES
+
 
 # allows origin point re-orientation, for precise alignments and convenience.
 enum OriginPosition {CENTER, BASE, BASE_CORNER}
@@ -24,9 +21,6 @@ var previous_origin_mode = OriginPosition.BASE
 enum PointPlane {X_Z, X_Y, Z_Y}
 export(PointPlane) var point_plane = PointPlane.X_Z setget update_point_plane
 
-# ////////////////////////////////////////////////////////////
-# PROPERTIES
-
 # Exported variables representing all usable handles for re-shaping the mesh, in order.
 # All functions that manipulate this list must also manupulate the internal Handles list.
 export(Array) var polygon_points = [] setget update_polygon_points
@@ -38,18 +32,13 @@ const BEVEL_CONTROL_NAME = "bevel_control_"
 
 # ////////////////////////////////////////////////////////////
 # UVS
-enum UnwrapMethod {PROPORTIONAL_OVERLAP, CLAMPED_OVERLAP}
-var unwrap_method = UnwrapMethod.PROPORTIONAL_OVERLAP
-
-
+enum UnwrapMethod {PROPORTIONAL_OVERLAP, PER_FACE_MAPPING}
+var unwrap_method = UnwrapMethod.PER_FACE_MAPPING setget update_unwrap_method
 
 
 # ////////////////////////////////////////////////////////////
 # UI
 var edit_toolbar : Control
-
-
-
 
 # ////////////////////////////////////////////////////////////
 # PROPERTY GENERATORS
@@ -67,13 +56,13 @@ func _get_property_list():
 			"type" : TYPE_INT,
 			"usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
 			"hint": PROPERTY_HINT_ENUM,
-			"hint_string": "Proportional Overlap, Face Projection"
+			"hint_string": "Proportional Overlap, Per-Face Mapping"
 		},
 	]
 	return props
 
 func _set(property, value):
-#	print("[OnyxCube] ", self.get_name(), " - _set() : ", property, " ", value)
+#	print("[OnyxPolygon] ", self.get_name(), " - _set() : ", property, " ", value)
 	
 	# Same value catcher
 	var old_value = self.get(property)
@@ -91,12 +80,13 @@ func _set(property, value):
 		
 
 func _get(property):
-#	print("[OnyxCube] ", self.get_name(), " - _get() : ", property)
+#	print("[OnyxPolygon] ", self.get_name(), " - _get() : ", property)
 	
 	match property:
 		"uv_options/unwrap_method":
 			return unwrap_method
 	
+
 
 # ////////////////////////////////////////////////////////////
 # PROPERTY UPDATERS
@@ -106,11 +96,13 @@ func update_polygon_points(new_value):
 	
 	polygon_points = new_value
 	build_handles()
+	generate_geometry()
 
 func update_depth(new_value):
 	
 	depth = new_value
 	generate_geometry()
+
 
 # Changes the origin position relative to the shape and regenerates geometry and handles.
 func update_origin_type(new_value):
@@ -134,7 +126,9 @@ func update_point_plane(new_value):
 	# ???
 	# ???
 
-
+func update_unwrap_method(new_value):
+	unwrap_method = new_value
+	generate_geometry()
 
 # Updates the origin location when the corresponding property is changed.
 func update_origin_mode():
@@ -307,8 +301,9 @@ func generate_geometry():
 	
 	# ////////////////////////////////////////
 	# TUBE BUILDER
-	
 	i = 0
+	# used for proportional/tube unwrapping
+	var total_unwrap_distance = 0
 	
 	# Build the tube
 	while i != size:
@@ -323,10 +318,31 @@ func generate_geometry():
 		var extr_1 = position_a + extrude_vector
 		var extr_2 = position_b + extrude_vector
 		
+		var vertices = [base_1, base_2, extr_2, extr_1]
+		var uvs = []
+		
+		# Used for tube unwrapping
+		var quad_length = (position_b - position_a).length()
+		
+		if unwrap_method == UnwrapMethod.PER_FACE_MAPPING:
+			uvs = [Vector2(0.0, 1.0), Vector2(1.0, 1.0), Vector2(1.0, 0.0), Vector2(0.0, 0.0)]
+		elif unwrap_method == UnwrapMethod.PROPORTIONAL_OVERLAP:
+			var b_1 = Vector2(total_unwrap_distance, 0)
+			var b_2 = Vector2(total_unwrap_distance + quad_length, 0)
+			var e_1 = Vector2(total_unwrap_distance, depth)
+			var e_2 = Vector2(total_unwrap_distance + quad_length, depth)
+			uvs = [b_1, b_2, e_2, e_1]
+		
 		if (depth < 0 && is_positively_orientated) || (depth >= 0 && is_positively_orientated == false):
-			onyx_mesh.add_ngon([base_1, extr_1, extr_2, base_2], [], [], [], [])
-		else:
-			onyx_mesh.add_ngon([base_1, base_2, extr_2, extr_1], [], [], [], [])
+			vertices = [base_1, extr_1, extr_2, base_2]
+			var uv_1 = uvs[1]
+			var uv_3 = uvs[3]
+			uvs.remove(3); uvs.remove(1)
+			uvs.push_back(uv_1);  uvs.insert(1, uv_3)
+		
+		onyx_mesh.add_ngon(vertices, [], [], uvs, [])
+		
+		total_unwrap_distance += quad_length
 		
 		i += 1
 	
@@ -341,10 +357,30 @@ func generate_geometry():
 	var bottom_poly_points = polygon_points.duplicate()
 	var vector_mask = 0
 	
+	# UV calculation
+	var top_uvs = []
+	var bottom_uvs = []
+	var aabb = VectorUtils.get_vertex2_array_aabb(top_poly_points)
+	
+	for point in top_poly_points:
+		if unwrap_method == UnwrapMethod.PER_FACE_MAPPING:
+			var uv_x = (point.x - aabb[0].x) / aabb[1].x
+			var uv_y = (point.y - aabb[0].y) / aabb[1].y
+			top_uvs.append(Vector2(uv_x, uv_y))
+		
+		elif unwrap_method == UnwrapMethod.PROPORTIONAL_OVERLAP:
+			var uv_x = (point.x - aabb[0].x) - aabb[1].x
+			var uv_y = (point.y - aabb[0].y) - aabb[1].y
+			top_uvs.append(Vector2(uv_x, uv_y))
+	
+	bottom_uvs = top_uvs.duplicate()
+	
 	if is_positively_orientated == true:
 		top_poly_points.invert()
+		top_uvs.invert()
 	else:
 		bottom_poly_points.invert()
+		bottom_uvs.invert()
 	
 	match point_plane:
 		PointPlane.X_Z:
@@ -355,8 +391,8 @@ func generate_geometry():
 			vector_mask = 0
 	
 	# submit it to the new OnyxMesh polygon triangulator.
-	onyx_mesh.add_unsorted_ngon(top_poly_points, [], [], [], [], vector_mask, depth)
-	onyx_mesh.add_unsorted_ngon(bottom_poly_points, [], [], [], [], vector_mask, 0)
+	onyx_mesh.add_unsorted_ngon(top_poly_points, [], [], top_uvs, [], vector_mask, depth)
+	onyx_mesh.add_unsorted_ngon(bottom_poly_points, [], [], bottom_uvs, [], vector_mask, 0)
 	
 	
 	# RENDER THE MESH
@@ -605,6 +641,7 @@ func assign_hollow_origin():
 #	hollow_object.set_translation(Vector3(0, 0, 0))
 	
 
+
 # An override-able function used to determine how margins apply to handles
 func apply_hollow_margins(hollow_controls: Dictionary):
 	
@@ -619,6 +656,7 @@ func apply_hollow_margins(hollow_controls: Dictionary):
 #		var hollow_handle = hollow_controls[key]
 #		var control_handle = handles[key]
 #		var margin = hollow_margin_values[key]
+		
 		
 #		match key:
 #			"x_minus":
@@ -637,9 +675,11 @@ func apply_hollow_margins(hollow_controls: Dictionary):
 	return hollow_controls
 
 
+
 # ////////////////////////////////////////////////////////////
 
 var is_mouse_down = false
+
 
 # ////////////////////////////////////////////////////////////
 # BASE UI FUNCTIONS
@@ -656,19 +696,20 @@ func editor_select():
 	print("EDITOR SELECT")
 	if edit_toolbar == null:
 		edit_toolbar = load("res://addons/onyx/ui/onyx_polygon_toolbar.tscn").instance()
-		edit_toolbar = plugin.add_toolbar(EditorPlugin.CONTAINER_SPATIAL_EDITOR_BOTTOM, edit_toolbar)
+		edit_toolbar = get_plugin().add_toolbar(EditorPlugin.CONTAINER_SPATIAL_EDITOR_BOTTOM, edit_toolbar, "onyx_polygon_toolbar")
 		edit_toolbar.connect("edit_mode_changed", self, "_change_edit_mode")
 		
 #		plugin.add_control_to_backup(EditorPlugin.CONTAINER_SPATIAL_EDITOR_BOTTOM, edit_toolbar, "ONYX_POLYGON_TOOLBAR")
 
 func editor_deselect():
 	print("EDITOR DESELECT")
+	get_plugin().remove_toolbar(EditorPlugin.CONTAINER_SPATIAL_EDITOR_BOTTOM, "onyx_polygon_toolbar")
+	
 	if edit_toolbar != null:
 		edit_toolbar.disconnect("edit_mode_changed", self, "_change_edit_mode")
-		plugin.remove_toolbar(EditorPlugin.CONTAINER_SPATIAL_EDITOR_BOTTOM, edit_toolbar)
 		edit_toolbar.queue_free()
 		edit_toolbar = null
-		
+	
 
 func receive_gui_input(camera, event):
 	
@@ -679,6 +720,7 @@ func receive_gui_input(camera, event):
 		return
 	
 #	print("EDIT MODE - ", edit_toolbar.edit_mode)
+	
 	
 	match edit_toolbar.edit_mode:
 		0:

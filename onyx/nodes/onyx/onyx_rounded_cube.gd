@@ -52,7 +52,7 @@ var corner_axis = CornerAxis.X setget update_corner_axis
 #export(BevelTarget) var bevel_target = BevelTarget.Y_AXIS setget update_bevel_target
 
 # UVS
-enum UnwrapMethod {PROPORTIONAL_OVERLAP, CLAMPED_OVERLAP}
+enum UnwrapMethod {PROPORTIONAL_OVERLAP, PER_FACE_MAPPING}
 var unwrap_method = UnwrapMethod.PROPORTIONAL_OVERLAP setget update_unwrap_method
 
 # MATERIALS
@@ -71,7 +71,7 @@ func _get_property_list():
 			"type" : TYPE_INT,
 			"usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
 			"hint": PROPERTY_HINT_ENUM,
-			"hint_string": "Proportional Overlap, Face Projection"
+			"hint_string": "Proportional Overlap, Per-Face Mapping"
 		},
 	]
 	return props

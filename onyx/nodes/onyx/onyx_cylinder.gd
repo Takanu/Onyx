@@ -32,7 +32,7 @@ export(float) var z_width = 0.5 setget update_z_width
 export(bool) var keep_width_proportional = false setget update_proportional_toggle
 
 # UVS
-enum UnwrapMethod {PROPORTIONAL_OVERLAP, PROPORTIONAL_OVERLAP_SEGMENTS, CLAMPED_OVERLAP}
+enum UnwrapMethod {PROPORTIONAL_OVERLAP, PROPORTIONAL_OVERLAP_SEGMENTS, PER_FACE_MAPPING}
 var unwrap_method = UnwrapMethod.PROPORTIONAL_OVERLAP setget update_unwrap_method
 
 # MATERIALS
@@ -52,7 +52,7 @@ func _get_property_list():
 			"type" : TYPE_INT,
 			"usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
 			"hint": PROPERTY_HINT_ENUM,
-			"hint_string": "Proportional Overlap, Proportional Overlap Segments, Face Projection"
+			"hint_string": "Proportional Overlap, Proportional Overlap Segments, Per-Face Mapping"
 		},
 	]
 	return props

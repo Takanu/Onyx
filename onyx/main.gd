@@ -156,25 +156,18 @@ func edit(object):
 # CUSTOM UI
 
 # Adds a toolbar to the spatial toolbar area.
-func add_toolbar(container, control_target):
+# The control key is used in case the toolbar is deallocated during a script reload
+func add_toolbar(container, control_target, control_key):
+	backup_control_list[control_key] = [control_target, container]
 	add_control_to_container(container, control_target)
 	return control_target
 	
 	
 # Removes a toolbar to the spatial toolbar area.
-func remove_toolbar(container, control_target):
-	remove_control_from_container(container, control_target)
-
-# Adds a control to the backup list for deletion, with a key.
-func add_control_to_backup(container, control_target, control_key):
-	backup_control_list[control_key] = [control_target, container]
-
-# Removes a control from the backup list, with the right key.
-func remove_control_in_backup(control_key):
-	
+func remove_toolbar(container, control_key):
 	if backup_control_list.has(control_key):
-		var control_backup = backup_control_list[control_key]
-		remove_toolbar(control_backup[1], control_backup[0])
+		var control_target = backup_control_list[control_key][0]
+		remove_control_from_container(container, control_target)
 
 
 # Removes all currently held custom controls in ta

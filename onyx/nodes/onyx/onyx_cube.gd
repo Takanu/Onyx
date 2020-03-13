@@ -16,7 +16,6 @@ export(OriginPosition) var origin_mode = OriginPosition.BASE setget update_origi
 # used to keep track of how to move the origin point into a new position.
 var previous_origin_mode = OriginPosition.BASE
 
-
 # ////////////////////////////////////////////////////////////
 # PROPERTIES
 
@@ -36,7 +35,7 @@ export(Vector3) var subdivisions = Vector3(1, 1, 1)
 
 
 # UVS
-enum UnwrapMethod {PROPORTIONAL_OVERLAP, CLAMPED_OVERLAP}
+enum UnwrapMethod {PROPORTIONAL_OVERLAP, PER_FACE_MAPPING}
 var unwrap_method = UnwrapMethod.PROPORTIONAL_OVERLAP
 
 
@@ -56,7 +55,7 @@ func _get_property_list():
 			"type" : TYPE_INT,
 			"usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
 			"hint": PROPERTY_HINT_ENUM,
-			"hint_string": "Proportional Overlap, Face Projection"
+			"hint_string": "Proportional Overlap, Per-Face Mapping"
 		},
 	]
 	return props
@@ -174,7 +173,6 @@ func update_origin_type(new_value):
 	old_handle_data = get_control_data()
 
 
-
 # Updates the origin location when the corresponding property is changed.
 func update_origin_mode():
 	
@@ -232,7 +230,8 @@ func update_origin_mode():
 	# set it
 	global_translate(new_translation)
 	translate_children(new_translation * -1)
-	boolean_preview_node.set_translation(Vector3(0, 0, 0))
+	if boolean_preview_node != null:
+		boolean_preview_node.set_translation(Vector3(0, 0, 0))
 	
 
 # Updates the origin position for the currently-active Origin Mode, either building a new one using properties or through a new position.
@@ -280,7 +279,8 @@ func update_origin_position(new_location = null):
 	# set it
 	global_translate(new_translation)
 	translate_children(new_translation * -1)
-	boolean_preview_node.set_translation(Vector3(0, 0, 0))
+	if boolean_preview_node != null:
+		boolean_preview_node.set_translation(Vector3(0, 0, 0))
 
 # ////////////////////////////////////////////////////////////
 # GEOMETRY GENERATION

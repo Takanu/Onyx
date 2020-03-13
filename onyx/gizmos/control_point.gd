@@ -384,9 +384,9 @@ func update_handle(index, camera, point):
 			
 			
 			# SNAPPING ENABLED
-			if control_point_owner.plugin.snap_gizmo_enabled == true:
+			if control_point_owner.get_plugin().snap_gizmo_enabled == true:
 				
-				var snap_increment = control_point_owner.plugin.snap_gizmo_increment
+				var snap_increment = control_point_owner.get_plugin().snap_gizmo_increment
 				new_position = snap_position(new_position, Vector3(snap_increment, snap_increment, snap_increment))
 				
 				control_position = new_position
@@ -446,8 +446,8 @@ func update_handle(index, camera, point):
 			control_position -= handle_offset
 			
 			# If snapping is enabled, we have stuff to do.
-			if control_point_owner.plugin.snap_gizmo_enabled == true:
-				var snap_increment = control_point_owner.plugin.snap_gizmo_increment
+			if control_point_owner.get_plugin().snap_gizmo_enabled == true:
+				var snap_increment = control_point_owner.get_plugin().snap_gizmo_increment
 				control_position = snap_position(control_position, Vector3(snap_increment, snap_increment, snap_increment))
 			
 			# Now we have a valid control_position, perform a callback.
@@ -550,7 +550,7 @@ func snap_position(position: Vector3, increment: Vector3) -> Vector3:
 	
 	var return_input = Vector3()
 	
-	if control_point_owner.plugin.snap_gizmo_global_orientation == true:
+	if control_point_owner.get_plugin().snap_gizmo_global_orientation == true:
 		var translated_input = position + control_point_owner.get_global_transform().origin 
 		
 		var snapped_input = Vector3()

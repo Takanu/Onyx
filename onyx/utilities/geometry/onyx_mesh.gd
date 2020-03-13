@@ -117,7 +117,7 @@ func add_ngon(vertices : Array, colors : Array, tangents : Array, uvs : Array, n
 # Adapted from - https://www.habrador.com/tutorials/math/10-triangulation/
 func add_unsorted_ngon(vertices: Array, colors: Array, tangents: Array, uvs: Array, normals: Array, vector_mask: int, mask_value: float) -> void:
 	
-	var stored_vertices = {}
+	var v_stack = {}
 	var ear_vertices = {}
 	
 	if vertices.size() < 2 || vertices == null:
@@ -165,17 +165,17 @@ func add_unsorted_ngon(vertices: Array, colors: Array, tangents: Array, uvs: Arr
 			"ear_vertex" : false,
 		}
 		
-		stored_vertices[i] = vertex_info
+		v_stack[i] = vertex_info
 		
 		i += 1
 	
 	# Iterate through them again to generate the "next" and "prev" properties
 	i = 0
-	for vertex in stored_vertices.values():
-		var index_0 = VectorUtils.clamp_int(i - 1, 0, stored_vertices.size() - 1)
-		var index_2 = VectorUtils.clamp_int(i + 1, 0, stored_vertices.size() - 1)
-		var vec_0 = stored_vertices[index_0]
-		var vec_2 = stored_vertices[index_2]
+	for vertex in v_stack.values():
+		var index_0 = VectorUtils.clamp_int(i - 1, 0, v_stack.size() - 1)
+		var index_2 = VectorUtils.clamp_int(i + 1, 0, v_stack.size() - 1)
+		var vec_0 = v_stack[index_0]
+		var vec_2 = v_stack[index_2]
 		
 		vertex["prev"] = vec_0
 		vertex["next"] = vec_2
@@ -185,8 +185,8 @@ func add_unsorted_ngon(vertices: Array, colors: Array, tangents: Array, uvs: Arr
 	# //////////////////////////////////////
 	# DOG EARS
 	# Check all vertices for dog ears
-	for vertex in stored_vertices.values():
-		if _check_dog_ear(vertex, stored_vertices):
+	for vertex in v_stack.values():
+		if _check_dog_ear(vertex, v_stack):
 			vertex["ear_vertex"] = true
 			ear_vertices[vertex["index"]] = vertex
 	
@@ -194,34 +194,21 @@ func add_unsorted_ngon(vertices: Array, colors: Array, tangents: Array, uvs: Arr
 	# //////////////////////////////////////
 	# DATA BUILD
 	i = 0
-	var loop_limit = stored_vertices.size() * 2
+	var loop_limit = v_stack.size() * 2
 	# Now we can B U I L D
 	while true:
 		
 		# If we have three left, build the last triangle and break.
-		if stored_vertices.size() == 3:
+		if v_stack.size() == 3:
 			i += 1
-			var a_i = stored_vertices.values()[0]["prev"]["index"]
-			var b_i = stored_vertices.values()[0]["index"]
-			var c_i = stored_vertices.values()[0]["next"]["index"]
+			var a_i = v_stack.values()[0]["prev"]["index"]
+			var b_i = v_stack.values()[0]["index"]
+			var c_i = v_stack.values()[0]["next"]["index"]
 			
 			# Check the orientation, as it could be either way
 			var vec = []; var col = []; var tng = [];  var nuv = [];  var nor = [];
-			var v_1 = Vector3();  var v_2 = Vector3();  var v_3 = Vector3()
 			
-			if _is_relative_tri_orientation_positive(vertices[a_i], vertices[b_i], vertices[c_i], is_orient_pos):
-				v_1 = vertices[a_i];  v_2 = vertices[c_i];  v_3 = vertices[b_i];
-			else:
-				v_1 = vertices[a_i];  v_2 = vertices[b_i];  v_3 = vertices[c_i];
-			
-			match vector_mask:
-				0:
-					# This ones inverted because of OnyxPolygon, you need to rewrite your geometry stack anyway.
-					vec = [Vector3(mask_value, v_1.y, v_1.x), Vector3(mask_value, v_2.y, v_2.x), Vector3(mask_value, v_3.y, v_3.x)]
-				1:
-					vec = [Vector3(v_1.x, mask_value, v_1.y), Vector3(v_2.x, mask_value, v_2.y), Vector3(v_3.x, mask_value, v_3.y)]
-				2:
-					vec = [Vector3(v_1.x, v_1.y, mask_value), Vector3(v_2.x, v_2.y, mask_value), Vector3(v_2.x, v_2.y, mask_value)]
+			vec = [vertices[a_i], vertices[b_i], vertices[c_i]]
 			
 			if colors.size() != 0:
 				col = [colors[a_i], colors[b_i], colors[c_i]]
@@ -232,12 +219,29 @@ func add_unsorted_ngon(vertices: Array, colors: Array, tangents: Array, uvs: Arr
 			if normals.size() != 0:
 				nor = [normals[a_i], normals[b_i], normals[c_i]]
 			
+			var tri_stack = [vec, col, tng, nuv, nor]
+			
+			if _is_relative_tri_orientation_positive(vertices[a_i], vertices[b_i], vertices[c_i], is_orient_pos):
+				for array in tri_stack:
+					if array.size() != 0:
+						var p_1 = array[1]
+						array.remove(1)
+						array.push_back(p_1)
+			
+			var v_1 = vec[0]; var v_2 = vec[1];  var v_3 = vec[2];
+			match vector_mask:
+				0:
+					# This ones inverted because of OnyxPolygon, you need to rewrite your geometry stack anyway.
+					vec = [Vector3(mask_value, v_1.y, v_1.x), Vector3(mask_value, v_2.y, v_2.x), Vector3(mask_value, v_3.y, v_3.x)]
+				1:
+					vec = [Vector3(v_1.x, mask_value, v_1.y), Vector3(v_2.x, mask_value, v_2.y), Vector3(v_3.x, mask_value, v_3.y)]
+				2:
+					vec = [Vector3(v_1.x, v_1.y, mask_value), Vector3(v_2.x, v_2.y, mask_value), Vector3(v_2.x, v_2.y, mask_value)]
+			
 			tris.append([ vec, col, tng, nuv, nor ])
 			break
 		
 		# Get the first ear vertex
-		print("NEW CYCLE - ", ear_vertices.keys())
-		print("VERTICES LEFT - ", stored_vertices.keys())
 		var ear_vertex = ear_vertices[ear_vertices.keys()[0]]
 		var ear_vertex_prev = ear_vertex["prev"]
 		var ear_vertex_next = ear_vertex["next"]
@@ -272,7 +276,7 @@ func add_unsorted_ngon(vertices: Array, colors: Array, tangents: Array, uvs: Arr
 		
 		# Remove the vertex from the list
 		ear_vertices.erase(ear_vertex["index"])
-		stored_vertices.erase(ear_vertex["index"])
+		v_stack.erase(ear_vertex["index"])
 		
 		# Change the indexes assigned to the previous and next vertexes
 		ear_vertex_prev["next"] = ear_vertex_next
@@ -295,10 +299,10 @@ func add_unsorted_ngon(vertices: Array, colors: Array, tangents: Array, uvs: Arr
 			ear_vertices.erase(ear_vertex_next["index"])
 		
 		# Re-check their dog ear status
-		if _check_dog_ear(ear_vertex_prev, stored_vertices):
+		if _check_dog_ear(ear_vertex_prev, v_stack):
 			ear_vertex_prev["ear_vertex"] = true
 			ear_vertices[ear_vertex_prev["index"]] = ear_vertex_prev
-		if _check_dog_ear(ear_vertex_next, stored_vertices):
+		if _check_dog_ear(ear_vertex_next, v_stack):
 			ear_vertex_next["ear_vertex"] = true
 			ear_vertices[ear_vertex_next["index"]] = ear_vertex_next
 		
@@ -493,7 +497,8 @@ func multiply_uvs(transform : Vector2):
 		var new_uvs = []
 
 		for uv in uvs:
-			new_uvs.append(uv * transform)
+			if uv != null:
+				new_uvs.append(uv * transform)
 
 		tri[3] = new_uvs
 
