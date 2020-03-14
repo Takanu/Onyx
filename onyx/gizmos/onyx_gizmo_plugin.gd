@@ -5,7 +5,6 @@ extends EditorSpatialGizmoPlugin
 # Gizmo plugin that manages and creates gizmos for other Onyx types.
 
 const ControlPointGizmo = preload("res://addons/onyx/gizmos/control_point_gizmo.gd")
-const OnyxCube = preload("res://addons/onyx/nodes/onyx/onyx_cube.gd")
 
 var plugin
 

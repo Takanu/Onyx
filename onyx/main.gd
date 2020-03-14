@@ -103,6 +103,9 @@ func _enter_tree():
 # Used to tell Godot that we want to handle these objects when they're selected.
 func handles(incoming_object):
 	
+	if Engine.editor_hint == false:
+		return
+	
 	print("ONYX handles() - ", incoming_object)
 	
 	if incoming_object.get_class() == "MultiNodeEdit":
@@ -162,6 +165,10 @@ func edit(object):
 # Adds a toolbar to the spatial toolbar area.
 # The control key is used in case the toolbar is deallocated during a script reload
 func add_toolbar(container, control_target, control_key):
+	
+	if Engine.editor_hint == false:
+		return
+		
 	backup_control_list[control_key] = [control_target, container]
 	add_control_to_container(container, control_target)
 	return control_target
@@ -169,6 +176,10 @@ func add_toolbar(container, control_target, control_key):
 	
 # Removes a toolbar to the spatial toolbar area.
 func remove_toolbar(toolbar_owner, container, control_key):
+	
+	if Engine.editor_hint == false:
+		return
+		
 	if backup_control_list.has(control_key):
 		var control_target = backup_control_list[control_key][0]
 		remove_control_from_container(container, control_target)

@@ -92,8 +92,6 @@ func _get(property):
 # Used when a handle variable changes in the properties panel.
 func update_polygon_points(new_value):
 	
-	print('updating polygon points')
-	
 	polygon_points = new_value
 	build_handles()
 	generate_geometry()
@@ -107,7 +105,8 @@ func update_depth(new_value):
 func update_point_plane(new_value):
 	
 	point_plane = new_value
-	
+	build_handles()
+	generate_geometry()
 	# ???
 	# ???
 
@@ -136,7 +135,7 @@ func update_origin_position(new_location = null):
 # Using the set handle points, geometry is generated and drawn.  The handles owned by the gizmo are also updated.
 func generate_geometry():
 	
-	print('trying to generate geometry...')
+#	print('trying to generate geometry...')
 	
 	# ////////////////////////////////////////
 	# VALIDITY CHECKS
@@ -162,7 +161,7 @@ func generate_geometry():
 		update_gizmo()
 		return
 	
-	print("[OnyxPolygon] ", self.get_name(), " - generate_geometry()")
+#	print("[OnyxPolygon] ", self.get_name(), " - generate_geometry()")
 	
 	# ////////////////////////////////////////
 	# EXTRUDE VECTOR + MESH OFFSET
@@ -177,6 +176,10 @@ func generate_geometry():
 	
 	# Add up all the signed angles and see if the average is positive or negative
 	var is_positively_orientated = VectorUtils.find_polygon_2d_orientation(polygon_points)
+	
+	# A fix for the X_Y orientation
+	if point_plane == PointPlane.X_Y:
+		is_positively_orientated = !is_positively_orientated
 	
 	# ////////////////////////////////////////
 	# TUBE BUILDER
@@ -262,6 +265,7 @@ func generate_geometry():
 		bottom_poly_points.invert()
 		bottom_uvs.invert()
 	
+	
 	match point_plane:
 		PointPlane.X_Z:
 			vector_mask = 1
@@ -301,7 +305,7 @@ func build_handles():
 	var plane_info = get_plane_info()
 	handles.clear()
 	
-	print("[OnyxPolygon] ", self.get_name(), " - build_handles()")
+#	print("[OnyxPolygon] ", self.get_name(), " - build_handles()")
 	
 	var i = 0
 	for point in polygon_points:
@@ -333,7 +337,7 @@ func refresh_handle_data():
 			build_handles()
 			return
 	
-	print("[OnyxPolygon] ", self.get_name(), " - refresh_handle_data()")
+#	print("[OnyxPolygon] ", self.get_name(), " - refresh_handle_data()")
 	
 	var i = 0
 	for control in handles.values():
@@ -348,7 +352,7 @@ func update_handle_from_gizmo(control):
 		print("update_handle_from_gizmo() - no handle found, whoops.")
 		return
 	
-	print("[OnyxPolygon] ", self.get_name(), " - update_handle_from_gizmo()")
+#	print("[OnyxPolygon] ", self.get_name(), " - update_handle_from_gizmo()")
 	
 	var index = int(control.control_name.replace(POLYGON_CONTROL_NAME, ""))
 	if index != null:
@@ -360,7 +364,7 @@ func update_handle_from_gizmo(control):
 # Applies the current control values to the shape attributes
 func apply_handle_attributes():
 	
-	print("[OnyxPolygon] ", self.get_name(), " - apply_handle_attributes()")
+#	print("[OnyxPolygon] ", self.get_name(), " - apply_handle_attributes()")
 	
 	var i = 0
 	for control in handles.values():
@@ -458,7 +462,7 @@ func convert_plane_point_to_vector3(point : Vector2) -> Vector3:
 # The margin options available in Hollow mode, identified by the control names that should have margins
 func get_hollow_margins() -> Array:
 	
-	print("[OnyxPolygon] ", self.get_name(), " - get_hollow_margins()")
+#	print("[OnyxPolygon] ", self.get_name(), " - get_hollow_margins()")
 	
 	return [
 		"top",
@@ -473,7 +477,7 @@ func assign_hollow_properties():
 	if hollow_object == null:
 		return
 	
-	print("[OnyxPolygon] ", self.get_name(), " - assign_hollow_properties()")
+#	print("[OnyxPolygon] ", self.get_name(), " - assign_hollow_properties()")
 
 #	if hollow_object.polygon_points.hash() != self.polygon_points.hash():
 #		hollow_object.polygon_points = self.polygon_points
@@ -492,7 +496,7 @@ func assign_hollow_origin():
 	if hollow_object == null:
 		return
 	
-	print("[OnyxPolygon] ", self.get_name(), " - assign_hollow_origin()")
+#	print("[OnyxPolygon] ", self.get_name(), " - assign_hollow_origin()")
 
 	var bottom_margin = get("hollow_mode/bottom_margin")
 	hollow_object.set_translation(Vector3(0, bottom_margin, 0))
@@ -504,7 +508,7 @@ func apply_hollow_margins(hollow_controls: Dictionary):
 	if hollow_object == null:
 		return
 	
-	print("[OnyxPolygon] ", self.get_name(), " - apply_hollow_margins(controls)")
+#	print("[OnyxPolygon] ", self.get_name(), " - apply_hollow_margins(controls)")
 #	print("base onyx controls - ", handles)
 #	print("hollow controls - ", hollow_controls)
 	
@@ -520,7 +524,6 @@ func apply_hollow_margins(hollow_controls: Dictionary):
 	var i = 0
 	
 	for hollow_control in hollow_controls.values():
-		print('boop')
 		
 		# Get the normal handle positions
 		var i_0 = VectorUtils.clamp_int(i - 1, 0, hollow_controls.size() - 1)
@@ -724,7 +727,7 @@ func insert_control_point(position : Vector3):
 		var snap_t = get_global_transform()
 		modified_position = VectorUtils.snap_position(position, Vector3(snap_inc, snap_inc, snap_inc), snap_t)
 	
-	print(handles.keys())
+#	print(handles.keys())
 	
 	# Now figure out which line its closest to.
 	# TODO - This system really isn't accurate.
@@ -742,8 +745,6 @@ func insert_control_point(position : Vector3):
 		var check = convert_vector3_to_plane_point(modified_position)
 		
 		var result = VectorUtils.find_distance_from_segment_2d(check, point_p1, point_p2)
-		print(point_p1, point_p2)
-		print(result)
 		
 #		var distance_1 = modified_position.distance_to(control_p1)
 #		var distance_2 = modified_position.distance_to(control_p2)
@@ -757,7 +758,6 @@ func insert_control_point(position : Vector3):
 	
 	var plane_info = get_plane_info()
 	var insert_index = int(closest_points[0].control_name.replace(POLYGON_CONTROL_NAME, "")) + 1
-	print("new index - ", insert_index)
 	
 	var new_control = ControlPoint.new(self, "get_gizmo_undo_state", "get_gizmo_redo_state", "restore_state", "restore_state")
 	new_control.control_position = modified_position
@@ -772,27 +772,19 @@ func insert_control_point(position : Vector3):
 		var rename_target = handles[POLYGON_CONTROL_NAME + str(i)]
 		handle_slice.append(rename_target)
 		handles.erase(POLYGON_CONTROL_NAME + str(i))
-		print('old - ', rename_target.control_name)
-		print(handles)
 		i += 1
 	
 	i = insert_index + 1
 	for handle in handle_slice:
 		handle.control_name = POLYGON_CONTROL_NAME + str(i)
 		handles[POLYGON_CONTROL_NAME + str(i)] = handle
-		print('new - ', handle.control_name)
-		print(handles)
 		i += 1
-	
-	print(handles.keys())
 	
 	# Insert the new control
 	var plane_point = convert_vector3_to_plane_point(modified_position)
 	
 	polygon_points.insert(insert_index, plane_point)
 	handles[new_control.control_name] = new_control
-	
-	print(handles.keys())
 	
 	rename_control_points()
 	generate_geometry()
@@ -801,18 +793,12 @@ func insert_control_point(position : Vector3):
 # Deletes the control point with the specified control.
 func delete_control_point(control):
 	
-	print("Attempting deletion! - ", control)
-	
 	var index = int(control.control_name.replace(POLYGON_CONTROL_NAME, ""))
 	if handles.has(control.control_name) == false || polygon_points.size() <= index:
-		print("nope. - ", index, "handle - ", control.control_name)
 		return
 	
 	polygon_points.remove(index)
 	handles.erase(control.control_name)
-	
-	print("Leftover points - ", polygon_points)
-	print("Leftover controls - ", handles.keys())
 	
 	rename_control_points()
 	generate_geometry()
@@ -833,5 +819,3 @@ func rename_control_points():
 		handles[control.control_name] = control
 		i += 1
 	
-	print("Renamed points - ", polygon_points)
-	print("Renamed controls - ", handles.keys())

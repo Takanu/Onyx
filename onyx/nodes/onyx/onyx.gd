@@ -303,7 +303,9 @@ func _ready():
 func _exit_tree():
 	
 	# Trigger this to ensure nothing is left behind.
-	editor_deselect()
+	if Engine.editor_hint == true:
+		editor_deselect()
+	
 
 # This was used, but there's no reason for it to be here.
 #func _notification(what):
@@ -676,8 +678,9 @@ func handle_build():
 # Used when an object is deselected to clear the handle info.
 func handle_clear():
 	
-	gizmo.control_points.clear()
-	handles.clear()
+	if Engine.editor_hint == true:
+		gizmo.control_points.clear()
+		handles.clear()
 	
 
 # Allows Control Points to notify the parent node that a handle has changed.

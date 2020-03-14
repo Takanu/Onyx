@@ -236,7 +236,7 @@ func add_unsorted_ngon(vertices: Array, colors: Array, tangents: Array, uvs: Arr
 				1:
 					vec = [Vector3(v_1.x, mask_value, v_1.y), Vector3(v_2.x, mask_value, v_2.y), Vector3(v_3.x, mask_value, v_3.y)]
 				2:
-					vec = [Vector3(v_1.x, v_1.y, mask_value), Vector3(v_2.x, v_2.y, mask_value), Vector3(v_2.x, v_2.y, mask_value)]
+					vec = [Vector3(v_1.x, v_1.y, mask_value), Vector3(v_2.x, v_2.y, mask_value), Vector3(v_3.x, v_3.y, mask_value)]
 			
 			tris.append([ vec, col, tng, nuv, nor ])
 			break
@@ -261,7 +261,7 @@ func add_unsorted_ngon(vertices: Array, colors: Array, tangents: Array, uvs: Arr
 			1:
 				vec = [Vector3(v_1.x, mask_value, v_1.y), Vector3(v_2.x, mask_value, v_2.y), Vector3(v_3.x, mask_value, v_3.y)]
 			2:
-				vec = [Vector3(v_1.x, v_1.y, mask_value), Vector3(v_2.x, v_2.y, mask_value), Vector3(v_2.x, v_2.y, mask_value)]
+				vec = [Vector3(v_1.x, v_1.y, mask_value), Vector3(v_2.x, v_2.y, mask_value), Vector3(v_3.x, v_3.y, mask_value)]
 		
 		if colors.size() != 0:
 			col = [colors[ear_ai], colors[ear_bi], colors[ear_ci]]
