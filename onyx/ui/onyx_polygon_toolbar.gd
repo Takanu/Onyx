@@ -6,13 +6,15 @@ extends HBoxContainer
 # EDIT ELEMENTS
 onready var move_button : Button = get_node("move")
 onready var add_button : Button = get_node("add")
+onready var insert_button : Button = get_node("insert")
 onready var delete_button : Button = get_node("delete")
 
 var edit_mode : int = 0
 const EDIT_MODE_NONE = 0
 const EDIT_MODE_MOVE = 1
 const EDIT_MODE_ADD = 2
-const EDIT_MODE_DELETE = 3
+const EDIT_MODE_INSERT = 3
+const EDIT_MODE_DELETE = 4
 
 signal edit_mode_changed
 
@@ -31,6 +33,7 @@ func _ready():
 	# Link the three button signals (NOPE CASES RECURSION LOOP)
 	move_button.connect("toggled", self, "_button_move_toggled")
 	add_button.connect("toggled", self, "_button_add_toggled")
+	insert_button.connect("toggled", self, "_button_insert_toggled")
 	delete_button.connect("toggled", self, "_button_delete_toggled")
 	print("finished connections")
 
@@ -47,6 +50,7 @@ func _set_edit_mode(new_edit_mode, is_pressed):
 	
 	move_button.pressed = false
 	add_button.pressed = false
+	insert_button.pressed = false
 	delete_button.pressed = false
 	
 	# If the one that was active becomes inactive, turn it off.
@@ -62,6 +66,8 @@ func _set_edit_mode(new_edit_mode, is_pressed):
 			move_button.pressed = true
 		EDIT_MODE_ADD:
 			add_button.pressed = true
+		EDIT_MODE_INSERT:
+			insert_button.pressed = true
 		EDIT_MODE_DELETE:
 			delete_button.pressed = true
 	
@@ -81,7 +87,10 @@ func _button_move_toggled(is_pressed):
 
 func _button_add_toggled(is_pressed):
 	_set_edit_mode(EDIT_MODE_ADD, is_pressed)
-	
+
+func _button_insert_toggled(is_pressed):
+	_set_edit_mode(EDIT_MODE_INSERT, is_pressed)
+
 func _button_delete_toggled(is_pressed):
 	_set_edit_mode(EDIT_MODE_DELETE, is_pressed)
 

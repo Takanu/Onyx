@@ -434,7 +434,7 @@ func _update_hollow_enable(value):
 	if is_hollow_object == true || Engine.editor_hint == false:
 		return
 	
-#	print("[Onyx] ", self.get_name() , " - _update_hollow_enable()")
+	print("[Onyx] ", self.get_name() , " - _update_hollow_enable()")
 	
 	# If we're not yet inside the tree, set the value and return.
 	if is_inside_tree() == false:
@@ -467,7 +467,7 @@ func _update_hollow_material(value):
 
 func _create_hollow_data():
 		
-#		print("[Onyx] ", self.get_name() , " - _create_hollow_data()")
+		print("[Onyx] ", self.get_name() , " - _create_hollow_data()")
 		
 		# REMEMBER THAT RE-SAVING A SCRIPT CAUSES IT TO BE RELOADED, MUST HAVE INSURANCE POLICY
 		if hollow_object != null:
@@ -490,6 +490,7 @@ func _create_hollow_data():
 #		print(self.get_children())
 		
 		hollow_object.operation = 2
+		assign_hollow_properties()
 		hollow_object.build_handles()
 		
 		# TEST COMMENT
@@ -507,7 +508,7 @@ func _create_hollow_data():
 
 func _delete_hollow_data():
 	
-#	print("[Onyx] ", self.get_name() , " - _delete_hollow_data()")
+	print("[Onyx] ", self.get_name() , " - _delete_hollow_data()")
 	
 	remove_child(hollow_object)
 		
@@ -521,7 +522,7 @@ func _delete_hollow_data():
 # Loads hollow data when the scene is loaded for the first time (_ready)
 func _load_hollow_data():
 	
-#	print("[Onyx] ", self.get_name() , " - _load_hollow_data()")
+	print("[Onyx] ", self.get_name() , " - _load_hollow_data()")
 	
 	if hollow_margin_values.size() == 0:
 		_generate_hollow_margin_data()
@@ -536,7 +537,7 @@ func _load_hollow_data():
 # Used specifically for when the game is running, as the node is not saved with the file.
 func _load_runtime_hollow_data():
 	
-#	print("[Onyx] ", self.get_name() , " - _load_runtime_hollow_data()")
+	print("[Onyx] ", self.get_name() , " - _load_runtime_hollow_data()")
 	
 	if Engine.editor_hint == false:
 		if hollow_mesh != null:
@@ -565,7 +566,7 @@ func _generate_hollow_margin_data():
 	if is_hollow_object == true || Engine.editor_hint == false:
 		return
 	
-#	print("[Onyx] ", self.get_name() , " - _generate_hollow_margins()")
+	print("[Onyx] ", self.get_name() , " - _generate_hollow_margins()")
 	
 	hollow_margin_values.clear()
 	var handle_names = get_hollow_margins()
@@ -577,7 +578,7 @@ func _generate_hollow_margin_data():
 # This is to prevent duplicate values and to ensure property name changes aren't destructive.
 func _build_hollow_margin_data():
 	
-#	print("[Onyx] ", self.get_name() , " - _build_hollow_margin_data()")
+	print("[Onyx] ", self.get_name() , " - _build_hollow_margin_data()")
 	
 	var handle_names = get_hollow_margins()
 	var new_hollow_margin_values = {}
@@ -602,7 +603,7 @@ func _build_hollow_margin_data():
 # while also calculating margin distances.
 func _generate_hollow_shape():
 	
-#	print("attempting to _generate_hollow_shape()")
+	print("attempting to _generate_hollow_shape()")
 	
 	if hollow_enable == false || is_hollow_object == true || is_inside_tree() == false:
 		return
@@ -610,13 +611,15 @@ func _generate_hollow_shape():
 	if hollow_object == null:
 		_create_hollow_data()
 		
-#	print("[Onyx] ", self.get_name() , " - _generate_hollow_shape()")
+	print("[Onyx] ", self.get_name() , " - _generate_hollow_shape()")
 	
 	# duplicate and set control data so the shapes mimic each other
+	print("1")
 	var parent_control_data = get_control_data()
 	hollow_object.set_control_data(parent_control_data)
 	
 	# Now modify the controls on an individual basis.
+	print("2")
 	apply_hollow_margins(hollow_object.handles)
 	hollow_object.apply_handle_attributes()
 	
@@ -624,11 +627,13 @@ func _generate_hollow_shape():
 	assign_hollow_origin()
 	
 	# Set material and render
+	print("3")
 	hollow_object.material = hollow_material
 	hollow_object.generate_geometry()
 	
 	hollow_mesh = hollow_object.mesh.duplicate()
 #	print("do we still exist?")
+	print("done")
 
 # ////////////////////////////////////////////////////////////
 # HANDLE GENERATION FUNCTIONS

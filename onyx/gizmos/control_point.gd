@@ -559,7 +559,15 @@ func mat_solid_color(red, green, blue):
 
 # Creates a new ControlPoint object and copies all properties to it (any arrays will also be duplicated).
 func copy() -> Object:
-	var new_control_point = load("res://addons/onyx/gizmos/control_point.gd").new()
+	
+	# CALLBACK
+	var owner_copy = self.control_point_owner
+	var undo_call_copy = self.undo_callback
+	var redo_call_copy = self.redo_callback
+	var undo_act_copy = self.undo_action_callback
+	var redo_act_copy = self.redo_action_callback
+	
+	var new_control_point = load("res://addons/onyx/gizmos/control_point.gd").new(owner_copy, undo_call_copy, redo_call_copy, undo_act_copy, redo_act_copy)
 	
 	# PROPERTIES
 	new_control_point.control_name = self.control_name
@@ -574,21 +582,22 @@ func copy() -> Object:
 	new_control_point.handle_distance = self.handle_distance
 	new_control_point.apply_snap = self.apply_snap
 	
-	# CALLBACK
-	new_control_point.control_point_owner = self.control_point_owner
-	new_control_point.undo_callback = self.undo_callback
-	new_control_point.redo_callback = self.redo_callback
+	
 
 	new_control_point.free_update_callback = self.free_update_callback
 	new_control_point.free_commit_callback = self.free_commit_callback
 	new_control_point.axis_update_callback = self.axis_update_callback
 	new_control_point.axis_commit_callback = self.axis_commit_callback
+	new_control_point.plane_update_callback = self.plane_update_callback
+	new_control_point.plane_commit_callback = self.plane_commit_callback
+	
 	new_control_point.translate_update_callback = self.translate_update_callback
 	new_control_point.translate_commit_callback = self.translate_commit_callback
 	new_control_point.rotate_update_callback = self.rotate_update_callback
 	new_control_point.rotate_commit_callback = self.rotate_commit_callback
 	new_control_point.scale_update_callback = self.scale_update_callback
 	new_control_point.scale_commit_callback = self.scale_commit_callback
+	
 	new_control_point.click_callback = self.click_callback
 	
 	

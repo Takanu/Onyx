@@ -295,8 +295,43 @@ static func check_segment_intersection(line_1 : Array, line_2 : Array) -> bool:
 	var ray_check_2 = check_ray_segment_intersection(line_2, line_1)
 	
 	return (bounds_check && ray_check_1 && ray_check_2)
-	
 
+# Returns the distance between a point and a line segment.
+static func find_distance_from_segment_2d(point : Vector2, seg_0 : Vector2, seg_1 : Vector2):
+	
+	if (seg_1 - seg_0).length() == 0:
+		return null
+	
+	var A = point.x - seg_0.x
+	var B = point.y - seg_0.y
+	var C = seg_1.x - seg_0.x
+	var D = seg_1.y - seg_0.y
+	
+	var dot = A * C + B * D
+	var len_sq = C * C + D * D
+	var param = -1
+	
+	if (len_sq != 0): # in case of 0 length line
+		param = dot / len_sq
+	
+	var xx;  var yy;
+	
+	if param < 0:
+		xx = seg_0.x
+		yy = seg_0.y
+	
+	elif param > 1:
+		xx = seg_1.x
+		yy = seg_1.y
+	
+	else:
+		xx = seg_0.x + param * C
+		yy = seg_0.y + param * D
+	
+	var dx = point.x - xx
+	var dy = point.y - yy
+	
+	return sqrt(dx * dx + dy * dy)
 
 # Checks to see if a collection of segments intersect with each other.
 # If any one of them does, returns true.  Otherwise returns false

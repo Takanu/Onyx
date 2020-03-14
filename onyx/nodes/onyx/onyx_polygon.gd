@@ -11,11 +11,9 @@ var ControlPoint = load("res://addons/onyx/gizmos/control_point.gd")
 
 
 # allows origin point re-orientation, for precise alignments and convenience.
-enum OriginPosition {CENTER, BASE, BASE_CORNER}
-export(OriginPosition) var origin_mode = OriginPosition.BASE setget update_origin_type
-
-# used to keep track of how to move the origin point into a new position.
-var previous_origin_mode = OriginPosition.BASE
+#enum OriginPosition {CENTER, BASE, BASE_CORNER}
+#export(OriginPosition) var origin_mode = OriginPosition.BASE setget update_origin_type
+#var previous_origin_mode = OriginPosition.BASE
 
 # Used to define what plane the points are built on.
 enum PointPlane {X_Z, X_Y, Z_Y}
@@ -94,6 +92,8 @@ func _get(property):
 # Used when a handle variable changes in the properties panel.
 func update_polygon_points(new_value):
 	
+	print('updating polygon points')
+	
 	polygon_points = new_value
 	build_handles()
 	generate_geometry()
@@ -104,24 +104,9 @@ func update_depth(new_value):
 	generate_geometry()
 
 
-# Changes the origin position relative to the shape and regenerates geometry and handles.
-func update_origin_type(new_value):
-	
-	if previous_origin_mode == new_value:
-		return
-	
-	origin_mode = new_value
-	update_origin_mode()
-	balance_handles()
-	generate_geometry()
-	
-	# ensure the origin mode toggle is preserved, and ensure the adjusted handles are saved.
-	previous_origin_mode = origin_mode
-	old_handle_data = get_control_data()
-
 func update_point_plane(new_value):
 	
-	origin_mode = new_value
+	point_plane = new_value
 	
 	# ???
 	# ???
@@ -151,7 +136,7 @@ func update_origin_position(new_location = null):
 # Using the set handle points, geometry is generated and drawn.  The handles owned by the gizmo are also updated.
 func generate_geometry():
 	
-#	print('trying to generate geometry...')
+	print('trying to generate geometry...')
 	
 	# ////////////////////////////////////////
 	# VALIDITY CHECKS
@@ -176,6 +161,8 @@ func generate_geometry():
 		refresh_handle_data()
 		update_gizmo()
 		return
+	
+	print("[OnyxPolygon] ", self.get_name(), " - generate_geometry()")
 	
 	# ////////////////////////////////////////
 	# EXTRUDE VECTOR + MESH OFFSET
@@ -308,11 +295,13 @@ func build_handles():
 	if Engine.editor_hint == false:
 		return
 	
+	if polygon_points.size() == 0:
+		return
+	
 	var plane_info = get_plane_info()
 	handles.clear()
 	
-	if polygon_points.size() == 0:
-		return
+	print("[OnyxPolygon] ", self.get_name(), " - build_handles()")
 	
 	var i = 0
 	for point in polygon_points:
@@ -344,6 +333,8 @@ func refresh_handle_data():
 			build_handles()
 			return
 	
+	print("[OnyxPolygon] ", self.get_name(), " - refresh_handle_data()")
+	
 	var i = 0
 	for control in handles.values():
 		control.control_position = convert_plane_point_to_vector3(polygon_points[i])
@@ -357,6 +348,8 @@ func update_handle_from_gizmo(control):
 		print("update_handle_from_gizmo() - no handle found, whoops.")
 		return
 	
+	print("[OnyxPolygon] ", self.get_name(), " - update_handle_from_gizmo()")
+	
 	var index = int(control.control_name.replace(POLYGON_CONTROL_NAME, ""))
 	if index != null:
 		polygon_points[index] = convert_vector3_to_plane_point(control.control_position)
@@ -366,6 +359,8 @@ func update_handle_from_gizmo(control):
 
 # Applies the current control values to the shape attributes
 func apply_handle_attributes():
+	
+	print("[OnyxPolygon] ", self.get_name(), " - apply_handle_attributes()")
 	
 	var i = 0
 	for control in handles.values():
@@ -382,79 +377,6 @@ func balance_handles():
 	# > the handle data is unique and independent, no balance required.
 	pass
 	
-
-# ////////////////////////////////////////////////////////////
-# NEW CONTROL POINT FUNCTIONS
-
-# Adds a control point using a 3D position
-func add_control_point(position : Vector3):
-	
-	var modified_position = position
-	
-	# If we have snapping enabled, modify the position.
-	if get_plugin().snap_gizmo_enabled == true:
-		var snap_inc = get_plugin().snap_gizmo_increment
-		var snap_t = get_global_transform()
-		modified_position = VectorUtils.snap_position(position, Vector3(snap_inc, snap_inc, snap_inc), snap_t)
-		
-	
-	var plane_info = get_plane_info()
-	
-	var new_control = ControlPoint.new(self, "get_gizmo_undo_state", "get_gizmo_redo_state", "restore_state", "restore_state")
-	new_control.control_position = modified_position
-	new_control.control_name = POLYGON_CONTROL_NAME + str(polygon_points.size())
-	new_control.set_type_plane(false, "handle_change", "handle_commit", plane_info["origin"], plane_info["x_up"], plane_info["y_up"])
-	
-	var plane_point = convert_vector3_to_plane_point(modified_position)
-	
-	polygon_points.append(plane_point)
-	handles[new_control.control_name] = new_control
-	
-	generate_geometry()
-	update_gizmo()
-
-# Deletes the control point with the specified control.
-func delete_control_point(control):
-	
-	print("Attempting deletion! - ", control)
-	
-	var index = int(control.control_name.replace(POLYGON_CONTROL_NAME, ""))
-	if handles.has(control.control_name) == false || polygon_points.size() <= index:
-		print("nope. - ", index, "handle - ", control.control_name)
-		return
-	
-	polygon_points.remove(index)
-	handles.erase(control.control_name)
-	
-	print("Leftover points - ", polygon_points)
-	print("Leftover controls - ", handles.keys())
-	
-	rename_control_points()
-	generate_geometry()
-
-# Used after a deletion to rename all other control points to be sequential
-func rename_control_points():
-	
-	if handles.size() == 0:
-		return
-	
-	# We also need to change the keys...
-	var old_handle_stack = handles.duplicate()
-	handles.clear()
-	
-	var i = 0
-	for control in old_handle_stack.values():
-		control.control_name = POLYGON_CONTROL_NAME + str(i)
-		handles[control.control_name] = control
-		i += 1
-	
-	print("Renamed points - ", polygon_points)
-	print("Renamed controls - ", handles.keys())
-	
-
-# Used to check if the polygon shape we have is free of intersections.
-func is_polgon_valid() -> bool:
-	return false
 
 # ////////////////////////////////////////////////////////////
 # SNAP PLANE FUNCTIONS
@@ -536,7 +458,13 @@ func convert_plane_point_to_vector3(point : Vector2) -> Vector3:
 # The margin options available in Hollow mode, identified by the control names that should have margins
 func get_hollow_margins() -> Array:
 	
-	return []
+	print("[OnyxPolygon] ", self.get_name(), " - get_hollow_margins()")
+	
+	return [
+		"top",
+		"bottom",
+		"inset",
+	]
 
 
 # Gets the current shape parameters not controlled by handles, to apply to the hollow shape
@@ -545,10 +473,16 @@ func assign_hollow_properties():
 	if hollow_object == null:
 		return
 	
-#	print("[OnyxPolygon] ", self.get_name(), " - assign_hollow_properties()")
+	print("[OnyxPolygon] ", self.get_name(), " - assign_hollow_properties()")
+
+#	if hollow_object.polygon_points.hash() != self.polygon_points.hash():
+#		hollow_object.polygon_points = self.polygon_points
 	
-#	if hollow_object.subdivisions != self.subdivisions:
-#		hollow_object.subdivisions = self.subdivisions
+	if hollow_object.depth != self.depth:
+		hollow_object.depth = self.depth
+	
+	if hollow_object.polygon_points.hash() != self.polygon_points.hash():
+		hollow_object.polygon_points = self.polygon_points
 	
 
 # Assigns the hollow object an origin point based on the origin mode of this Onyx type.
@@ -558,11 +492,11 @@ func assign_hollow_origin():
 	if hollow_object == null:
 		return
 	
-#	print("[OnyxPolygon] ", self.get_name(), " - assign_hollow_origin()")
-	
-#	hollow_object.set_translation(Vector3(0, 0, 0))
-	
+	print("[OnyxPolygon] ", self.get_name(), " - assign_hollow_origin()")
 
+	var bottom_margin = get("hollow_mode/bottom_margin")
+	hollow_object.set_translation(Vector3(0, bottom_margin, 0))
+	
 
 # An override-able function used to determine how margins apply to handles
 func apply_hollow_margins(hollow_controls: Dictionary):
@@ -570,28 +504,40 @@ func apply_hollow_margins(hollow_controls: Dictionary):
 	if hollow_object == null:
 		return
 	
-#	print("[OnyxPolygon] ", self.get_name(), " - apply_hollow_margins(controls)")
+	print("[OnyxPolygon] ", self.get_name(), " - apply_hollow_margins(controls)")
 #	print("base onyx controls - ", handles)
 #	print("hollow controls - ", hollow_controls)
 	
-#	for key in hollow_controls.keys():
-#		var hollow_handle = hollow_controls[key]
-#		var control_handle = handles[key]
-#		var margin = hollow_margin_values[key]
+	# TOP CAP
+	var top_margin = get("hollow_mode/top_margin")
+	var bottom_margin = get("hollow_mode/bottom_margin")
+	hollow_object.depth = depth - (top_margin + bottom_margin)
+	
+	# INSET MARGIN
+
+	var hollow_keys = hollow_controls.keys()
+	var inset = get("hollow_mode/inset_margin")
+	var i = 0
+	
+	for hollow_control in hollow_controls.values():
+		print('boop')
 		
-#		match key:
-#			"x_minus":
-#				hollow_handle.control_position.x = control_handle.control_position.x + margin
-#			"x_plus":
-#				hollow_handle.control_position.x = control_handle.control_position.x - margin
-#			"y_minus":
-#				hollow_handle.control_position.y = control_handle.control_position.y + margin
-#			"y_plus":
-#				hollow_handle.control_position.y = control_handle.control_position.y - margin
-#			"z_minus":
-#				hollow_handle.control_position.z = control_handle.control_position.z + margin
-#			"z_plus":
-#				hollow_handle.control_position.z = control_handle.control_position.z - margin
+		# Get the normal handle positions
+		var i_0 = VectorUtils.clamp_int(i - 1, 0, hollow_controls.size() - 1)
+		var i_2 = VectorUtils.clamp_int(i + 1, 0, hollow_controls.size() - 1)
+		
+		var control_0 = handles[POLYGON_CONTROL_NAME + str(i_0)]
+		var control_1 = handles[POLYGON_CONTROL_NAME + str(i)]
+		var control_2 = handles[POLYGON_CONTROL_NAME + str(i_2)]
+		
+		# Get the unit vector in-between these three points.
+		var v_1 = control_2.control_position - control_1.control_position
+		var v_2 = control_0.control_position - control_1.control_position
+		var unit = (v_1 + v_2).normalized()
+		
+		# Pull the hollow control by the unit multiplied by the margin
+		hollow_control.control_position = control_1.control_position + (unit * inset)
+		i += 1
 	
 	return hollow_controls
 
@@ -606,6 +552,9 @@ var is_mouse_down = false
 
 func editor_select():
 	
+	if is_hollow_object:
+		return
+	
 	# Failsafe for Godot's script reload badness.
 #	plugin.remove_control_in_backup("ONYX_POLYGON_TOOLBAR")
 
@@ -613,7 +562,6 @@ func editor_select():
 		edit_toolbar.queue_free()
 		edit_toolbar = null
 	
-	print("EDITOR SELECT")
 	if edit_toolbar == null:
 		edit_toolbar = load("res://addons/onyx/ui/onyx_polygon_toolbar.tscn").instance()
 		edit_toolbar = get_plugin().add_toolbar(EditorPlugin.CONTAINER_SPATIAL_EDITOR_BOTTOM, edit_toolbar, "onyx_polygon_toolbar")
@@ -623,7 +571,10 @@ func editor_select():
 
 
 func editor_deselect():
-	print("EDITOR DESELECT")
+	
+	if is_hollow_object:
+		return
+		
 	get_plugin().remove_toolbar(owner, EditorPlugin.CONTAINER_SPATIAL_EDITOR_BOTTOM, "onyx_polygon_toolbar")
 	
 	if edit_toolbar != null:
@@ -638,7 +589,7 @@ func deallocate_toolbar(toolbar):
 
 func receive_gui_input(camera, event):
 	
-	if edit_toolbar == null:
+	if edit_toolbar == null || is_hollow_object:
 		return
 	
 	if event.is_class("InputEventMouse") == false:
@@ -648,26 +599,30 @@ func receive_gui_input(camera, event):
 	
 	
 	match edit_toolbar.edit_mode:
-		0:
+		0: # NONE
 			pass
-		1:
+		1: # MOVE
 			pass
-		2:
+		2: # ADD
 			return _receive_input_add_mode(camera, event)
-		3:
+		3: # INSERT
+			return _receive_input_insert_mode(camera, event)
+		4: # DELETE
 			pass
-	
 	return false
 
 func _change_edit_mode(old_edit_mode, new_edit_mode):
 	
+	if is_hollow_object:
+		return
+	
 	# If the old edit mode is Delete, switch the handle type to Free
-	if old_edit_mode == 3:
+	if old_edit_mode == 4:
 		for control in handles.values():
 			control.set_type_free(true, "handle_change", "handle_commit")
 	
 	# If the new edit mode is Delete, switch the handle type to Delete
-	elif new_edit_mode == 3:
+	elif new_edit_mode == 4:
 		for control in handles.values():
 			control.set_type_click(true, "delete_control_point")
 
@@ -681,17 +636,12 @@ func _receive_input_add_mode(camera, event):
 	
 	if event.is_class("InputEventMouseButton"):
 		if is_mouse_down != event.pressed && event.button_index == BUTTON_LEFT:
-			# If we have a mouse down event and we didnt before, add a new handle and make it the active handle.
-			print("DING!")
-			
 			if event.pressed == true:
-				print("DING! DING! DIIIIIIING!")
 				var plane = get_plane_info()
 				var mouse_pos = event.position
 				var world_tf = self.global_transform
 				
 				var spawn_position = VectorUtils.project_cursor_to_plane(camera, mouse_pos, world_tf, plane["origin"], plane["x_up"], plane["y_up"])
-				print("NEW POSITION - ", spawn_position)
 				add_control_point(spawn_position)
 			
 			# If we have a mouse up event and we didnt before, finish the edit and generate geometry.
@@ -711,8 +661,177 @@ func _receive_input_add_mode(camera, event):
 	
 	return false
 
+func _receive_input_insert_mode(camera, event):
+	
+	if event.is_class("InputEventMouse") == false:
+		return
+	
+	if event.is_class("InputEventMouseButton"):
+		if is_mouse_down != event.pressed && event.button_index == BUTTON_LEFT:
+			if event.pressed == true:
+				var plane = get_plane_info()
+				var mouse_pos = event.position
+				var world_tf = self.global_transform
+				
+				var spawn_position = VectorUtils.project_cursor_to_plane(camera, mouse_pos, world_tf, plane["origin"], plane["x_up"], plane["y_up"])
+				insert_control_point(spawn_position)
+			
+			# If we have a mouse up event and we didnt before, finish the edit and generate geometry.
+			if event.pressed == false:
+				pass
+			
+			is_mouse_down = event.pressed
+			return true
 
 
 # ////////////////////////////////////////////////////////////
 # UI EDITOR FUNCTIONS
+# Adds a control point using a 3D position
+func add_control_point(position : Vector3):
+	
+	var modified_position = position
+	
+	# If we have snapping enabled, modify the position.
+	if get_plugin().snap_gizmo_enabled == true:
+		var snap_inc = get_plugin().snap_gizmo_increment
+		var snap_t = get_global_transform()
+		modified_position = VectorUtils.snap_position(position, Vector3(snap_inc, snap_inc, snap_inc), snap_t)
+		
+	
+	var plane_info = get_plane_info()
+	
+	var new_control = ControlPoint.new(self, "get_gizmo_undo_state", "get_gizmo_redo_state", "restore_state", "restore_state")
+	new_control.control_position = modified_position
+	new_control.control_name = POLYGON_CONTROL_NAME + str(polygon_points.size())
+	new_control.set_type_plane(false, "handle_change", "handle_commit", plane_info["origin"], plane_info["x_up"], plane_info["y_up"])
+	
+	var plane_point = convert_vector3_to_plane_point(modified_position)
+	
+	polygon_points.append(plane_point)
+	handles[new_control.control_name] = new_control
+	
+	generate_geometry()
+	update_gizmo()
 
+# Inserts a control point between the two closest points.
+func insert_control_point(position : Vector3):
+	
+	var modified_position = position
+	
+	# If we have snapping enabled, modify the position.
+	if get_plugin().snap_gizmo_enabled == true:
+		var snap_inc = get_plugin().snap_gizmo_increment
+		var snap_t = get_global_transform()
+		modified_position = VectorUtils.snap_position(position, Vector3(snap_inc, snap_inc, snap_inc), snap_t)
+	
+	print(handles.keys())
+	
+	# Now figure out which line its closest to.
+	# TODO - This system really isn't accurate.
+	var closest_points = []
+	var closest_distance = 0.0
+	var i = 0
+	for control in handles.values():
+		var control_i2 = VectorUtils.clamp_int(i + 1, 0, handles.size() - 1)
+		var control_2 = handles[POLYGON_CONTROL_NAME + str(control_i2)]
+		var control_p1 = control.control_position
+		var control_p2 = control_2.control_position
+		
+		var point_p1 = convert_vector3_to_plane_point(control_p1)
+		var point_p2 = convert_vector3_to_plane_point(control_p2)
+		var check = convert_vector3_to_plane_point(modified_position)
+		
+		var result = VectorUtils.find_distance_from_segment_2d(check, point_p1, point_p2)
+		print(point_p1, point_p2)
+		print(result)
+		
+#		var distance_1 = modified_position.distance_to(control_p1)
+#		var distance_2 = modified_position.distance_to(control_p2)
+#		var result = (distance_1 + distance_2) / 2
+		
+		if closest_distance == 0 || closest_distance > result:
+			closest_distance = result
+			closest_points = [control, control_2]
+		
+		i += 1
+	
+	var plane_info = get_plane_info()
+	var insert_index = int(closest_points[0].control_name.replace(POLYGON_CONTROL_NAME, "")) + 1
+	print("new index - ", insert_index)
+	
+	var new_control = ControlPoint.new(self, "get_gizmo_undo_state", "get_gizmo_redo_state", "restore_state", "restore_state")
+	new_control.control_position = modified_position
+	new_control.control_name = POLYGON_CONTROL_NAME + str(insert_index)
+	new_control.set_type_plane(false, "handle_change", "handle_commit", plane_info["origin"], plane_info["x_up"], plane_info["y_up"])
+	
+	# Rename all the controls above it
+	var handle_slice = []
+	var size = handles.size()
+	i = insert_index
+	while i < size:
+		var rename_target = handles[POLYGON_CONTROL_NAME + str(i)]
+		handle_slice.append(rename_target)
+		handles.erase(POLYGON_CONTROL_NAME + str(i))
+		print('old - ', rename_target.control_name)
+		print(handles)
+		i += 1
+	
+	i = insert_index + 1
+	for handle in handle_slice:
+		handle.control_name = POLYGON_CONTROL_NAME + str(i)
+		handles[POLYGON_CONTROL_NAME + str(i)] = handle
+		print('new - ', handle.control_name)
+		print(handles)
+		i += 1
+	
+	print(handles.keys())
+	
+	# Insert the new control
+	var plane_point = convert_vector3_to_plane_point(modified_position)
+	
+	polygon_points.insert(insert_index, plane_point)
+	handles[new_control.control_name] = new_control
+	
+	print(handles.keys())
+	
+	rename_control_points()
+	generate_geometry()
+	update_gizmo()
+
+# Deletes the control point with the specified control.
+func delete_control_point(control):
+	
+	print("Attempting deletion! - ", control)
+	
+	var index = int(control.control_name.replace(POLYGON_CONTROL_NAME, ""))
+	if handles.has(control.control_name) == false || polygon_points.size() <= index:
+		print("nope. - ", index, "handle - ", control.control_name)
+		return
+	
+	polygon_points.remove(index)
+	handles.erase(control.control_name)
+	
+	print("Leftover points - ", polygon_points)
+	print("Leftover controls - ", handles.keys())
+	
+	rename_control_points()
+	generate_geometry()
+
+# Used after a deletion or insertion to rename all other control points to be sequential
+func rename_control_points():
+	
+	if handles.size() == 0:
+		return
+	
+	# We also need to change the keys...
+	var old_handle_stack = handles.duplicate()
+	handles.clear()
+	
+	var i = 0
+	for control in old_handle_stack.values():
+		control.control_name = POLYGON_CONTROL_NAME + str(i)
+		handles[control.control_name] = control
+		i += 1
+	
+	print("Renamed points - ", polygon_points)
+	print("Renamed controls - ", handles.keys())

@@ -32,9 +32,18 @@ toggle_mode = true
 text = "Add"
 flat = true
 
-[node name="delete" type="Button" parent="."]
+[node name="insert" type="Button" parent="."]
 margin_left = 100.0
-margin_right = 155.0
+margin_right = 150.0
+margin_bottom = 36.0
+hint_tooltip = "Create a new handle point."
+toggle_mode = true
+text = "Insert"
+flat = true
+
+[node name="delete" type="Button" parent="."]
+margin_left = 154.0
+margin_right = 209.0
 margin_bottom = 36.0
 hint_tooltip = "Create a new handle point."
 toggle_mode = true
@@ -42,6 +51,6 @@ text = "Delete"
 flat = true
 
 [node name="VSeparator2" type="VSeparator" parent="."]
-margin_left = 159.0
-margin_right = 163.0
+margin_left = 213.0
+margin_right = 217.0
 margin_bottom = 36.0
