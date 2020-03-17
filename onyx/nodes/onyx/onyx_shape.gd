@@ -115,8 +115,13 @@ var boolean_preview_node = null
 # /////////////////////////////////////////////////////////////////////////////
 # INITIALIZATION
 
+# Called right at the objects creation, the earliest """init""" call
+func _init():
+	print("[OnyxShape] ", self.get_name() , " - _init()")
 
-# Global initialisation
+
+# Called when the node enters the scene tree (either from code, editor reparenting or 
+# other stuff.
 func _enter_tree():
 	
 	print("[OnyxShape] ", self.get_name() , " - _enter_tree()")
@@ -126,7 +131,9 @@ func _enter_tree():
 		_build_runtime_hollow_object()
 
 
-# Called when the node enters the scene tree for the first time.
+# Called when the node is "ready", i.e. when both the node and its children have 
+# entered the scene tree. If the node has children, their _ready() callbacks get triggered 
+# first, and the parent node will receive the ready notification afterwards.
 func _ready():
 	
 	print("[OnyxShape] ", self.get_name() , " - _ready()")
@@ -150,33 +157,14 @@ func _ready():
 			_create_hollow_object()
 
 
-# Used to perform some basic deallocation where necessary
+# Called when the node is removed from the scene tree for any reason.
+# (really m8, don't use this for deallocation, it will not end well)
 func _exit_tree():
 	
-	print("[OnyxShape] ", self.get_name() , " - _exit_tree()")
+#	print("[OnyxShape] ", self.get_name() , " - _exit_tree()")
+	pass
 
-	# Trigger this to ensure nothing is left behind.
-	if Engine.editor_hint == true:
-		
-		editor_deselect()
-		update_gizmo() # just a test, idk
-		gizmo.control_points.clear()
-		
-		_gen_property_list.clear()
-		_gen_property_values.clear()
-		
-		if _generator != null:
-			_generator.disconnect("shape_properties_updated", self, "update_all_geometry")
-			_generator.disconnect("hollow_properties_updated", self, "_update_hollow_geometry")
-			_generator.disconnect("property_list_changed", self, "update_gen_property_lists")
-			_generator.disconnect("request_origin_move", self, "_move_origin")
-			_generator.disconnect("request_origin_change", self, "_replace_origin")
-		
-			remove_child(_generator)
-			_generator.free()
 
-	return
-	
 # This was used, maybe itll be used later
 #func _notification(what):
 #
@@ -196,7 +184,7 @@ func _exit_tree():
 # advanced usage but... why.
 
 func _get_property_list():
-#	print("[Onyx] ", self.get_name() , " - _get_property_list()")
+	print("[OnyxShape] ", self.get_name() , " - _get_property_list()")
 	var props = [
 		
 		{
@@ -252,7 +240,7 @@ func _get_property_list():
 	return props
 
 func _set(property, value):
-#	print("[OnyxShape] ", self.get_name() , " - _set() : ", property, " ", value)
+	print("[OnyxShape] ", self.get_name() , " - _set() : ", property, " ", value)
 	
 	# Same-value catcher.
 	var old_value = self.get(property)
@@ -331,7 +319,7 @@ func _set(property, value):
 
 
 func _get(property):
-#	print("[OnyxShape] ", self.get_name() , " - _get() : ", property)
+	print("[OnyxShape] ", self.get_name() , " - _get() : ", property)
 	match property:
 		
 		# Saved internal properties
