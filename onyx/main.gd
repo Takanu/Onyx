@@ -94,64 +94,77 @@ func _enter_tree():
 # ////////////////////////////////////////////////////////////
 # EDITOR SELECTION
 
+# Used when the scene is saved or closed.  Use this to fix things that are busted.
+func save_external_data():
+	
+	print("[Onyx (main)] ", self, " - save_external_data() - ")
+	
+	# THIS MUST BE CLEARED, OTHERWISE BAD THINGS HAPPEN ON RELOAD.
+	currently_selected_node = null
+	
+
 # Used to tell Godot that we want to handle these objects when they're selected.
 func handles(incoming_object):
 	
 	if Engine.editor_hint == false:
 		return
 	
-	print("ONYX handles() - ", incoming_object)
+	print("[Onyx (main)] ", self, " - handles(incoming_object) - ", incoming_object)
 	
 	if incoming_object.get_class() == "MultiNodeEdit":
 		return false
-	
+
 	for handled_object in NodeHandlerList:
 		if incoming_object is handled_object:
-			print(incoming_object, currently_selected_node)
 			
+			print("New selected object! - ", incoming_object)
+
 			# Handle editor selections and deselections here
 			if currently_selected_node != incoming_object:
-				
+
 				if currently_selected_node != null:
 					currently_selected_node.editor_deselect()
-					
+
 				currently_selected_node = incoming_object
 				currently_selected_node.editor_select()
-			
+
 			elif currently_selected_node == null:
+				currently_selected_node = incoming_object
 				currently_selected_node.editor_select()
-			
+
 			return true
-	
+
 	if currently_selected_node != null:
+		print("Nullifying selected node", incoming_object)
 		currently_selected_node.editor_deselect()
 		currently_selected_node = null
 	
+	print("Finishing handling operation")
 	return false
 	
 # The functionality of this isn't actually clea, gets called multiple times during a new selection o - o
-func make_visible(is_visible):
-	
-#	print("ONYX make_visible - ", is_visible)
-	
-	# If the node we had is no longer visible and we were given no other nodes,
-	# we have to deselect it just to be careful.
-#	if currently_selected_node != null && is_visible == false:
-#		currently_selected_node.editor_deselect()
-#		currently_selected_node = null
-	
-	pass
+#func make_visible(is_visible):
+#
+#	print("[Onyx (main)] ", self, " - make_visible(is_visible) - ", is_visible)
+#
+#	# If the node we had is no longer visible and we were given no other nodes,
+#	# we have to deselect it just to be careful.
+##	if currently_selected_node != null && is_visible == false:
+##		currently_selected_node.editor_deselect()
+##		currently_selected_node = null
+#
+#	pass
 	
 
 # The functionality of this is also no longer clear, gets called multiple times for no obvious reason
-func edit(object):
-	
-#	print("ONYX edit - ", object)
-	
-#	currently_selected_node = object
-#	currently_selected_node.editor_select()
-	pass
-	
+#func edit(object):
+#
+#	print("[Onyx (main)] ", self, " - edit(object) - ", object)
+#
+##	currently_selected_node = object
+##	currently_selected_node.editor_select()
+#	pass
+#
 	
 # ////////////////////////////////////////////////////////////
 # CUSTOM UI
@@ -159,6 +172,8 @@ func edit(object):
 # Adds a toolbar to the spatial toolbar area.
 # The control key is used in case the toolbar is deallocated during a script reload
 func add_toolbar(container, control_target, control_key):
+	
+	print("[Onyx (main)] ", self, " - remove_toolbar()")
 	
 	if Engine.editor_hint == false:
 		return
@@ -170,6 +185,8 @@ func add_toolbar(container, control_target, control_key):
 	
 # Removes a toolbar to the spatial toolbar area.
 func remove_toolbar(toolbar_owner, container, control_key):
+	
+	print("[Onyx (main)] ", self, " - remove_toolbar()")
 	
 	if Engine.editor_hint == false:
 		return
@@ -193,12 +210,39 @@ func remove_toolbar(toolbar_owner, container, control_key):
 # Return True to consume the event and False to pass it onto other editorss.
 func forward_spatial_gui_input(camera, ev):
 	
-	if currently_selected_node != null:
-		if currently_selected_node.has_method("receive_gui_input") == true:
-			var result =  currently_selected_node.call("receive_gui_input", camera, ev)
-			return result
-
 	return false
+	
+#	# An attempt to catch weird "not quite deallocated" objects in Godot 3.2
+#	if currently_selected_node != null:
+#		if currently_selected_node.get_instance_id() == 0:
+#
+#			print(" I N S T A N C E   I D   R E J E C T E D ")
+#			currently_selected_node = null
+#			return false
+#
+#	if currently_selected_node != null:
+#		print("currently selected node - ", currently_selected_node, 
+#				currently_selected_node.get_class())
+#	else:
+#		print("currently selected node - ", currently_selected_node)
+#
+#	print("[Onyx (main)] ", self, " - forward_spatial_gui_input()")
+#
+##	if currently_selected_node != null:
+##		if currently_selected_node.get_class() == 'previously freed instance':
+##			currently_selected_node = null
+##			return false
+#	print(currently_selected_node)
+#	if currently_selected_node != null:
+#		return false
+#
+#		if currently_selected_node.has_method("receive_gui_input") == true:
+#			return false
+#
+##			var result =  currently_selected_node.call("receive_gui_input", camera, ev)
+##			return result
+#
+#	return false
 	
 	
 
@@ -208,6 +252,9 @@ func forward_spatial_gui_input(camera, ev):
 
 
 func _exit_tree():
+	
+	print("[Onyx (main)] ", self, " - _exit_tree()")
+	
 	#  Clean-up of the plugin goes here
 	remove_control_from_container(CONTAINER_SPATIAL_EDITOR_MENU, snap_menu)
 	snap_menu.queue_free()

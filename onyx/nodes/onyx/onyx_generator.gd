@@ -140,14 +140,12 @@ var previous_active_controls : Dictionary = {}
 
 # Global initialisation
 func _enter_tree():
-	
 	print("[OnyxGenerator] ", self, " - _enter_tree()")
 	pass
 
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
-	
 	print("[OnyxGenerator] ", self, " - _ready()")
 	
 	if Engine.editor_hint == true:
@@ -158,12 +156,13 @@ func _ready():
 
 # Used to perform some basic deallocation where necessary
 func _exit_tree():
-	
 	print("[OnyxGenerator] ", self, " - _exit_tree()")
 	
 	# Trigger this to ensure nothing is left behind.
 	if Engine.editor_hint == true:
 		editor_deselect()
+		active_controls.clear()
+		previous_active_controls.clear()
 	
 	return
 
@@ -366,7 +365,7 @@ func commit_control(control):
 #	print("********************************")
 
 # Used by the ControlPoint to get the global transform of the owning node.
-func get_global_transform() -> Transform:
+func get_global_transform():
 	return self.global_transform
 
 # /////////////////////////////////////////////////////////////////////////////
@@ -425,7 +424,6 @@ func get_gizmo_undo_state(control_point):
 
 # Restores the state of the shape to a previous given state.
 func restore_state(state):
-	
 	print("[OnyxGenerator] ", self, " - restore_state()")
 	
 	var new_controls = state[0]
@@ -447,7 +445,6 @@ func restore_state(state):
 # EDITOR SELECTION
 
 func editor_select():
-	
 	print("[OnyxGenerator] ", self, " - editor_select()")
 	
 	if Engine.editor_hint == true:
@@ -456,7 +453,6 @@ func editor_select():
 	
 	
 func editor_deselect():
-	
 	print("[OnyxGenerator] ", self.name, " - editor_deselect()")
 	
 	if Engine.editor_hint == true:

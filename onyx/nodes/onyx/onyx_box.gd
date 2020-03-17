@@ -183,7 +183,7 @@ func set_shape_aspects(aspects : Dictionary):
 
 # Creates new geometry to reflect the shapes current properties, then returns it.
 func update_geometry() -> OnyxMesh:
-
+	
 	# Prevents geometry generation if the node hasn't loaded yet
 	if Engine.editor_hint == false:
 		return OnyxMesh.new()
@@ -573,8 +573,6 @@ func apply_control_attributes():
 	y_plus_position = active_controls["y_plus"].control_position.y
 	z_minus_position = active_controls["z_minus"].control_position.z * -1
 	z_plus_position = active_controls["z_plus"].control_position.z
-
-
 
 # Calibrates the stored properties if they need to change before the origin is updated.
 # Only called during Gizmo movements for origin auto-updating.

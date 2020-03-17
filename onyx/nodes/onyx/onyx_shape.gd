@@ -159,18 +159,21 @@ func _exit_tree():
 	if Engine.editor_hint == true:
 		
 		editor_deselect()
+		update_gizmo() # just a test, idk
 		gizmo.control_points.clear()
 		
 		_gen_property_list.clear()
 		_gen_property_values.clear()
 		
-		_generator.disconnect("shape_properties_updated", self, "update_all_geometry")
-		_generator.disconnect("hollow_properties_updated", self, "_update_hollow_geometry")
-		_generator.disconnect("property_list_changed", self, "update_gen_property_lists")
-		_generator.disconnect("request_origin_move", self, "_move_origin")
-		_generator.disconnect("request_origin_change", self, "_replace_origin")
-		remove_child(_generator)
-		_generator.free()
+		if _generator != null:
+			_generator.disconnect("shape_properties_updated", self, "update_all_geometry")
+			_generator.disconnect("hollow_properties_updated", self, "_update_hollow_geometry")
+			_generator.disconnect("property_list_changed", self, "update_gen_property_lists")
+			_generator.disconnect("request_origin_move", self, "_move_origin")
+			_generator.disconnect("request_origin_change", self, "_replace_origin")
+		
+			remove_child(_generator)
+			_generator.free()
 
 	return
 	
@@ -459,6 +462,7 @@ func create_generator_data():
 	property_list_changed_notify()
 
 	use_collision = true
+	
 
 
 # Populates the generator with the currently saved property data.  
@@ -472,7 +476,6 @@ func load_generator_data():
 			return
 	
 	print("[OnyxShape] ", self.get_name() , " - load_generator_data() : ")
-	
 	
 	
 	
@@ -527,6 +530,8 @@ func switch_generator(new_value):
 	_generator.connect("shape_properties_updated", self, "update_all_geometry")
 	_generator.connect("hollow_properties_updated", self, "_update_hollow_geometry")
 	_generator.connect("property_list_changed", self, "update_gen_property_lists")
+	_generator.connect("request_origin_move", self, "_move_origin")
+	_generator.connect("request_origin_change", self, "_replace_origin")
 	
 	# Create mesh data
 	_update_geometry()
@@ -771,39 +776,39 @@ func _update_hollow_material(value):
 # Creates the hollow object, won't generate new mesh data if it doesn't have to.
 func _create_hollow_object():
 		
-		print("[Onyx] ", self.get_name() , " - _create_hollow_object()")
-		
-		# REMEMBER THAT RE-SAVING A SCRIPT CAUSES IT TO BE RELOADED, MUST HAVE INSURANCE POLICY
-		if Engine.editor_hint == false || hollow_object != null:
+	print("[Onyx] ", self.get_name() , " - _create_hollow_object()")
+	
+	# REMEMBER THAT RE-SAVING A SCRIPT CAUSES IT TO BE RELOADED, MUST HAVE INSURANCE POLICY
+	if Engine.editor_hint == false || hollow_object != null:
 #			print("Hollow object already found, returning!")
-			return
-		
-		if has_node(HOLLOW_OBJECT_NAME):
-			hollow_object = self.get_node(HOLLOW_OBJECT_NAME)
-			return
-		
-		# Build the node
-		hollow_object = CSGMesh.new()
-		hollow_object.set_name(HOLLOW_OBJECT_NAME)
-		add_child(hollow_object)
-		
-		# Check for mesh before generating one
-		if hollow_mesh != null:
-			hollow_object.set_mesh(hollow_mesh)
-		else:
-			_update_hollow_geometry()
-		
-		# Set the origin and operation mode
-		_generator.get_hollow_origin()
-		hollow_object.operation = 2
-		
-		# If the parent has a material, let the child inherit it.
-		if hollow_material != null:
-			hollow_object.material = hollow_material
-		elif material != null:
-			hollow_material = self.material
-		
-		print("new hollow object - ", hollow_object)
+		return
+	
+	if has_node(HOLLOW_OBJECT_NAME):
+		hollow_object = self.get_node(HOLLOW_OBJECT_NAME)
+		return
+	
+	# Build the node
+	hollow_object = CSGMesh.new()
+	hollow_object.set_name(HOLLOW_OBJECT_NAME)
+	add_child(hollow_object)
+	
+	# Check for mesh before generating one
+	if hollow_mesh != null:
+		hollow_object.set_mesh(hollow_mesh)
+	else:
+		_update_hollow_geometry()
+	
+	# Set the origin and operation mode
+	_generator.get_hollow_origin()
+	hollow_object.operation = 2
+	
+	# If the parent has a material, let the child inherit it.
+	if hollow_material != null:
+		hollow_object.material = hollow_material
+	elif material != null:
+		hollow_material = self.material
+	
+	print("new hollow object - ", hollow_object)
 
 
 # Deletes the hollow object node and defaults all hollow data.
