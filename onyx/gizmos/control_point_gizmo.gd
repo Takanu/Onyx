@@ -3,10 +3,17 @@ extends EditorSpatialGizmo
 
 # ////////////////////////////////////////////////////////////
 # INFO
-# A compound gizmo system that uses ControlPoint types instead of loose positions, allowing one node to display gizmos for different nodes as
-# well as being able to display and manage more complicated sets of handles.
-
+# A compound gizmo system that uses ControlPoint types instead of loose positions, allowing one node to display gizmos for multiple other nodes as well as being able to display and manage more complicated sets of ControlPoints.
+#
+#
 # Any callbacks are handled through the GizmoHandle type itself.
+
+
+# ////////////////////////////////////////////////////////////
+# INTERFACE
+
+# get_gizmo_control_points() - Owning node must implement this to forward handle data.
+
 
 
 # ////////////////////////////////////////////////////////////

@@ -188,7 +188,7 @@ func receive_viewport_click(camera, event):
 # BUILDERS
 
 # Generates geometry that's just used for collision visualisation in the editor.
-func generate_geometry():
+func update_geometry():
 	pass
 
 

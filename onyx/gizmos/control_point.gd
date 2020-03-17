@@ -66,9 +66,9 @@ var handle_distance: float = 0.5
 
 
 # ////////////////////////////////////////////////////////////
-# CALLBACK
+# CALLBACKS
 # The node that this handle belongs to, will be used for all callbacks.
-var control_point_owner
+var control_point_owner : Object
 
 # The callback used to create and return undo data.
 var undo_data_callback: String = ""
@@ -126,7 +126,8 @@ var click_callback: String = ""
 
 # ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 # INITIALIZATION
-func _init(owner : Node, undo_data_callback : String, redo_data_callback : String, undo_action_callback : String, redo_action_callback : String):
+func _init(owner : Node, undo_data_callback : String, redo_data_callback : String, undo_action_callback : String, 
+		redo_action_callback : String):
 	self.control_point_owner = owner
 	self.undo_data_callback = undo_data_callback
 	self.redo_data_callback = redo_data_callback
@@ -138,8 +139,8 @@ func _init(owner : Node, undo_data_callback : String, redo_data_callback : Strin
 # ////////////////////////////////////////////////////////////
 # MAINTENANCE
 
-# Clears any callbacks set.
-func clear_callbacks():
+# Clears any mode-based callbacks set.
+func clear_mode_callbacks():
 	free_update_callback = ""
 	free_commit_callback = ""
 	axis_update_callback = ""
@@ -163,7 +164,7 @@ func clear_callbacks():
 func set_type_free(clear_all_callbacks : bool, update_callback : String, commit_callback : String):
 	
 	if clear_all_callbacks == true:
-		clear_callbacks()
+		clear_mode_callbacks()
 	
 	self.handle_type = HandleType.FREE
 	self.free_update_callback = update_callback
@@ -173,7 +174,7 @@ func set_type_free(clear_all_callbacks : bool, update_callback : String, commit_
 func set_type_axis(clear_all_callbacks : bool, update_callback : String, commit_callback : String, snap_axis : Vector3):
 	
 	if clear_all_callbacks == true:
-		clear_callbacks()
+		clear_mode_callbacks()
 	
 	self.handle_type = HandleType.AXIS
 	self.axis_update_callback = update_callback
@@ -183,7 +184,7 @@ func set_type_axis(clear_all_callbacks : bool, update_callback : String, commit_
 func set_type_plane(clear_all_callbacks : bool, update_callback : String, commit_callback : String, plane_origin : Vector3, plane_x : Vector3, plane_y : Vector3):
 	
 	if clear_all_callbacks == true:
-		clear_callbacks()
+		clear_mode_callbacks()
 	
 	self.handle_type = HandleType.PLANE
 	self.plane_update_callback = update_callback
@@ -195,7 +196,7 @@ func set_type_plane(clear_all_callbacks : bool, update_callback : String, commit
 func set_type_translate(clear_all_callbacks : bool, update_callback : String, commit_callback : String):
 	
 	if clear_all_callbacks == true:
-		clear_callbacks()
+		clear_mode_callbacks()
 	
 	self.handle_type = HandleType.TRANSLATE
 	self.translate_update_callback = update_callback
@@ -205,7 +206,7 @@ func set_type_translate(clear_all_callbacks : bool, update_callback : String, co
 func set_type_rotation(clear_all_callbacks : bool, update_callback : String, commit_callback : String):
 	
 	if clear_all_callbacks == true:
-		clear_callbacks()
+		clear_mode_callbacks()
 	
 	self.handle_type = HandleType.ROTATE
 	self.rotation_update_callback = update_callback
@@ -215,7 +216,7 @@ func set_type_rotation(clear_all_callbacks : bool, update_callback : String, com
 func set_type_scale(clear_all_callbacks : bool, update_callback : String, commit_callback : String):
 	
 	if clear_all_callbacks == true:
-		clear_callbacks()
+		clear_mode_callbacks()
 	
 	self.handle_type = HandleType.SCALE
 	self.scale_update_callback = update_callback
@@ -225,7 +226,7 @@ func set_type_scale(clear_all_callbacks : bool, update_callback : String, commit
 func set_type_click(clear_all_callbacks : bool, click_callback : String):
 	
 	if clear_all_callbacks == true:
-		clear_callbacks()
+		clear_mode_callbacks()
 	
 	self.handle_type = HandleType.CLICK
 	self.click_callback = click_callback
@@ -366,13 +367,16 @@ func update_handle(index, camera, point):
 			if handle_type == HandleType.FREE:
 				var camera_x_basis = camera.get_camera_transform().basis.x
 				var camera_y_basis = camera.get_camera_transform().basis.y
-				new_position = VectorUtils.project_cursor_to_plane(camera, point, world_matrix, control_position, camera_x_basis, camera_y_basis)
+				new_position = VectorUtils.project_cursor_to_plane(camera, point, world_matrix, 
+						control_position, camera_x_basis, camera_y_basis)
 			
 			elif handle_type == HandleType.AXIS:
-				new_position = project_point_to_axis(point, camera, control_position, world_matrix, snap_axis)
+				new_position = project_point_to_axis(point, camera, control_position, 
+						world_matrix, snap_axis)
 			
 			elif handle_type == HandleType.PLANE:
-				new_position = VectorUtils.project_cursor_to_plane(camera, point, world_matrix, plane_origin, plane_x_axis, plane_y_axis)
+				new_position = VectorUtils.project_cursor_to_plane(camera, point, world_matrix, 
+						plane_origin, plane_x_axis, plane_y_axis)
 			
 			# POSITION PROPERTY HANDLERS
 			if not new_position: 

@@ -107,12 +107,12 @@ func initialise_path():
 # BUILDERS
 
 # Generates the wireframe that displays the path 
-func generate_geometry():
+func update_geometry():
 	
 	if is_inside_tree() == false:
 		return
 	
-	print("generate_geometry")
+	print("update_geometry")
 	onyx_mesh.clear()
 	
 	var i_1 = 0
@@ -195,7 +195,7 @@ func get_gizmo_control_points() -> Array:
 func handle_change(control):
 	print("handle_change")
 	update_handle_from_gizmo(control)
-	generate_geometry()
+	update_geometry()
 
 # Called when a handle has stopped being dragged.
 func handle_commit(control):

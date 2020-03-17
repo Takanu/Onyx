@@ -5,22 +5,15 @@ extends EditorPlugin
 # PROPERTIES
 
 # Core node types
-const OnyxCube = preload("./nodes/onyx/onyx_cube.gd")
-const OnyxCylinder = preload("./nodes/onyx/onyx_cylinder.gd")
-const OnyxSphere = preload("./nodes/onyx/onyx_sphere.gd")
-const OnyxWedge = preload("./nodes/onyx/onyx_wedge.gd")
-const OnyxRamp = preload("./nodes/onyx/onyx_ramp.gd")
-const OnyxRoundedRect = preload("./nodes/onyx/onyx_rounded_cube.gd")
-const OnyxStairs = preload("./nodes/onyx/onyx_stairs.gd")
-const OnyxPolygon = preload("./nodes/onyx/onyx_polygon.gd")
+const OnyxShape = preload("res://addons/onyx/nodes/onyx/onyx_shape.gd")
 
-const FluxArea  = preload("./nodes/flux/flux_area.gd")
-const FluxCollider  = preload("./nodes/flux/flux_collider.gd")
+#const FluxArea  = preload("./nodes/flux/flux_area.gd")
+#const FluxCollider  = preload("./nodes/flux/flux_collider.gd")
 
-const ResTest = preload('./nodes/res_test.gd')
+#const ResTest = preload('./nodes/res_test.gd')
 
-const NodeHandlerList = [OnyxCube, OnyxCylinder, OnyxSphere, OnyxWedge, OnyxRoundedRect, OnyxStairs, OnyxPolygon, OnyxRamp, FluxArea, FluxCollider]
-const NodeStrings = ['OnyxCube', 'OnyxCylinder', 'OnyxSphere', 'OnyxWedge', 'OnyxRoundedRect', 'OnyxStairs', "OnyxPolygon", 'FluxArea', 'FluxCollider']
+const NodeHandlerList = [OnyxShape]
+const NodeStrings = ['OnyxShape']
 
 # Gizmo types
 const OnyxGizmoPlugin = preload("res://addons/Onyx/gizmos/onyx_gizmo_plugin.gd")
@@ -73,14 +66,15 @@ func _enter_tree():
 	print(gizmo_plugin)
 	
 	# onyx types
-	add_custom_type("OnyxCube", "CSGMesh", preload("./nodes/onyx/onyx_cube.gd"), preload("res://addons/onyx/icons/nodes/onyx_block.png"))
-	add_custom_type("OnyxCylinder", "CSGMesh", preload("./nodes/onyx/onyx_cylinder.gd"), preload("res://addons/onyx/icons/nodes/onyx_block.png"))
-	add_custom_type("OnyxSphere", "CSGMesh", preload("./nodes/onyx/onyx_sphere.gd"), preload("res://addons/onyx/icons/nodes/onyx_block.png"))
-	add_custom_type("OnyxWedge", "CSGMesh", preload("./nodes/onyx/onyx_wedge.gd"), preload("res://addons/onyx/icons/nodes/onyx_block.png"))
-	add_custom_type("OnyxRamp", "CSGMesh", preload("./nodes/onyx/onyx_ramp.gd"), preload("res://addons/onyx/icons/nodes/onyx_block.png"))
-	add_custom_type("OnyxRoundedCube", "CSGMesh", preload("./nodes/onyx/onyx_rounded_cube.gd"), preload("res://addons/onyx/icons/nodes/onyx_block.png"))
-	add_custom_type("OnyxStairs", "CSGMesh", preload("./nodes/onyx/onyx_stairs.gd"), preload("res://addons/onyx/icons/nodes/onyx_block.png"))
-	add_custom_type("OnyxPolygon", "CSGMesh", preload("./nodes/onyx/onyx_polygon.gd"), preload("res://addons/onyx/icons/nodes/onyx_block.png"))
+	add_custom_type("OnyxShape", "CSGMesh", preload("./nodes/onyx/onyx_shape.gd"), preload("res://addons/onyx/icons/nodes/onyx_block.png"))
+#	add_custom_type("OnyxCube", "CSGMesh", preload("./nodes/onyx/onyx_cube.gd"), preload("res://addons/onyx/icons/nodes/onyx_block.png"))
+#	add_custom_type("OnyxCylinder", "CSGMesh", preload("./nodes/onyx/onyx_cylinder.gd"), preload("res://addons/onyx/icons/nodes/onyx_block.png"))
+#	add_custom_type("OnyxSphere", "CSGMesh", preload("./nodes/onyx/onyx_sphere.gd"), preload("res://addons/onyx/icons/nodes/onyx_block.png"))
+#	add_custom_type("OnyxWedge", "CSGMesh", preload("./nodes/onyx/onyx_wedge.gd"), preload("res://addons/onyx/icons/nodes/onyx_block.png"))
+#	add_custom_type("OnyxRamp", "CSGMesh", preload("./nodes/onyx/onyx_ramp.gd"), preload("res://addons/onyx/icons/nodes/onyx_block.png"))
+#	add_custom_type("OnyxRoundedCube", "CSGMesh", preload("./nodes/onyx/onyx_rounded_cube.gd"), preload("res://addons/onyx/icons/nodes/onyx_block.png"))
+#	add_custom_type("OnyxStairs", "CSGMesh", preload("./nodes/onyx/onyx_stairs.gd"), preload("res://addons/onyx/icons/nodes/onyx_block.png"))
+#	add_custom_type("OnyxPolygon", "CSGMesh", preload("./nodes/onyx/onyx_polygon.gd"), preload("res://addons/onyx/icons/nodes/onyx_block.png"))
 	
 	# flux types
 	#add_custom_type("FluxArea", "CSGCombiner", preload("./nodes/flux/flux_area.gd"), preload("res://addons/onyx/ui/nodes/onyx_sprinkle.png"))
@@ -182,10 +176,12 @@ func remove_toolbar(toolbar_owner, container, control_key):
 		
 	if backup_control_list.has(control_key):
 		var control_target = backup_control_list[control_key][0]
-		remove_control_from_container(container, control_target)
 		
-		if toolbar_owner.has_method("deallocate_toolbar"):
-			toolbar_owner.deallocate_toolbar(control_target)
+		if control_target != null:
+			remove_control_from_container(container, control_target)
+			
+			if toolbar_owner.has_method("deallocate_toolbar"):
+				toolbar_owner.deallocate_toolbar(control_target)
 
 
 # Removes all currently held custom controls in ta
@@ -218,6 +214,7 @@ func _exit_tree():
 	
 	for string in NodeStrings:
 		remove_custom_type(string)
+	
 	remove_spatial_gizmo_plugin(gizmo_plugin)
 	pass
 	

@@ -140,7 +140,7 @@ func _ready():
 						volume_geom = child
 		
 			initialise_hierarchy()
-			generate_geometry()
+			update_geometry()
 			
 		# if we have no handles already, make some
 		# (used during duplication and other functions)
@@ -197,7 +197,7 @@ func update_area_shape_parameters(new_value):
 	print("update_area_shape_parameters")
 	area_shape_parameters = new_value
 	
-	generate_geometry()
+	update_geometry()
 	build_location_array()
 	spawn_children()
 
@@ -299,17 +299,17 @@ func generate_volume():
 	
 	# clear the current area shape parameters and provide new ones
 	build_area_shape_parameters()
-	generate_geometry()
+	update_geometry()
 	build_location_array()
 	
 
 # Generates the geometry for the current area wireframe and renders it.
-func generate_geometry():
+func update_geometry():
 	
 	if is_inside_tree() == false:
 		return
 	
-	print("generate_geometry")
+	print("update_geometry")
 	onyx_mesh.clear()
 	
 	match area_type:
@@ -680,7 +680,7 @@ func get_gizmo_control_points() -> Array:
 func handle_change(control):
 	print("handle_change")
 	update_handle_from_gizmo(control)
-	generate_geometry()
+	update_geometry()
 
 # Called when a handle has stopped being dragged.
 func handle_commit(control):
