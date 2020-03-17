@@ -116,15 +116,15 @@ var boolean_preview_node = null
 # INITIALIZATION
 
 # Called right at the objects creation, the earliest """init""" call
-func _init():
-	print("[OnyxShape] ", self.get_name() , " - _init()")
+#func _init():
+#	print("[OnyxShape] ", self.get_name() , " - _init()")
 
 
 # Called when the node enters the scene tree (either from code, editor reparenting or 
 # other stuff.
 func _enter_tree():
 	
-	print("[OnyxShape] ", self.get_name() , " - _enter_tree()")
+#	print("[OnyxShape] ", self.get_name() , " - _enter_tree()")
 	
 	# Required to build hollow data before the scene loads
 	if Engine.editor_hint == false:
@@ -136,7 +136,7 @@ func _enter_tree():
 # first, and the parent node will receive the ready notification afterwards.
 func _ready():
 	
-	print("[OnyxShape] ", self.get_name() , " - _ready()")
+#	print("[OnyxShape] ", self.get_name() , " - _ready()")
 	
 	if Engine.editor_hint == true:
 		
@@ -149,8 +149,7 @@ func _ready():
 		else:
 			load_generator_data()
 		
-		# TODO - Add boolean previews back later.
-#		create_boolean_preview()
+		_create_boolean_preview()
 		
 		# If hollow mode is on, initialize the data for it.
 		if hollow_enable == true:
@@ -184,7 +183,7 @@ func _exit_tree():
 # advanced usage but... why.
 
 func _get_property_list():
-	print("[OnyxShape] ", self.get_name() , " - _get_property_list()")
+#	print("[OnyxShape] ", self.get_name() , " - _get_property_list()")
 	var props = [
 		
 		{
@@ -240,7 +239,7 @@ func _get_property_list():
 	return props
 
 func _set(property, value):
-	print("[OnyxShape] ", self.get_name() , " - _set() : ", property, " ", value)
+#	print("[OnyxShape] ", self.get_name() , " - _set() : ", property, " ", value)
 	
 	# Same-value catcher.
 	var old_value = self.get(property)
@@ -258,8 +257,7 @@ func _set(property, value):
 			return
 		
 		"operation":
-			operation = value
-#			_update_geometry()
+			_switch_boolean_mode(value)
 			return
 		
 		# Saved internal properties /////
@@ -306,20 +304,20 @@ func _set(property, value):
 	# Match with a generator property and save internally
 	
 	if _gen_property_list.has(property):
-		print("attempting to set property...", property, value)
+#		print("attempting to set property...", property, value)
 		
 		if _generator != null:
-			print("...succeeded!")
+#			print("...succeeded!")
 			_generator.set(property, value)
 			
 		
 		else:
 			_gen_property_values[property] = value
-			print("...no generator, setting property values!")
+#			print("...no generator, setting property values!")
 
 
 func _get(property):
-	print("[OnyxShape] ", self.get_name() , " - _get() : ", property)
+#	print("[OnyxShape] ", self.get_name() , " - _get() : ", property)
 	match property:
 		
 		# Saved internal properties
@@ -351,10 +349,10 @@ func _get(property):
 	# Match with a generator property
 	
 	if _gen_property_list.has(property):
-		print("attempting to get property...", property)
+#		print("attempting to get property...", property)
 		
 		if _generator != null:
-			print("...succeeded!")
+#			print("...succeeded!")
 			return _generator.get(property)
 
 
@@ -628,7 +626,7 @@ func _update_geometry():
 	helper.commit_to_surface(mesh)
 	set_mesh(mesh)
 	
-	update_boolean_preview()
+	_update_boolean_geometry()
 	update_gizmo()
 
 
@@ -670,53 +668,92 @@ func _update_hollow_geometry():
 	
 	update_gizmo()
 
+# /////////////////////////////////////////////////////////////////////////////
+# SUBTRACTION / INTERSECTION BOOLEAN PREVIEW
 
-# Used to create a node used for previewing the mesh when using a non-union boolean mode.
-func create_boolean_preview():
+# Used to decide what happens when the boolean mode is switched.
+func _switch_boolean_mode(new_value):
 	
 	if Engine.editor_hint == false || is_inside_tree() == false:
 		return
 	
-	boolean_preview_node = MeshInstance.new()
-	boolean_preview_node.set_name(BOOLEAN_PREVIEW_OBJECT_NAME)
-	add_child(boolean_preview_node)
+	if operation == new_value:
+		return
 	
-	update_boolean_preview()
+	print("[OnyxShape] ", self.get_name() , " - _switch_boolean_mode()")
+	
+	self.set_operation(new_value)
+	
+	# if we were at 0, delete!
+	if new_value == 0:
+		_delete_boolean_preview()
+	
+	# OTHERWISE create a boolean if needed and give the geometry with a new material
+	else:
+		_create_boolean_preview()
+
+# Used to create a node used for previewing the mesh when using a non-union boolean mode.
+func _create_boolean_preview():
+	
+	if Engine.editor_hint == false || is_inside_tree() == false:
+		return
+	
+	# If we're in Union mode, nope.
+	if self.operation == 0:
+		return
+	
+	print("[OnyxShape] ", self.get_name() , " - _create_boolean_preview()")
+	
+	if boolean_preview_node == null:
+		boolean_preview_node = MeshInstance.new()
+		boolean_preview_node.set_name(BOOLEAN_PREVIEW_OBJECT_NAME)
+		add_child(boolean_preview_node)
+		
+	_update_boolean_geometry()
+
+
+# Used to remove a pre-existing boolean preview.  Only works when the node's operation mode
+# is set to Union.
+func _delete_boolean_preview():
+	
+	if Engine.editor_hint == false || is_inside_tree() == false:
+		return
+	
+	print("[OnyxShape] ", self.get_name() , " - _delete_boolean_preview()")
+	
+	if boolean_preview_node != null:
+		remove_child(boolean_preview_node)
+		boolean_preview_node.free()
 
 
 # Used to render the boolean preview.
-func update_boolean_preview():
+func _update_boolean_geometry():
 	
 	if Engine.editor_hint == false || is_inside_tree() == false :
 		return
 	
+	print("[OnyxShape] ", self.get_name() , " - _update_boolean_geometry()")
+	
 	# If we have a boolean preview, decide what to do.
 	if boolean_preview_node != null:
 		
-		if operation == 0:
-			boolean_preview_node.visible = false
-#			print("Boolean preview hidden")
-			return
-			
-		else:
-			boolean_preview_node.visible = true
-			var boolean_material = null
-			
-			if operation == 1:
-				boolean_material = load("res://addons/onyx/materials/wireframes/onyx_wireframe_int.material")
-			elif operation == 2:
-				boolean_material = load("res://addons/onyx/materials/wireframes/onyx_wireframe_sub.material")
-			
-			# Set the new mesh using the current mesh
-			var helper = MeshDataTool.new()
-			var boolean_mesh = Mesh.new()
-			helper.create_from_surface(mesh, 0)
-			helper.set_material(boolean_material)
-			helper.commit_to_surface(boolean_mesh)
-			
-			boolean_preview_node.set_mesh(boolean_mesh)
-			
-#			print("Boolean preview rendered")
+		var boolean_material = null
+		
+		if operation == 1:
+			boolean_material = load("res://addons/onyx/materials/wireframes/onyx_wireframe_int.material")
+		elif operation == 2:
+			boolean_material = load("res://addons/onyx/materials/wireframes/onyx_wireframe_sub.material")
+		
+		# Set the new mesh using the current mesh
+		var helper = MeshDataTool.new()
+		var boolean_mesh = Mesh.new()
+		helper.create_from_surface(mesh, 0)
+		helper.set_material(boolean_material)
+		helper.commit_to_surface(boolean_mesh)
+		
+		boolean_preview_node.set_mesh(boolean_mesh)
+		
+#		print("Boolean preview rendered")
 
 
 # /////////////////////////////////////////////////////////////////////////////

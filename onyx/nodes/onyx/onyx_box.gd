@@ -161,8 +161,8 @@ func get_shape_properties() -> Dictionary:
 # NOTE - Conforms to the SHAPE_ASPECTS constant.
 # 
 func get_shape_aspects() -> Dictionary:
-	print("[OnyxGenerator] ", self, 
-			" - get_shape_aspects() - Override this function!")
+#	print("[OnyxGenerator] ", self, 
+#			" - get_shape_aspects() - Override this function!")
 	return {}
 
 
@@ -171,8 +171,8 @@ func get_shape_aspects() -> Dictionary:
 # NOTE - Conforms to the SHAPE_ASPECTS constant.
 # 
 func set_shape_aspects(aspects : Dictionary):
-	print("[OnyxGenerator] ", self, 
-			" - set_shape_aspects() - Override this function!")
+#	print("[OnyxGenerator] ", self, 
+#			" - set_shape_aspects() - Override this function!")
 	return {}
 
 
@@ -200,7 +200,7 @@ func update_hollow_geometry() -> OnyxMesh:
 	if Engine.editor_hint == false:
 		return OnyxMesh.new()
 	
-	print("[OnyxCube] - update_hollow_geometry()")
+#	print("[OnyxCube] - update_hollow_geometry()")
 	
 	var x_minus_diff = x_minus_position - _x_minus_hollow
 	var x_plus_diff = x_plus_position - _x_plus_hollow
@@ -218,13 +218,13 @@ func update_hollow_geometry() -> OnyxMesh:
 func build_geometry(x_minus : float,  x_plus : float,  y_minus : float,  y_plus : float, 
 	z_minus : float,  z_plus : float):
 	
-	print('trying to generate geometry...')
+#	print('trying to generate geometry...')
 	
 	# Prevents geometry generation if the node hasn't loaded yet
 	if Engine.editor_hint == false:
 		return
 	
-	print("[OnyxCube] - build_geometry()")
+#	print("[OnyxCube] - build_geometry()")
 	
 	var maxPoint = Vector3(x_plus, y_plus, z_plus)
 	var minPoint = Vector3(-x_minus, -y_minus, -z_minus)
@@ -355,7 +355,7 @@ func _update_origin_mode():
 	if active_controls.size() == 0:
 		return
 	
-	print("[OnyxGenerator] ", self.name, " - _update_origin_mode()")
+#	print("[OnyxGenerator] ", self.name, " - _update_origin_mode()")
 	
 	# based on the current position and properties, work out how much to move the origin.
 	var diff = Vector3(0, 0, 0)
@@ -403,7 +403,7 @@ func _update_origin_position():
 	if Engine.editor_hint == false:
 		return
 	
-	print("[OnyxGenerator] ", self.name, " - _update_origin_position()")
+#	print("[OnyxGenerator] ", self.name, " - _update_origin_position()")
 	
 	# Find what the current location should be
 	var diff = Vector3()

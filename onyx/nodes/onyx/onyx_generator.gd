@@ -140,13 +140,13 @@ var previous_active_controls : Dictionary = {}
 
 # Global initialisation
 func _enter_tree():
-	print("[OnyxGenerator] ", self, " - _enter_tree()")
+#	print("[OnyxGenerator] ", self, " - _enter_tree()")
 	pass
 
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
-	print("[OnyxGenerator] ", self, " - _ready()")
+#	print("[OnyxGenerator] ", self, " - _ready()")
 	
 	if Engine.editor_hint == true:
 		
@@ -156,13 +156,7 @@ func _ready():
 
 # Used to perform some basic deallocation where necessary
 func _exit_tree():
-	print("[OnyxGenerator] ", self, " - _exit_tree()")
-	
-	# Trigger this to ensure nothing is left behind.
-	if Engine.editor_hint == true:
-		editor_deselect()
-		active_controls.clear()
-		previous_active_controls.clear()
+#	print("[OnyxGenerator] ", self, " - _exit_tree()")
 	
 	return
 
@@ -311,7 +305,7 @@ func balance_control_data():
 # Used when this object is selected for the control points to be built and displayed.
 func build_controls():
 	
-	print("[OnyxGenerator] ", self, " - build_controls()")
+#	print("[OnyxGenerator] ", self, " - build_controls()")
 	
 	if Engine.editor_hint == true:
 		build_control_points()
@@ -321,7 +315,7 @@ func build_controls():
 # Used when this object is deselected to hide the control points.
 func clear_controls():
 	
-	print("[OnyxGenerator] ", self, " - clear_controls()")
+#	print("[OnyxGenerator] ", self, " - clear_controls()")
 	
 	if Engine.editor_hint == true:
 		active_controls.clear()
@@ -332,7 +326,7 @@ func clear_controls():
 #
 func modify_control(control):
 	
-	print("[OnyxGenerator] ", self, " - modify_control()")
+#	print("[OnyxGenerator] ", self, " - modify_control()")
 	
 #	print("********************************")
 #	print("[Onyx] ", self.get_name() , " - handle_change()")
@@ -350,7 +344,7 @@ func modify_control(control):
 #
 func commit_control(control):
 #	print("********************************")
-	print("[OnyxGenerator] ", self, " - commit_control()")
+#	print("[OnyxGenerator] ", self, " - commit_control()")
 	
 	update_control_from_gizmo(control)
 	apply_control_attributes()
@@ -361,6 +355,8 @@ func commit_control(control):
 	# store current handle points as the old ones, so they can be used later
 	# as an undo point before the next commit.
 	previous_active_controls = get_control_data()
+	
+	get_parent().property_list_changed_notify()
 	
 #	print("********************************")
 
@@ -376,7 +372,7 @@ func get_global_transform():
 # Returns a list of control data from each point.
 func get_control_data() -> Dictionary:
 	
-	print("[OnyxGenerator] ", self, " - get_control_data()")
+#	print("[OnyxGenerator] ", self, " - get_control_data()")
 	
 	var result = {}
 	for control in active_controls.values():
@@ -387,7 +383,7 @@ func get_control_data() -> Dictionary:
 # Changes all current control point data with a previously set list of control data.
 func set_control_data(data : Dictionary):
 	
-	print("[OnyxGenerator] ", self, " - get_control_data()")
+#	print("[OnyxGenerator] ", self, " - get_control_data()")
 
 	for data_key in data.keys():
 		active_controls[data_key].set_control_data(data[data_key])
@@ -424,7 +420,7 @@ func get_gizmo_undo_state(control_point):
 
 # Restores the state of the shape to a previous given state.
 func restore_state(state):
-	print("[OnyxGenerator] ", self, " - restore_state()")
+#	print("[OnyxGenerator] ", self, " - restore_state()")
 	
 	var new_controls = state[0]
 	var stored_location = state[1]
@@ -445,7 +441,7 @@ func restore_state(state):
 # EDITOR SELECTION
 
 func editor_select():
-	print("[OnyxGenerator] ", self, " - editor_select()")
+#	print("[OnyxGenerator] ", self, " - editor_select()")
 	
 	if Engine.editor_hint == true:
 #		is_selected = true
@@ -453,7 +449,7 @@ func editor_select():
 	
 	
 func editor_deselect():
-	print("[OnyxGenerator] ", self.name, " - editor_deselect()")
+#	print("[OnyxGenerator] ", self.name, " - editor_deselect()")
 	
 	if Engine.editor_hint == true:
 #		is_selected = false
