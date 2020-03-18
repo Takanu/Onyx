@@ -124,14 +124,15 @@ var boolean_preview_node = null
 # other stuff.
 func _enter_tree():
 	
-	print("[OnyxShape] ", self.get_name() , " - _enter_tree()")
+#	print("[OnyxShape] ", self.get_name() , " - _enter_tree()")
 
 	# Use this to recover the preview node from duplications.
 	if Engine.editor_hint == true:
 		
 		# We can assume that if we have a mesh, it's already been initialized.
+		# Need to update boolean mode when reparenting occurs.
 		if _onyx_mesh != null:
-			_switch_boolean_mode(operation)
+			_update_boolean_mode()
 
 
 	# Required to build hollow data before the scene loads
@@ -265,7 +266,8 @@ func _set(property, value):
 			return
 		
 		"operation":
-			_switch_boolean_mode(value)
+			operation = value
+			_update_boolean_mode()
 			return
 		
 		# Saved internal properties /////
@@ -392,7 +394,7 @@ func activate_node():
 	if _generator != null:
 		return
 	
-	print("[OnyxShape] ", self.get_name() , " - activate_node() : ")
+#	print("[OnyxShape] ", self.get_name() , " - activate_node() : ")
 	
 	# Make a new generator
 	var script = load(GENERATOR_SCRIPTS[shape])
@@ -428,7 +430,7 @@ func create_generator_data():
 	if Engine.editor_hint == false || is_inside_tree() == false:
 		return
 	
-	print("[OnyxShape] ", self.get_name() , " - create_generator_data() : ")
+#	print("[OnyxShape] ", self.get_name() , " - create_generator_data() : ")
 	
 	# Make a new generator
 	var script = load(GENERATOR_SCRIPTS[shape])
@@ -469,7 +471,7 @@ func load_generator_data():
 	if Engine.editor_hint == false || is_inside_tree() == false:
 			return
 	
-	print("[OnyxShape] ", self.get_name() , " - load_generator_data() : ")
+#	print("[OnyxShape] ", self.get_name() , " - load_generator_data() : ")
 	
 	
 	
@@ -585,7 +587,7 @@ func _load_genenerator_properties():
 # Triggered when the shape_properties_updated signal is received from the generator.
 func update_all_geometry():
 	
-	print("[OnyxShape] ", self.get_name() , " - update_all_geometry()")
+#	print("[OnyxShape] ", self.get_name() , " - update_all_geometry()")
 	
 	_update_geometry()
 	_update_hollow_geometry()
@@ -605,7 +607,7 @@ func _update_geometry():
 	if Engine.editor_hint == false:
 		return
 	
-	print("[OnyxShape] ", self.get_name() , " - _update_geometry()")
+#	print("[OnyxShape] ", self.get_name() , " - _update_geometry()")
 	
 	# Get the geometry from the generator.
 	var new_onyx_mesh = _generator.update_geometry()
@@ -641,7 +643,7 @@ func _update_geometry():
 # Internal function for updating the hollow mesh
 func _update_hollow_geometry():
 	
-	print("[OnyxShape] ", self.get_name() , " - _update_hollow_mesh()")
+#	print("[OnyxShape] ", self.get_name() , " - _update_hollow_mesh()")
 	
 	if Engine.editor_hint == false || hollow_object == null || hollow_enable == false:
 		return
@@ -680,28 +682,19 @@ func _update_hollow_geometry():
 # SUBTRACTION / INTERSECTION BOOLEAN PREVIEW
 
 # Used to decide what happens when the boolean mode is switched.
-func _switch_boolean_mode(new_value):
+func _update_boolean_mode():
 	
 	if Engine.editor_hint == false || is_inside_tree() == false:
 		return
 	
-#	if operation == new_value:
-#		return
-	
-	print("[OnyxShape] ", self.get_name() , " - _switch_boolean_mode()")
-	print("Do we have node?  ", has_node(BOOLEAN_PREVIEW_OBJECT_NAME))
-	
-	self.set_operation(new_value)
-	
-	if has_node(BOOLEAN_PREVIEW_OBJECT_NAME) != false:
-		boolean_preview_node = get_node(BOOLEAN_PREVIEW_OBJECT_NAME)
+#	print("[OnyxShape] ", self.get_name() , " - _switch_boolean_mode()")
 	
 	# if we were at 0 or we no longer have a CSG parent, abandon!
-	if new_value == 0 || get_parent().is_class("CSGShape") == false:
+	if operation == 0 || get_parent().is_class("CSGShape") == false:
 		_delete_boolean_preview()
 	
 	# OTHERWISE create a boolean if needed and give the geometry with a new material
-	elif new_value != 0 || get_parent().is_class("CSGShape") == true:
+	elif operation != 0 && get_parent().is_class("CSGShape") == true:
 		_create_boolean_preview()
 
 
@@ -715,11 +708,9 @@ func _create_boolean_preview():
 	if self.operation == 0:
 		return
 	
-	print("[OnyxShape] ", self.get_name() , " - _create_boolean_preview()")
-	print("Do we have node?  ", has_node(BOOLEAN_PREVIEW_OBJECT_NAME))
+#	print("[OnyxShape] ", self.get_name() , " - _create_boolean_preview()")
 	
 	if has_node(BOOLEAN_PREVIEW_OBJECT_NAME) == false:
-		print("creatin...")
 		boolean_preview_node = MeshInstance.new()
 		boolean_preview_node.set_name(BOOLEAN_PREVIEW_OBJECT_NAME)
 		add_child(boolean_preview_node)
@@ -734,12 +725,11 @@ func _delete_boolean_preview():
 	if Engine.editor_hint == false || is_inside_tree() == false:
 		return
 	
-	print("[OnyxShape] ", self.get_name() , " - _delete_boolean_preview()")
-	print("Do we have node?  ", has_node(BOOLEAN_PREVIEW_OBJECT_NAME))
+#	print("[OnyxShape] ", self.get_name() , " - _delete_boolean_preview()")
 	
-	if has_node(BOOLEAN_PREVIEW_OBJECT_NAME) != false:
+	if has_node(BOOLEAN_PREVIEW_OBJECT_NAME) == true:
 		boolean_preview_node = get_node(BOOLEAN_PREVIEW_OBJECT_NAME)
-		print("deleting found boolean")
+		
 		remove_child(boolean_preview_node)
 		boolean_preview_node.free()
 		boolean_preview_node = null
@@ -751,23 +741,18 @@ func _update_boolean_geometry():
 	if Engine.editor_hint == false || is_inside_tree() == false :
 		return
 	
-	print("[OnyxShape] ", self.get_name() , " - _update_boolean_geometry()")
-	print("Do we have node?  ", has_node(BOOLEAN_PREVIEW_OBJECT_NAME))
+#	print("[OnyxShape] ", self.get_name() , " - _update_boolean_geometry()")
 	
 	# If we have a boolean preview, decide what to do.
-	if has_node(BOOLEAN_PREVIEW_OBJECT_NAME) != false:
+	if has_node(BOOLEAN_PREVIEW_OBJECT_NAME) == true:
 		boolean_preview_node = get_node(BOOLEAN_PREVIEW_OBJECT_NAME)
 		
 		var boolean_material = null
-		
-		print("Boop")
 		
 		if operation == 1:
 			boolean_material = load("res://addons/onyx/materials/wireframes/onyx_wireframe_int.material")
 		elif operation == 2:
 			boolean_material = load("res://addons/onyx/materials/wireframes/onyx_wireframe_sub.material")
-			
-		print("Boop")
 		
 		# Set the new mesh using the current mesh
 		var helper = MeshDataTool.new()
@@ -777,8 +762,6 @@ func _update_boolean_geometry():
 		helper.commit_to_surface(boolean_mesh)
 		
 		boolean_preview_node.set_mesh(boolean_mesh)
-		
-		print("BOOOOOOOOOOP")
 		
 #		print("Boolean preview rendered")
 
@@ -801,7 +784,7 @@ func _update_hollow_enable(value):
 	if hollow_enable == value:
 		return
 	
-	print("[Onyx] ", self.get_name() , " - _update_hollow_enable()")
+#	print("[Onyx] ", self.get_name() , " - _update_hollow_enable()")
 	
 	hollow_enable = value
 	
@@ -828,7 +811,7 @@ func _update_hollow_material(value):
 # Creates the hollow object, won't generate new mesh data if it doesn't have to.
 func _create_hollow_object():
 		
-	print("[Onyx] ", self.get_name() , " - _create_hollow_object()")
+#	print("[Onyx] ", self.get_name() , " - _create_hollow_object()")
 	
 	# REMEMBER THAT RE-SAVING A SCRIPT CAUSES IT TO BE RELOADED, MUST HAVE INSURANCE POLICY
 	if Engine.editor_hint == false || hollow_object != null:
@@ -866,7 +849,7 @@ func _create_hollow_object():
 # Deletes the hollow object node and defaults all hollow data.
 func _delete_hollow_object():
 	
-	print("[Onyx] ", self.get_name() , " - _delete_hollow_data()")
+#	print("[Onyx] ", self.get_name() , " - _delete_hollow_data()")
 	
 	remove_child(hollow_object)
 		
@@ -883,7 +866,7 @@ func _delete_hollow_object():
 # Creates a hollow object node when it is loaded at runtime.
 func _build_runtime_hollow_object():
 	
-	print("[Onyx] ", self.get_name() , " - _build_runtime_hollow_object()")
+#	print("[Onyx] ", self.get_name() , " - _build_runtime_hollow_object()")
 	
 	if Engine.editor_hint == false:
 		if hollow_mesh != null:
@@ -921,7 +904,7 @@ func get_gizmo_control_points() -> Array:
 # Only trigger from a signal.
 func _move_origin(movement_vec : Vector3):
 	
-	print("[OnyxShape] ", self.get_name() , " - _move_origin()")
+#	print("[OnyxShape] ", self.get_name() , " - _move_origin()")
 	
 	var global_t = self.global_transform
 	
@@ -946,7 +929,7 @@ func _move_origin(movement_vec : Vector3):
 # Only trigger from a signal.
 func _replace_origin(new_loc : Vector3):
 	
-	print("[OnyxShape] ", self.get_name() , " - _move_origin()")
+#	print("[OnyxShape] ", self.get_name() , " - _move_origin()")
 
 	var old_loc = self.global_transform.origin
 	var new_translation = new_loc - old_loc
