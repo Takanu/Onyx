@@ -49,7 +49,7 @@ extends Spatial
 
 # get_shape_aspects() - Returns general details about the shapes size and form.
 
-# set_shape_aspects(aspects) - Applies given aspects that the shape will use to determine
+# load_shape_aspects(aspects) - Applies given aspects that the shape will use to determine
 # it's shape.  Used when the owner switches shape types
 
 
@@ -63,8 +63,14 @@ extends Spatial
 #
 # Shapes can utilize as many or as few as they'd like.
 enum ShapeAspects {
-	BOUNDING_BOX,		# the size and area of the shape
-	HOLLOW_THICKNESS,		# if it had a hollow, what it's general thickness was
+	
+	# ASPECTS YOU CAN EXPECT TO SEE /////
+	ORIGIN,				# the origin point RELATIVE TO THE SHAPE BOUNDS.
+	SHAPE_BOUNDS,		# the size and area of the shape
+	HOLLOW_BOUNDS,		# if it had a hollow, what it's general bounds were
+	
+	# OPTIONALS ////
+#	ORIGIN_TYPE,			# Origin currently baked into Shape Bounds, not needed
 	HEIGHT,				# if height was important, what that total was
 	
 	START_POINT_POS,		# if it used a path, where it started
@@ -195,9 +201,9 @@ func get_shape_aspects() -> Dictionary:
 #
 # NOTE - Conforms to the SHAPE_ASPECTS constant.
 # 
-func set_shape_aspects(aspects : Dictionary):
+func load_shape_aspects(aspects : Dictionary):
 	print("[OnyxGenerator] ", self, 
-			" - set_shape_aspects() - Override this function!")
+			" - load_shape_aspects() - Override this function!")
 	pass
 
 

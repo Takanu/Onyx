@@ -35,7 +35,7 @@ const BOOLEAN_PREVIEW_OBJECT_NAME = "**BOOLEAN PREVIEW**"
 # The generator types.
 enum ShapeType {
 	BOX, 
-# 	ROUNDED_BOX,
+	ROUNDED_BOX,
 # 	CYLINDER,
 # 	SPHERE,
 # 	WEDGE,
@@ -52,7 +52,8 @@ enum ShapeType {
 
 # The dictionary used to find the script for each ShapeType.
 const GENERATOR_SCRIPTS = {
-	ShapeType.BOX : "res://addons/onyx/nodes/onyx/onyx_box.gd",
+	ShapeType.BOX : "res://addons/onyx/nodes/onyx/onyx_gen_box.gd",
+	ShapeType.ROUNDED_BOX : "res://addons/onyx/nodes/onyx/onyx_gen_roundedbox.gd",
 }
 
 # ////////////////////////////////////
@@ -60,7 +61,7 @@ const GENERATOR_SCRIPTS = {
 # Made public through property lists 
 
 # Used to select different shapes.
-export(ShapeType) var shape = ShapeType.BOX  setget switch_generator
+export(ShapeType) var shape_type = ShapeType.BOX  setget switch_generator
 
 var uv_scale = Vector2(1.0, 1.0)
 var flip_uvs_horizontally = false
@@ -248,14 +249,14 @@ func _get_property_list():
 	return props
 
 func _set(property, value):
-#	print("[OnyxShape] ", self.get_name() , " - _set() : ", property, " ", value)
+	print("[OnyxShape] ", self.get_name() , " - _set() : ", property, " ", value)
 	
 	# Same-value catcher.
 	var old_value = self.get(property)
 	if old_value != null:
 		if old_value == value:
 #			print("Same value assignment, BAIIIII")
-			return
+			return true
 	
 	match property:
 		
@@ -263,74 +264,88 @@ func _set(property, value):
 		"material":
 			material = value
 #			_update_geometry()
-			return
+			return true
 		
 		"operation":
 			operation = value
 			_update_boolean_mode()
-			return
+			return true
 		
 		# Saved internal properties /////
 		
+#		"shape":
+#			shape = value
+#			return true
 		
 		# UVs /////
 		
 		"uv_options/uv_scale":
 			uv_scale = value
 			_update_geometry()
-			return
+			return true
 			
 		"uv_options/flip_uvs_horizontally":
 			flip_uvs_horizontally = value
 			_update_geometry()
-			return
+			return true
 			
 		"uv_options/flip_uvs_vertically":
 			flip_uvs_vertically = value
 			_update_geometry()
-			return
+			return true
 		
 		# Hollow Mode /////
 		
 		"hollow_mode/enable_hollow_mode":
 			_update_hollow_enable(value)
-			return
+			return true
 			
 		"hollow_mode/hollow_material":
 			_update_hollow_material(value)
-			return
+			return true
 			
 		"hollow_mode/hollow_mesh":
 			hollow_mesh = value
-			return
+			return true
 		
 		# Generator /////
 		
 		"_gen_property_list":
 			_gen_property_list = value
-			return
+			return true
 	
 	
 	# Match with a generator property and save internally
-	
-	if _gen_property_list.has(property):
-#		print("attempting to set property...", property, value)
+	var i = 0
+	for gen_property in _gen_property_list.values():
 		
-		if _generator != null:
-#			print("...succeeded!")
-			_generator.set(property, value)
+		# match it with the property name we wanted to publish.
+		if property == gen_property["name"]:
+			var gen_property_name = _gen_property_list.keys()[i]
+#			print("aaa")
 			
-		
-		else:
-			_gen_property_values[property] = value
-#			print("...no generator, setting property values!")
+			if _generator != null:
+				
+				_generator._set(gen_property_name, value)
+				_gen_property_values[gen_property_name] = value
+			else:
+				_gen_property_values[gen_property_name] = value
+			
+			return true
+			
+		i += 1
+	
+
 
 
 func _get(property):
-#	print("[OnyxShape] ", self.get_name() , " - _get() : ", property)
+	print("[OnyxShape] ", self.get_name() , " - _get() : ", property)
 	match property:
 		
 		# Saved internal properties
+		
+#		"shape":
+#			return shape
 		
 		# UVs /////
 		
@@ -356,14 +371,19 @@ func _get(property):
 			return _gen_property_list
 	
 	
-	# Match with a generator property
-	
-	if _gen_property_list.has(property):
-#		print("attempting to get property...", property)
+	# Match with a generator property 
+	var i = 0
+	for gen_property in _gen_property_list.values():
 		
-		if _generator != null:
-#			print("...succeeded!")
-			return _generator.get(property)
+		# match it with the property name we wanted to publish.
+		if property == gen_property["name"]:
+			var gen_property_name = _gen_property_list.keys()[i]
+			
+			if _generator != null:
+				return _generator.get(gen_property_name)
+				
+		i += 1
+	
 
 
 # Used to prevent weird "disappearances" of the plugin.  smh...
@@ -397,7 +417,7 @@ func activate_node():
 #	print("[OnyxShape] ", self.get_name() , " - activate_node() : ")
 	
 	# Make a new generator
-	var script = load(GENERATOR_SCRIPTS[shape])
+	var script = load(GENERATOR_SCRIPTS[shape_type])
 	_generator = script.new()
 	_generator.name = GENERATOR_NODE_NAME
 	self.add_child(_generator)
@@ -433,7 +453,7 @@ func create_generator_data():
 #	print("[OnyxShape] ", self.get_name() , " - create_generator_data() : ")
 	
 	# Make a new generator
-	var script = load(GENERATOR_SCRIPTS[shape])
+	var script = load(GENERATOR_SCRIPTS[shape_type])
 	_generator = script.new()
 	_generator.name = GENERATOR_NODE_NAME
 	self.add_child(_generator)
@@ -478,45 +498,48 @@ func load_generator_data():
 
 # Called as a SET/GETTER by generator_type to change the generator being used
 func switch_generator(new_value):
+	
+	print("received value for switching generator - ", new_value)
 
-	if shape == new_value:
+	if shape_type == new_value:
 		return
+	
+#	print("[OnyxShape] ", self.get_name() , " - switch_generator() : ")
+	
+	# This has to be here for duplication and saving, when the object might no longer be in the tree.
+	shape_type = new_value
 	
 	if Engine.editor_hint == false || is_inside_tree() == false:
 		return
 	
-	print("[OnyxShape] ", self.get_name() , " - switch_generator() : ")
-	
-	shape = new_value
-
 	# TODO - Work out how to handle undo/redo states here
 	
 	
 	# Drop current property backups
 	_gen_property_list.clear()
+	var old_shape_aspects = null
 	
 	# Ask the generator what aspects of itself we should preserve for the next one
-	var old_shape_aspects = _generator.get_shape_aspects()
-	
-	# Free the generator and associated properties
-	_generator.disconnect("shape_properties_updated", self, "update_all_geometry")
-	_generator.disconnect("hollow_properties_updated", self, "_update_hollow_geometry")
-	_generator.disconnect("property_list_changed", self, "update_gen_property_lists")
-	_generator.disconnect("request_origin_move", self, "_move_origin")
-	_generator.disconnect("request_origin_change", self, "_replace_origin")
-	remove_child(_generator)
-	_generator.free()
-	
-	_gen_property_list.clear()
+	if _generator != null:
+		old_shape_aspects = _generator.get_shape_aspects()
+		
+		# Free the generator and associated properties
+		_generator.disconnect("shape_properties_updated", self, "update_all_geometry")
+		_generator.disconnect("hollow_properties_updated", self, "_update_hollow_geometry")
+		_generator.disconnect("property_list_changed", self, "update_gen_property_lists")
+		_generator.disconnect("request_origin_move", self, "_move_origin")
+		_generator.disconnect("request_origin_change", self, "_replace_origin")
+		remove_child(_generator)
 	
 	# Make a new generator
-	var script = load(GENERATOR_SCRIPTS[shape])
+	var script = load(GENERATOR_SCRIPTS[new_value])
 	_generator = script.new()
 	_generator.name = GENERATOR_NODE_NAME
 	self.add_child(_generator)
 	
 	# Modify property lists based on previously saved aspects
-	_generator.set_shape_aspects(old_shape_aspects)
+	if old_shape_aspects != null:
+		_generator.load_shape_aspects(old_shape_aspects)
 	
 	# Get property lists
 	_gen_property_list = _generator.get_shape_properties()
@@ -552,10 +575,10 @@ func _rebuild_genenerator_property_values():
 	_gen_property_values.clear()
 	
 	var i = 0
-	var keys = _gen_property_list.keys()
+	var property_keys = _gen_property_list.keys()
 	
-	while i < keys.size():
-		var property = keys[i]
+	while i < property_keys.size():
+		var property = property_keys[i]
 		var value = _generator.get(property)
 		
 		_gen_property_values[property] = value

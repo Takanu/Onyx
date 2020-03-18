@@ -4,11 +4,12 @@ extends "res://addons/onyx/nodes/onyx/onyx_generator.gd"
 # /////////////////////////////////////////////////////////////////////////////
 # INFO
 # A generator for use with OnyxShape.
-# Generates a box-like shape which has a surface-like interaction 
+# Generates a box-like shape with rounded like corners.  It has a surface-like interaction.
 
 # A surface-like interaction means that each control point acts as an independent 
 # point in space to define the boundaries of the shape, rather than it merely defining
-# the "x width" or height, which allows it to be more useful when building spaces.
+# the "x width" or height, which allows it to be more useful when building and 
+# carving spaces.
 
 
 # ////////////////////////////////////////////////////////////
@@ -39,29 +40,42 @@ enum UnwrapMethod {
 	PER_FACE_MAPPING,			# Every face is mapped 1:1 with the bounds of UV space
 }
 
+# The axis on which the corners become rounded.
+enum CornerAxis {
+	X,
+	Y, 
+	Z,
+}
+
 
 # ////////////////////////////////////
 # PUBLIC
 
 # The current origin mode set.
-export(OriginPosition) var origin_mode = OriginPosition.BASE setget update_origin_type
+var origin_mode = OriginPosition.BASE
 
 
 # SHAPE PROPERTIES /////
 
 # Exported variables representing all usable handles for re-shaping the mesh.
-var x_plus_position = 0.5 setget update_x_plus
-var x_minus_position = 0.5 setget update_x_minus
+var x_plus_position = 0.5
+var x_minus_position = 0.5
 
-var y_plus_position = 1.0 setget update_y_plus
-var y_minus_position = 0.0 setget update_y_minus
+var y_plus_position = 1.0
+var y_minus_position = 0.0
 
-var z_plus_position = 0.5 setget update_z_plus
-var z_minus_position = 0.5 setget update_z_minus
+var z_plus_position = 0.5
+var z_minus_position = 0.5
 
 
-# Used to subdivide the mesh to help ease CSG boolean inaccuracies.
-export(Vector3) var subdivisions = Vector3(1, 1, 1)
+# Decides which corners on the box become rounded.
+var corner_axis = CornerAxis.X
+
+# The size of the corner in standard world units.
+var corner_size = 0.2
+
+# The number of faces each corner has.  The more faces, the smoother the appearance
+var corner_faces = 4
 
 
 # HOLLOW PROPERTIES /////
@@ -82,6 +96,9 @@ var _z_minus_hollow = 0.2
 
 var unwrap_method = UnwrapMethod.PROPORTIONAL_OVERLAP
 
+# If true, the normals around the rounded corner will be smoothed.
+var smooth_normals = false
+
 
 
 # ////////////////////////////////////
@@ -91,11 +108,144 @@ var unwrap_method = UnwrapMethod.PROPORTIONAL_OVERLAP
 # to function.
 var previous_origin_mode = OriginPosition.BASE
 
-
-
 # /////////////////////////////////////////////////////////////////////////////
 # /////////////////////////////////////////////////////////////////////////////
 # PROPERTY HANDLING
+
+# Used in replacement of setget functions to streamline triggers n stuff.
+func _set(property, value):
+	
+#	print("[OnyxRoundedBox] - ", self, "_set()", property, value)
+#	
+	match property:
+		
+		# SHAPE PROPERTIES /////
+		
+		"x_minus_position":
+			if value < 0 || origin_mode == OriginPosition.BASE_CORNER:
+				value = 0
+			
+			x_minus_position = value
+		
+		"x_plus_position":
+			if value < 0:
+				value = 0
+				
+			x_plus_position = value
+		
+		"y_minus_position":
+			if value < 0 && (origin_mode == OriginPosition.BASE_CORNER || origin_mode == OriginPosition.BASE) :
+				value = 0
+				
+			y_minus_position = value
+		
+		"y_plus_position":
+			if value < 0:
+				value = 0
+				
+			y_plus_position = value
+		
+		"z_minus_position":
+			if value < 0 || origin_mode == OriginPosition.BASE_CORNER:
+				value = 0
+				
+			z_minus_position = value
+		
+		"z_plus_position":
+			if value < 0:
+				value = 0
+				
+			z_plus_position = value
+		
+		# CORNER PROPERTIES /////
+		
+		"corner_axis":
+			corner_axis = value
+		
+		"corner_faces":
+			if value <= 0:
+				value = 1
+				
+			corner_faces = value
+		
+		"corner_size":
+			if value <= 0:
+				value = 0.01
+				
+			# ensure the rounded corners do not surpass the bounds of the size of the shape sides.
+			var x_range = (x_plus_position - -x_minus_position) / 2
+			var y_range = (y_plus_position - -y_minus_position) / 2
+			var z_range = (z_plus_position - -z_minus_position) / 2
+			
+			match corner_axis:
+				CornerAxis.X:
+					if value > y_range:
+						value = y_range
+					if value > z_range:
+						value = z_range
+				CornerAxis.Y:
+					if value > x_range:
+						value = x_range
+					if value > z_range:
+						value = z_range
+				CornerAxis.Z:
+					if value > x_range:
+						value = x_range
+					if value > y_range:
+						value = y_range
+				
+			corner_size = value
+		
+		# ORIGIN MODE /////
+		
+		"origin_mode":
+			if previous_origin_mode == value:
+				return
+			
+			origin_mode = value
+			_update_origin_mode()
+			
+			balance_control_data()
+			
+			_process_property_update()
+			
+			# ensure the origin mode toggle is preserved, and ensure the adjusted handles are saved.
+			previous_origin_mode = origin_mode
+			previous_active_controls = get_control_data()
+			
+			return true
+		
+		# UVS / NORMALS /////
+		
+		"unwrap_method":
+			unwrap_method = value
+		
+		"smooth_normals":
+			smooth_normals = value
+		
+		# HOLLOW MARGINS /////
+		
+		"_x_minus_hollow":
+			_x_minus_hollow = value
+		
+		"_x_plus_hollow":
+			_x_plus_hollow = value
+		
+		"_y_minus_hollow":
+			_y_minus_hollow = value
+		
+		"_y_plus_hollow":
+			_y_plus_hollow = value
+		
+		"_z_minus_hollow":
+			_z_minus_hollow = value
+		
+		"_z_plus_hollow":
+			_z_plus_hollow = value
+	
+	_process_property_update()
+	return true
+
 
 
 # Returns the list of custom shape properties that an owner should save and display.
@@ -103,7 +253,23 @@ func get_shape_properties() -> Dictionary:
 
 	var props = {
 		
-		# UV UNWRAP TYPES /////
+		# SHAPE PROPERTIES /////
+		
+		"corner_size" : {	
+		
+			"name" : "corner_size",
+			"type" : TYPE_REAL,
+			"usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
+		},
+		
+		"corner_faces" : {	
+		
+			"name" : "corner_faces",
+			"type" : TYPE_INT,
+			"usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
+		},
+		
+		# ORIGIN SETTINGS /////
 		
 		"origin_mode" : {	
 		
@@ -114,7 +280,7 @@ func get_shape_properties() -> Dictionary:
 			"hint_string": "Center, Base, Bottom Corner"
 		},
 		
-		# UV UNWRAP TYPES /////
+		# UV / NORMALS /////
 		
 		"unwrap_method" : {	
 		
@@ -123,6 +289,13 @@ func get_shape_properties() -> Dictionary:
 			"usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
 			"hint": PROPERTY_HINT_ENUM,
 			"hint_string": "Proportional Overlap, Per-Face Mapping"
+		},
+		
+		"smooth_normals" : {	
+		
+			"name" : "uv_options/smooth_normals",
+			"type" : TYPE_BOOL,
+			"usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
 		},
 		
 	}
@@ -161,19 +334,68 @@ func get_shape_properties() -> Dictionary:
 # NOTE - Conforms to the SHAPE_ASPECTS constant.
 # 
 func get_shape_aspects() -> Dictionary:
-#	print("[OnyxGenerator] ", self, 
-#			" - get_shape_aspects() - Override this function!")
-	return {}
+	
+	var aspects = {}
+	
+	var size = Vector3(x_minus_position + x_plus_position, 
+			y_minus_position + y_plus_position, z_minus_position + z_plus_position)
+	
+	match origin_mode:
+		OriginPosition.BASE_CORNER:
+			var bounds_origin = Vector3(-size.x / 2, -size.y / 2, -size.z / 2)
+			aspects[ShapeAspects.SHAPE_BOUNDS] = AABB(bounds_origin, size)
+			aspects[ShapeAspects.ORIGIN] = Vector3(0, 0, 0)
+			
+		OriginPosition.BASE:
+			var bounds_origin = Vector3(-size.x / 2, 0, -size.z / 2)
+			aspects[ShapeAspects.SHAPE_BOUNDS] = AABB(bounds_origin, size)
+			aspects[ShapeAspects.ORIGIN] = Vector3(size.x / 2, 0, size.z / 2)
+			
+		OriginPosition.CENTER:
+			var bounds_origin = Vector3(0, 0, 0)
+			aspects[ShapeAspects.SHAPE_BOUNDS] = AABB(bounds_origin, size)
+			aspects[ShapeAspects.ORIGIN] = Vector3(size.x / 2, size.y / 2, size.z / 2)
+	
+	
+#	if get_parent().hollow_enable == true:
+#		var h_minus_margin = Vector3(_x_minus_hollow, _y_minus_hollow, _z_minus_hollow)
+#		var h_plus_margin = Vector3(_x_plus_hollow, _y_plus_hollow, _z_plus_hollow)
+#
+#		aspects[ShapeAspects.HOLLOW_BOUNDS] = AABB(origin + h_minus_margin, size - h_plus_margin)
+
+	return aspects
 
 
 # Used by the owner to implant parts of the last shape generator to a new one.
 #
 # NOTE - Conforms to the SHAPE_ASPECTS constant.
 # 
-func set_shape_aspects(aspects : Dictionary):
-#	print("[OnyxGenerator] ", self, 
-#			" - set_shape_aspects() - Override this function!")
-	return {}
+func load_shape_aspects(aspects : Dictionary):
+	
+	if aspects.has(ShapeAspects.SHAPE_BOUNDS):
+		var shape_bounds : AABB = aspects[ShapeAspects.SHAPE_BOUNDS]
+		
+		# If we're given an aspect, 
+		x_minus_position = abs(shape_bounds.position.x)
+		y_minus_position = abs(shape_bounds.position.y)
+		z_minus_position = abs(shape_bounds.position.z)
+		
+		x_plus_position = abs(shape_bounds.end.x)
+		y_plus_position = abs(shape_bounds.end.y)
+		z_plus_position = abs(shape_bounds.end.z)
+	
+#		if aspects.has(ShapeAspects.HOLLOW_BOUNDS):
+#			var hollow_bounds = aspects[ShapeAspects.HOLLOW_BOUNDS]
+#
+#			_x_minus_hollow = hollow_bounds.position.x - shape_bounds.position.x
+#			_y_minus_hollow = hollow_bounds.position.y - shape_bounds.position.x
+#			_z_minus_hollow = hollow_bounds.position.z - shape_bounds.position.x
+#
+#			_x_plus_hollow = hollow_bounds.end.x - shape_bounds.end.x
+#			_y_plus_hollow = hollow_bounds.end.y - shape_bounds.end.x
+#			_z_plus_hollow = hollow_bounds.end.z - shape_bounds.end.x
+	
+	build_control_points()
 
 
 # /////////////////////////////////////////////////////////////////////////////
@@ -218,117 +440,201 @@ func update_hollow_geometry() -> OnyxMesh:
 func build_geometry(x_minus : float,  x_plus : float,  y_minus : float,  y_plus : float, 
 	z_minus : float,  z_plus : float):
 	
-#	print('trying to generate geometry...')
+#	print('trying to build geometry...')
 	
 	# Prevents geometry generation if the node hasn't loaded yet
 	if Engine.editor_hint == false:
 		return
 	
-#	print("[OnyxCube] - build_geometry()")
+#	# Clamp important values
+	if corner_size < 0:
+		corner_size = 0
+	if corner_faces < 1:
+		corner_faces = 1
+		
 	
-	var maxPoint = Vector3(x_plus, y_plus, z_plus)
-	var minPoint = Vector3(-x_minus, -y_minus, -z_minus)
+	var max_point = Vector3(x_plus, y_plus, z_plus)
+	var min_point = Vector3(-x_minus, -y_minus, -z_minus)
+	
+	# Build 8 vertex points
+	var top_x = Vector3(max_point.x, max_point.y, min_point.z)
+	var top_xz = Vector3(max_point.x, max_point.y, max_point.z)
+	var top_z = Vector3(min_point.x, max_point.y, max_point.z)
+	var top = Vector3(min_point.x, max_point.y, min_point.z)
+	
+	var bottom_x = Vector3(max_point.x, min_point.y, min_point.z)
+	var bottom_xz = Vector3(max_point.x, min_point.y, max_point.z)
+	var bottom_z = Vector3(min_point.x, min_point.y, max_point.z)
+	var bottom = Vector3(min_point.x, min_point.y, min_point.z)
 	
 	# Generate the geometry
 	var new_onyx_mesh = OnyxMesh.new()
-	var mesh_factory = OnyxMeshFactory.new()
 	
-	# Build 8 vertex points
-	var top_x = Vector3(maxPoint.x, maxPoint.y, minPoint.z)
-	var top_xz = Vector3(maxPoint.x, maxPoint.y, maxPoint.z)
-	var top_z = Vector3(minPoint.x, maxPoint.y, maxPoint.z)
-	var top = Vector3(minPoint.x, maxPoint.y, minPoint.z)
+	# ROUNDED CORNERS
+	# build the initial list of corners, positive rotation.
+	var circle_points = []
+	var angle_step = (PI / 2) / float(corner_faces)
 	
-	var bottom_x = Vector3(maxPoint.x, minPoint.y, minPoint.z)
-	var bottom_xz = Vector3(maxPoint.x, minPoint.y, maxPoint.z)
-	var bottom_z = Vector3(minPoint.x, minPoint.y, maxPoint.z)
-	var bottom = Vector3(minPoint.x, minPoint.y, minPoint.z)
-	
-	# Build the 6 vertex Lists
-	var vec_x_minus = [bottom, top, top_z, bottom_z]
-	var vec_x_plus = [bottom_xz, top_xz, top_x, bottom_x]
-	var vec_y_minus = [bottom_x, bottom, bottom_z, bottom_xz]
-	var vec_y_plus = [top, top_x, top_xz, top_z]
-	var vec_z_minus = [bottom_x, top_x, top, bottom]
-	var vec_z_plus = [bottom_z, top_z, top_xz, bottom_xz]
-	
-	var surfaces = []
-	surfaces.append( mesh_factory.internal_build_surface(bottom, top_z, top, bottom_z, 
-			Vector2(subdivisions.z, subdivisions.y), 0) )
-	surfaces.append( mesh_factory.internal_build_surface(bottom_xz, top_x, top_xz, bottom_x, 
-			Vector2(subdivisions.z, subdivisions.y), 0) )
-	
-	surfaces.append( mesh_factory.internal_build_surface(bottom_x, bottom_z, bottom, bottom_xz, 
-			Vector2(subdivisions.z, subdivisions.x), 0) )
-	surfaces.append( mesh_factory.internal_build_surface(top, top_xz, top_x, top_z, 
-			Vector2(subdivisions.z, subdivisions.x), 0) )
-	
-	surfaces.append( mesh_factory.internal_build_surface(bottom_x, top, top_x, bottom, 
-			Vector2(subdivisions.x, subdivisions.y), 0) )
-	surfaces.append( mesh_factory.internal_build_surface(bottom_z, top_xz, top_z, bottom_xz, 
-			Vector2(subdivisions.x, subdivisions.y), 0) )
-	
+	var current_angle = 0.0
+	var end_angle = (PI / 2)
 	var i = 0
 	
-	for surface in surfaces:
+	while i < 4:
+		var point_set = []
+		current_angle = (PI / 2) * i
+		end_angle = (PI / 2) * (i + 1)
 		
-		var vertices = []
-		for quad in surface:
-			for vertex in quad[0]:
-				vertices.append(vertex)
+		var x = corner_size * cos(current_angle)
+		var y = corner_size * sin(current_angle)
+		point_set.append(Vector2(x, y))
 		
-		for quad in surface:
+		current_angle += angle_step
+		
+		# adds a lil minus to try and compensate for bit precision issues.
+		while current_angle < end_angle - 0.00001:
+			x = corner_size * cos(current_angle)
+			y = corner_size * sin(current_angle)
+			point_set.append(Vector2(x, y))
 			
-			# UV UNWRAPPING
-			
-			# 1:1 Overlap is Default
-			var uvs = quad[3]
-			
-			# Proportional Overlap
-			# Try and work out how to properly reorient the UVS later...
-			if unwrap_method == UnwrapMethod.PROPORTIONAL_OVERLAP:
-				if i == 0 || i == 1:
-					uvs = VectorUtils.vector3_to_vector2_array(quad[0], 'X', 'Z')
-					uvs = [uvs[2], uvs[3], uvs[0], uvs[1]]
-#					if i == 0:
-#						uvs = VectorUtils.reverse_array(uvs)
-				elif i == 2 || i == 3:
-					uvs = VectorUtils.vector3_to_vector2_array(quad[0], 'Y', 'X')
-					uvs = [uvs[2], uvs[3], uvs[0], uvs[1]]
-					#uvs = VectorUtils.reverse_array(uvs)
-				elif i == 4 || i == 5:
-					uvs = VectorUtils.vector3_to_vector2_array(quad[0], 'Z', 'X')
-					uvs = [uvs[2], uvs[3], uvs[0], uvs[1]]
-#					if i == 5:
-#						uvs = VectorUtils.reverse_array(uvs)
-
-				
-#				print(uvs)
-			
-			# Island Split - UV split up into two thirds.
-#			elif unwrap_method == UnwrapMethod.ISLAND_SPLIT:
-#
-#				# get the max and min
-#				var surface_range = VectorUtils.get_vector3_ranges(vertices)
-#				var max_point = surface_range['max']
-#				var min_point = surface_range['min']
-#				var diff = max_point - min_point
-#
-#				var initial_uvs = []
-#
-#				if i == 0 || i == 1:
-#					initial_uvs = VectorUtils.vector3_to_vector2_array(quad[0], 'X', 'Z')
-#				elif i == 2 || i == 3:
-#					initial_uvs = VectorUtils.vector3_to_vector2_array(quad[0], 'Y', 'X')
-#				elif i == 4 || i == 5:
-#					initial_uvs = VectorUtils.vector3_to_vector2_array(quad[0], 'Z', 'X')
-#
-#				for uv in initial_uvs:
-#					uv
-			
-			new_onyx_mesh.add_ngon(quad[0], quad[1], quad[2], uvs, quad[4])
-			
+			current_angle += angle_step
+		
+		x = corner_size * cos(end_angle)
+		y = corner_size * sin(end_angle)
+		point_set.append(Vector2(x, y))
+		
+		circle_points.append(point_set)
 		i += 1
+	
+	
+	# EXTRUSION
+	# build the initial list of vertices to be extruded.
+	var extrusion_vertices = []
+	
+	# will make a nicer bit of code later...
+	if corner_axis == CornerAxis.X:
+		var corners_top = VectorUtils.vector2_to_vector3_array(circle_points[0], 'X', 'Y')
+		var corners_y = VectorUtils.vector2_to_vector3_array(circle_points[1], 'X', 'Y')
+		var corners_bottom = VectorUtils.vector2_to_vector3_array(circle_points[2], 'X', 'Y')
+		var corners_x = VectorUtils.vector2_to_vector3_array(circle_points[3], 'X', 'Y')
+		
+		# top, top_z, bottom, bottom_z
+		# Get the four inset vertices to position the circle points to
+		var offset_top = top_z + Vector3(0, -corner_size, -corner_size)
+		var offset_y = top + Vector3(0, -corner_size, corner_size)
+		var offset_bottom = bottom + Vector3(0, corner_size, corner_size)
+		var offset_x = bottom_z + Vector3(0, corner_size, -corner_size)
+		
+		# Create transforms 
+		var tf_top = Transform(Basis(), offset_top)
+		var tf_y = Transform(Basis(), offset_y)
+		var tf_bottom = Transform(Basis(), offset_bottom)
+		var tf_x = Transform(Basis(), offset_x)
+		
+		# Get the circle points and translate each corner set by the above offsets
+		corners_top = VectorUtils.transform_vector3_array(corners_top, tf_top)
+		corners_y = VectorUtils.transform_vector3_array(corners_y, tf_y)
+		corners_bottom = VectorUtils.transform_vector3_array(corners_bottom, tf_bottom)
+		corners_x = VectorUtils.transform_vector3_array(corners_x, tf_x)
+		
+		# Stack all the vertices into a single array
+		var start_cap = VectorUtils.combine_arrays([corners_top, corners_y, corners_bottom, corners_x])
+		
+		# Project and duplicate
+		var tf_end_cap = Transform(Basis(), Vector3(max_point.x - min_point.x, 0, 0)) 
+		var end_cap = VectorUtils.transform_vector3_array(start_cap, tf_end_cap)
+		
+		# UVS
+		var start_cap_uvs = []
+		var end_cap_uvs = []
+		
+		# 0 - Proportional Overlap
+		if unwrap_method == UnwrapMethod.PROPORTIONAL_OVERLAP:
+			start_cap_uvs = VectorUtils.vector3_to_vector2_array(start_cap, 'X', 'Z')
+			end_cap_uvs = start_cap_uvs.duplicate()
+		
+		
+		# 1 - Per-Face Mapping
+		elif unwrap_method == UnwrapMethod.PER_FACE_MAPPING:
+			var diff = max_point - min_point
+			var clamped_vs = []
+			
+			# for every vertex, minus it by the min and divide by the difference.
+			for vertex in start_cap:
+				clamped_vs.append( (vertex - min_point) / diff )
+			start_cap_uvs = VectorUtils.vector3_to_vector2_array(clamped_vs, 'X', 'Z')
+			
+			# for every vertex, minus it by the min and divide by the difference.
+#			for vertex in end_cap:
+#				clamped_vs.append( (vertex - min_point) / diff )
+#			end_cap_uvs = VectorUtils.vector3_to_vector2_array(clamped_vs, 'X', 'Z')
+			
+			for uv in start_cap_uvs:
+				end_cap_uvs.append(uv * Vector2(-1.0, -1.0))
+		
+		
+		new_onyx_mesh.add_ngon(VectorUtils.reverse_array(start_cap), [], [], start_cap_uvs, [])
+		new_onyx_mesh.add_ngon(end_cap, [], [], end_cap_uvs, [])
+		
+		# used for Proportional Unwrap.
+		var total_edge_length = 0.0
+		
+		# Build side edges
+		var v_1 = 0
+		while v_1 < start_cap.size():
+			
+			var v_2 = VectorUtils.clamp_int( (v_1 + 1), 0, (start_cap.size() - 1) )
+			
+			var b_1 = start_cap[v_1]
+			var b_2 = start_cap[v_2]
+			var t_1 = end_cap[v_1]
+			var t_2 = end_cap[v_2]
+			
+			var normals = []
+			
+			# SMOOTH SHADING
+			if smooth_normals == true:
+				var v_0 = VectorUtils.clamp_int( (v_1 - 1), 0, (start_cap.size() - 1) )
+				var v_3 = VectorUtils.clamp_int( (v_2 + 1), 0, (start_cap.size() - 1) )
+				
+				var b_0 = start_cap[v_0]
+				var b_3 = start_cap[v_3]
+				var t_0 = end_cap[v_0]
+				var t_3 = end_cap[v_3]
+				
+				var n_0 = VectorUtils.get_triangle_normal( [b_0, t_0, b_1] )
+				var n_1 = VectorUtils.get_triangle_normal( [b_1, t_1, b_2] )
+				var n_2 = VectorUtils.get_triangle_normal( [b_2, t_2, b_3] )
+				
+				var normal_1 = (n_0 + n_1).normalized()
+				var normal_2 = (n_1 + n_2).normalized()
+				normals = [normal_1, normal_2, normal_2, normal_1]
+				
+			else:
+				var normal = VectorUtils.get_triangle_normal( [b_1, t_1, b_2] )
+				normals = [normal, normal, normal, normal]
+				
+				
+			# UVS
+			var uvs = []
+			
+			# 0 - Proportional Overlap
+			if unwrap_method == UnwrapMethod.PROPORTIONAL_OVERLAP:
+				var height = (t_1 - b_1).length()
+				var new_width = (t_2 - t_1).length()
+				uvs = [Vector2(total_edge_length, 0.0), Vector2(total_edge_length + new_width, 0.0), 
+				Vector2(total_edge_length + new_width, height), Vector2(total_edge_length, height)]
+			
+			# 1 - Per-Face Mapping
+			elif unwrap_method == UnwrapMethod.PER_FACE_MAPPING:
+				uvs = [Vector2(0.0, 0.0), Vector2(1.0, 0.0), Vector2(1.0, 1.0), Vector2(0.0, 1.0)]
+			
+			var vertex_set = [b_1, b_2, t_2, t_1]
+			new_onyx_mesh.add_ngon(vertex_set, [], [], uvs, normals)
+			
+			v_1 += 1
+			total_edge_length += (t_2 - t_1).length()
+		
+			
 	
 	return new_onyx_mesh
 
@@ -629,87 +935,4 @@ func editor_deselect():
 # ////////////////////////////////////////////////////////////
 # PROPERTY UPDATERS
 
-# Used when a handle variable changes in the properties panel.
-func update_x_plus(new_value):
-#	print("ONYXCUBE update_x_plus")
-	
-	if new_value < 0:
-		new_value = 0
-		
-	x_plus_position = new_value
-	_process_property_update()
-	
-	
-func update_x_minus(new_value):
-#	print("ONYXCUBE update_x_minus")
-
-	if new_value < 0 || origin_mode == OriginPosition.BASE_CORNER:
-		new_value = 0
-		
-	x_minus_position = new_value
-	_process_property_update()
-	
-func update_y_plus(new_value):
-#	print("ONYXCUBE update_y_plus")
-	if new_value < 0:
-		new_value = 0
-		
-	y_plus_position = new_value
-	_process_property_update()
-	
-func update_y_minus(new_value):
-#	print("ONYXCUBE update_y_minus")
-	if new_value < 0 && (origin_mode == OriginPosition.BASE_CORNER || origin_mode == OriginPosition.BASE) :
-		new_value = 0
-		
-	y_minus_position = new_value
-	_process_property_update()
-	
-func update_z_plus(new_value):
-#	print("ONYXCUBE update_z_plus")
-	if new_value < 0:
-		new_value = 0
-		
-	z_plus_position = new_value
-	_process_property_update()
-	
-	
-func update_z_minus(new_value):
-#	print("ONYXCUBE update_z_minus")
-	if new_value < 0 || origin_mode == OriginPosition.BASE_CORNER:
-		new_value = 0
-		
-	z_minus_position = new_value
-	_process_property_update()
-	
-	
-func update_subdivisions(new_value):
-#	print("ONYXCUBE update_subdivisions")
-	if new_value.x < 1:
-		new_value.x = 1
-	if new_value.y < 1:
-		new_value.y = 1
-	if new_value.z < 1:
-		new_value.z = 1
-		
-	subdivisions = new_value
-	_process_property_update()
-	
-
-# Changes the origin position relative to the shape and regenerates geometry and handles.
-func update_origin_type(new_value):
-#	print("ONYXCUBE update_origin_mode")
-	if previous_origin_mode == new_value:
-		return
-	
-	origin_mode = new_value
-	_update_origin_mode()
-	
-	balance_control_data()
-	
-	_process_property_update()
-	
-	# ensure the origin mode toggle is preserved, and ensure the adjusted handles are saved.
-	previous_origin_mode = origin_mode
-	previous_active_controls = get_control_data()
 
