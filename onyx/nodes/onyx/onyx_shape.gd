@@ -30,7 +30,7 @@ const GENERATOR_NODE_NAME = "**GENERATOR NODE**"
 const HOLLOW_OBJECT_NAME = "**HOLLOW ONYX OBJECT**"
 
 # The name for the node used to preview non-union boolean modes.
-const BOOLEAN_PREVIEW_OBJECT_NAME = "Boolean Preview"
+const BOOLEAN_PREVIEW_OBJECT_NAME = "**BOOLEAN PREVIEW**"
 
 # The generator types.
 enum ShapeType {
@@ -124,8 +124,16 @@ var boolean_preview_node = null
 # other stuff.
 func _enter_tree():
 	
-#	print("[OnyxShape] ", self.get_name() , " - _enter_tree()")
-	
+	print("[OnyxShape] ", self.get_name() , " - _enter_tree()")
+
+	# Use this to recover the preview node from duplications.
+	if Engine.editor_hint == true:
+		
+		# We can assume that if we have a mesh, it's already been initialized.
+		if _onyx_mesh != null:
+			_switch_boolean_mode(operation)
+
+
 	# Required to build hollow data before the scene loads
 	if Engine.editor_hint == false:
 		_build_runtime_hollow_object()
@@ -677,20 +685,25 @@ func _switch_boolean_mode(new_value):
 	if Engine.editor_hint == false || is_inside_tree() == false:
 		return
 	
-	if operation == new_value:
-		return
+#	if operation == new_value:
+#		return
 	
 	print("[OnyxShape] ", self.get_name() , " - _switch_boolean_mode()")
+	print("Do we have node?  ", has_node(BOOLEAN_PREVIEW_OBJECT_NAME))
 	
 	self.set_operation(new_value)
 	
-	# if we were at 0, delete!
-	if new_value == 0:
+	if has_node(BOOLEAN_PREVIEW_OBJECT_NAME) != false:
+		boolean_preview_node = get_node(BOOLEAN_PREVIEW_OBJECT_NAME)
+	
+	# if we were at 0 or we no longer have a CSG parent, abandon!
+	if new_value == 0 || get_parent().is_class("CSGShape") == false:
 		_delete_boolean_preview()
 	
 	# OTHERWISE create a boolean if needed and give the geometry with a new material
-	else:
+	elif new_value != 0 || get_parent().is_class("CSGShape") == true:
 		_create_boolean_preview()
+
 
 # Used to create a node used for previewing the mesh when using a non-union boolean mode.
 func _create_boolean_preview():
@@ -703,8 +716,10 @@ func _create_boolean_preview():
 		return
 	
 	print("[OnyxShape] ", self.get_name() , " - _create_boolean_preview()")
+	print("Do we have node?  ", has_node(BOOLEAN_PREVIEW_OBJECT_NAME))
 	
-	if boolean_preview_node == null:
+	if has_node(BOOLEAN_PREVIEW_OBJECT_NAME) == false:
+		print("creatin...")
 		boolean_preview_node = MeshInstance.new()
 		boolean_preview_node.set_name(BOOLEAN_PREVIEW_OBJECT_NAME)
 		add_child(boolean_preview_node)
@@ -720,10 +735,14 @@ func _delete_boolean_preview():
 		return
 	
 	print("[OnyxShape] ", self.get_name() , " - _delete_boolean_preview()")
+	print("Do we have node?  ", has_node(BOOLEAN_PREVIEW_OBJECT_NAME))
 	
-	if boolean_preview_node != null:
+	if has_node(BOOLEAN_PREVIEW_OBJECT_NAME) != false:
+		boolean_preview_node = get_node(BOOLEAN_PREVIEW_OBJECT_NAME)
+		print("deleting found boolean")
 		remove_child(boolean_preview_node)
 		boolean_preview_node.free()
+		boolean_preview_node = null
 
 
 # Used to render the boolean preview.
@@ -733,16 +752,22 @@ func _update_boolean_geometry():
 		return
 	
 	print("[OnyxShape] ", self.get_name() , " - _update_boolean_geometry()")
+	print("Do we have node?  ", has_node(BOOLEAN_PREVIEW_OBJECT_NAME))
 	
 	# If we have a boolean preview, decide what to do.
-	if boolean_preview_node != null:
+	if has_node(BOOLEAN_PREVIEW_OBJECT_NAME) != false:
+		boolean_preview_node = get_node(BOOLEAN_PREVIEW_OBJECT_NAME)
 		
 		var boolean_material = null
+		
+		print("Boop")
 		
 		if operation == 1:
 			boolean_material = load("res://addons/onyx/materials/wireframes/onyx_wireframe_int.material")
 		elif operation == 2:
 			boolean_material = load("res://addons/onyx/materials/wireframes/onyx_wireframe_sub.material")
+			
+		print("Boop")
 		
 		# Set the new mesh using the current mesh
 		var helper = MeshDataTool.new()
@@ -752,6 +777,8 @@ func _update_boolean_geometry():
 		helper.commit_to_surface(boolean_mesh)
 		
 		boolean_preview_node.set_mesh(boolean_mesh)
+		
+		print("BOOOOOOOOOOP")
 		
 #		print("Boolean preview rendered")
 
