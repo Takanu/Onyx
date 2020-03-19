@@ -36,7 +36,7 @@ const BOOLEAN_PREVIEW_OBJECT_NAME = "**BOOLEAN PREVIEW**"
 enum ShapeType {
 	BOX, 
 	ROUNDED_BOX,
-# 	CYLINDER,
+	CYLINDER,
 # 	SPHERE,
 # 	WEDGE,
 # 	STAIRS,
@@ -54,6 +54,7 @@ enum ShapeType {
 const GENERATOR_SCRIPTS = {
 	ShapeType.BOX : "res://addons/onyx/nodes/onyx/onyx_gen_box.gd",
 	ShapeType.ROUNDED_BOX : "res://addons/onyx/nodes/onyx/onyx_gen_roundedbox.gd",
+	ShapeType.CYLINDER : "res://addons/onyx/nodes/onyx/onyx_gen_cylinder.gd",
 }
 
 # ////////////////////////////////////
@@ -249,7 +250,7 @@ func _get_property_list():
 	return props
 
 func _set(property, value):
-	print("[OnyxShape] ", self.get_name() , " - _set() : ", property, " ", value)
+	# print("[OnyxShape] ", self.get_name() , " - _set() : ", property, " ", value)
 	
 	# Same-value catcher.
 	var old_value = self.get(property)
@@ -339,7 +340,7 @@ func _set(property, value):
 
 
 func _get(property):
-	print("[OnyxShape] ", self.get_name() , " - _get() : ", property)
+	# print("[OnyxShape] ", self.get_name() , " - _get() : ", property)
 	match property:
 		
 		# Saved internal properties

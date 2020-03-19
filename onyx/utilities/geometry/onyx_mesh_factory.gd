@@ -243,7 +243,9 @@ func build_sphere(height, x_width, z_width, segments, height_segments, position,
 	
 # Builds a cylinder given the height, width and number of points.  
 # Returns an array in the format of face_array.
-func build_cylinder(mesh : OnyxMesh, points : int, height : float, x_width : float, y_width : float, rings : int, position : Vector3, unwrap_method : int, smooth_shading : bool):
+func build_cylinder(mesh : OnyxMesh, points : int, height : float, x_width : float, 
+			y_width : float, rings : int, position : Vector3, unwrap_method : int, 
+			smooth_shading : bool):
 	
 	# generate the initial circle
 	var angle_step = (2.0 * PI) / points
@@ -584,7 +586,9 @@ func build_ramp(start_tf, end_tf, width, depth, maintain_width, iterations, ramp
 	
 	
 # Builds a "polygon extrusion" which takes a series of 2D points and extrudes them along the provided axis.
-func build_polygon_extrusion(mesh : OnyxMesh, points : Array, depth : float, rings : int, position : Vector3, extrusion_axis : Vector3, unwrap_method : int, smooth_shading : bool):
+func build_polygon_extrusion(mesh : OnyxMesh, points : Array, depth : float, 
+		rings : int, position : Vector3, extrusion_axis : Vector3, 
+		unwrap_method : int, smooth_shading : bool):
 	
 	# make the points given three-dimensional.
 	var start_vertices = []
