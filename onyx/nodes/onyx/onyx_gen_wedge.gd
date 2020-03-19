@@ -150,7 +150,7 @@ func _set(property, value):
             if keep_shape_proportional == true:
                 base_z_size = value
 
-                base_x_size = value
+            base_x_size = value
 
         "base_z_size":
             if value < 0:

@@ -39,8 +39,8 @@ enum ShapeType {
 	CYLINDER,
 	SPHERE,
 	WEDGE,
-# 	STAIRS,
-# 	RAMP,
+	STAIRS,
+	RAMP,
 #
 #	# Placeholders for future releases
 #	STAR,
@@ -57,6 +57,8 @@ const GENERATOR_SCRIPTS = {
 	ShapeType.CYLINDER : "res://addons/onyx/nodes/onyx/onyx_gen_cylinder.gd",
 	ShapeType.SPHERE : "res://addons/onyx/nodes/onyx/onyx_gen_sphere.gd",
 	ShapeType.WEDGE : "res://addons/onyx/nodes/onyx/onyx_gen_wedge.gd",
+	ShapeType.STAIRS : "res://addons/onyx/nodes/onyx/onyx_gen_stairs.gd",
+	ShapeType.RAMP : "res://addons/onyx/nodes/onyx/onyx_gen_ramp.gd",
 }
 
 # ////////////////////////////////////
