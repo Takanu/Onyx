@@ -98,7 +98,9 @@ func build_circle(points, x_width, z_width, position):
 	return tris
 	
 	
-func build_sphere(height, x_width, z_width, segments, height_segments, position, slice_from, slice_to, hemisphere, generate_cap, generate_ends, smooth_normals):
+func build_sphere(height, x_width, z_width, segments, height_segments, 
+			position, slice_from, slice_to, hemisphere, generate_cap, 
+			generate_ends, smooth_normals):
 	
 	var onyx_mesh = OnyxMesh.new()
 	

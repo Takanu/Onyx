@@ -29,15 +29,22 @@ var ControlPoint = load("res://addons/onyx/gizmos/control_point.gd")
 # Used for origin auto-updating, to define where the position should always move
 # itself to.
 enum OriginPosition {
-	CENTER, 					# Anchored to the center of the shape
-	BASE, 						# Anchored to the Y bottom, centered in all other axis
-	BASE_CORNER,				# Anchored to the lowest value of every axis
+
+	# Anchored to the center of the shape
+	CENTER, 					
+	# Anchored to the Y bottom, centered in all other axis
+	BASE, 				
+	# Anchored to the lowest value of every axis		
+	BASE_CORNER,				
 }
 
 # The unwrap methods that can be selected with this generator.
 enum UnwrapMethod {
-	PROPORTIONAL_OVERLAP, 		# All faces are unwrapped to match world space, will overlap
-	PER_FACE_MAPPING,			# Every face is mapped 1:1 with the bounds of UV space
+	
+	# All faces are unwrapped to match world space, will overlap UV space
+	PROPORTIONAL_OVERLAP, 		
+	# Every face is mapped 1:1 within the bounds of UV space
+	PER_FACE_MAPPING,			
 }
 
 

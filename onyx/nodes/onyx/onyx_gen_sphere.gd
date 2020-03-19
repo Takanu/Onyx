@@ -4,7 +4,7 @@ extends "res://addons/onyx/nodes/onyx/onyx_generator.gd"
 # /////////////////////////////////////////////////////////////////////////////
 # INFO
 # A generator for use with OnyxShape.
-# Generates a box-like shape with rounded like corners.  It has a surface-like 
+# Generates a sphere shape.  It has a surface-like 
 # interaction.
 
 # A surface-like interaction means that each control point acts as an independent 
@@ -44,17 +44,8 @@ enum UnwrapMethod {
 
 	# All faces are unwrapped to match world space, overlaps
 	PROPORTIONAL_OVERLAP, 	
-	# Like the above, but applied on a per-segment basis.
-	PROPORTIONAL_OVERLAP_SEGMENTS, 
 	# Every face is mapped 1:1 with the bounds of UV space, will not extend beyond it
 	PER_FACE_MAPPING,		
-}
-
-# The axis on which the corners become rounded.
-enum CornerAxis {
-	X,
-	Y, 
-	Z,
 }
 
 
@@ -67,19 +58,22 @@ var origin_mode = OriginPosition.BASE
 
 # SHAPE PROPERTIES /////
 
-# Exported variables representing all usable handles for re-shaping the mesh.
-var sides = 12
-var rings = 1
+# The number of X-Z edge loops that make up the sphere.
+var segments = 12
+# The number of Y-aligned loops that make up the sphere.
+var rings = 6
 
-# The height values for the top and bottom of the cylinder.
-var height_max = 1
-var height_min = 0
+# The height of the sphere.
+var height = 1
 
+# The X width of the sphere.
 var x_width = 0.5
+
+# The Z width of the sphere.
 var z_width = 0.5
 
-# If true, the X and Z width will always equal each other.
-var keep_width_proportional = false
+# If true, the X, Y and Z width will always equal each other.
+var keep_shape_proportional = false
 
 
 
@@ -87,9 +81,7 @@ var keep_width_proportional = false
 
 # Used to determine how much the hollow faces move away from the
 # sides of the current box.
-var _height_max_hollow = 0.2
-var _height_min_hollow = 0.2
-
+var _height_hollow = 0.2
 var _x_width_hollow = 0.2
 var _z_width_hollow = 0.2
 
@@ -110,6 +102,7 @@ var smooth_normals = false
 # to function.
 var previous_origin_mode = OriginPosition.BASE
 
+
 # /////////////////////////////////////////////////////////////////////////////
 # /////////////////////////////////////////////////////////////////////////////
 # PROPERTY HANDLING
@@ -117,56 +110,10 @@ var previous_origin_mode = OriginPosition.BASE
 # Used in replacement of setget functions to streamline triggers n stuff.
 func _set(property, value):
 	
-#	print("[OnyxRoundedBox] - ", self, "_set()", property, value)
-#	
+	#	print("[OnyxRoundedBox] - ", self, "_set()", property, value)
+	#	
 	match property:
-		
-		# SHAPE PROPERTIES /////
-		
-		"sides":
-			if value < 3:
-				value = 3
-			sides = value
-		
-		"rings":
-			if value < 1:
-				value = 1
-			rings = value
-		
-		"height_max":
-			if value < 0:
-				value = 0
-				
-			height_max = value
-		
-		"height_min":
-			if value < 0:
-				value = 0
-			height_min = value
-		
-		"x_width":
-			if value < 0:
-				value = 0
-				
-			if keep_width_proportional == true:
-				z_width = value
-				
-			x_width = value
-		
-		"z_width":
-			if value < 0:
-				value = 0
-				
-			if keep_width_proportional == true:
-				x_width = value
-				
-			z_width = value
-		
-		"keep_width_proportional":
-			keep_width_proportional = value
-			_update_origin_mode()
-			balance_control_data()
-		
+
 		# ORIGIN MODE /////
 		
 		"origin_mode":
@@ -186,6 +133,54 @@ func _set(property, value):
 			
 			return true
 		
+		# SHAPE PROPERTIES /////
+		
+		"segments":
+			if value < 3:
+				value = 3
+			segments = value
+		
+		"rings":
+			if value < 3:
+				value = 3
+			rings = value
+		
+		"height":
+			if value < 0:
+				value = 0
+			
+			if keep_shape_proportional == true:
+				x_width = value
+				z_width = value
+
+			height = value
+		
+		"x_width":
+			if value < 0:
+				value = 0
+				
+			if keep_shape_proportional == true:
+				x_width = value
+				z_width = value
+				
+			x_width = value
+		
+		"z_width":
+			if value < 0:
+				value = 0
+				
+			if keep_shape_proportional == true:
+				x_width = value
+				z_width = value
+
+			z_width = value
+		
+		"keep_shape_proportional":
+			keep_shape_proportional = value
+			_update_origin_mode()
+			balance_control_data()
+		
+		
 		# UVS / NORMALS /////
 		
 		"unwrap_method":
@@ -197,10 +192,7 @@ func _set(property, value):
 		# HOLLOW MARGINS /////
 		
 		"_height_max_hollow":
-			_height_max_hollow = value
-		
-		"_height_min_hollow":
-			_height_min_hollow = value
+			_height_hollow = value
 		
 		"_x_width_hollow":
 			_x_width_hollow = value
@@ -211,18 +203,18 @@ func _set(property, value):
 	
 	_process_property_update()
 	return true
-
-
-
+	
+	
+	
 # Returns the list of custom shape properties that an owner should save and display.
 func get_shape_properties() -> Dictionary:
 
 	var props = {
 
 		# ORIGIN SETTINGS /////
-			
+		
 		"origin_mode" : {	
-			
+		
 			"name" : "origin_mode",
 			"type" : TYPE_INT,
 			"usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
@@ -232,9 +224,9 @@ func get_shape_properties() -> Dictionary:
 		
 		# SHAPE PROPERTIES /////
 		
-		"sides" : {	
+		"segments" : {	
 		
-			"name" : "sides",
+			"name" : "segments",
 			"type" : TYPE_INT,
 			"usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
 		},
@@ -268,7 +260,7 @@ func get_shape_properties() -> Dictionary:
 
 	# ///// POSITIONAL PROPERTIES /////
 	
-	var bound_names = ["height_max", "height_min", "x_width", "z_width"]
+	var bound_names = ["height", "x_width", "z_width"]
 
 	for name in bound_names:
 
@@ -304,7 +296,7 @@ func get_shape_aspects() -> Dictionary:
 	
 	var aspects = {}
 	
-	var size = Vector3(x_width * 2, height_max + height_min, z_width * 2)
+	var size = Vector3(x_width * 2, height * 2, z_width * 2)
 	
 	match origin_mode:
 		OriginPosition.BASE_CORNER:
@@ -343,8 +335,7 @@ func load_shape_aspects(aspects : Dictionary):
 		
 		# If we're given an aspect, set the values now
 		# TODO - This is not coded correctly.
-		height_max = abs(shape_bounds.size.y)
-		height_min = abs(0)
+		height = abs(shape_bounds.size.y / 2)
 		x_width = abs(shape_bounds.size.x / 2)
 		z_width = abs(shape_bounds.size.z / 2)
 	
@@ -374,7 +365,7 @@ func update_geometry() -> OnyxMesh:
 	if Engine.editor_hint == false:
 		return OnyxMesh.new()
 	
-	return build_geometry(height_max, height_min, x_width * 2, z_width * 2)
+	return build_geometry(height * 2, x_width * 2, z_width * 2)
 
 
 # Creates new geometry to reflect the hollow shapes current properties, 
@@ -387,19 +378,16 @@ func update_hollow_geometry() -> OnyxMesh:
 	
 #	print("[OnyxCube] - update_hollow_geometry()")
 	
-	var height_max_diff = height_max - _height_max_hollow
-	var height_min_diff = height_min - _height_min_hollow
+	var height_diff = height - _height_hollow
 	var x_width_diff = x_width - _x_width_hollow
 	var z_width_diff = z_width - _z_width_hollow
 	
-	return build_geometry(height_max_diff, height_min_diff, 
-			x_width_diff, z_width_diff)
+	return build_geometry(height_diff, x_width_diff, z_width_diff)
 	
 
 
 # Performs the process of building a set of mesh data and returning it to the caller.
-func build_geometry(height_max : float,  height_min : float,  x_size : float,  
-	z_size : float):
+func build_geometry(height : float,  x_size : float,  z_size : float):
 	
 #	print('trying to build geometry...')
 	
@@ -409,200 +397,146 @@ func build_geometry(height_max : float,  height_min : float,  x_size : float,
 
 	var new_onyx_mesh = OnyxMesh.new()
 
-	var total_height = height_max - -height_min
 	var position = Vector3(0, 0, 0)
 	match origin_mode:
 		OriginPosition.CENTER:
-			position = Vector3(0, -height_min, 0)
+			position = Vector3(0, 0, 0)
 		OriginPosition.BASE:
-			position = Vector3(0, -height_min, 0)
+			position = Vector3(0, height / 2, 0)
 		OriginPosition.BASE_CORNER:
-			position = Vector3(x_width, -height_min, z_width)
+			position = Vector3(x_width / 2, height / 2, z_width / 2)
 	
-	# generate the initial circle as a series of 2D points
-	var angle_step = (2.0 * PI) / sides
-	var current_angle = 0.0
+	# The increments that vertex plotting will be broken up into
+	var deltaTheta = PI/rings
+	var deltaPhi = 2*PI/segments
 	
-	var circle_points = []
+	# The variables used to step through and plot points.
+	var theta1 = 0.0
+	var theta2 = deltaTheta
+	var phi1 = 0.0
+	var phi2 = deltaPhi
 	
-	while current_angle < 2 * PI:
-		
-		# get coordinates
-		var x = x_width * cos(current_angle)
-		var y = z_width * sin(current_angle)
-		circle_points.append(Vector2(x, y))
-		
-		current_angle += angle_step
+#	print([theta1, theta2, phi1, phi2])
 	
-
-	# make the points given three-dimensional.
-	var start_vertices = []
-	var start_point_normal = Vector3(0, 0, 1)
-	for point in circle_points:
-		start_vertices.append(Vector3(point.x, point.y, 0))
-	
-	var base_vertices = []
-	var extrusion_axis = Vector3(0, 1, 0)
-	
-	
-	# Build a basis and rotate it to the normal we desire.
-	var dot = start_point_normal.dot(extrusion_axis)
-	var cross = start_point_normal.cross(extrusion_axis).normalized()
-	
-	#print("DOT/CROSS: ", dot, cross)
-	
-	# If the face angle is where we want it, do nothing.
-	if dot == 1 || dot == -1:
-		#print("No need to rotate!") 
-		for vertex in start_vertices:
-			base_vertices.append(vertex + position)
-
-	# Otherwise rotate it!
-	else:
-		#("Rotating!")
-		var matrix = Basis()
-		matrix = matrix.rotated(cross, PI*((dot + 1) / 2))
-		
-		for vertex in start_vertices:
-			var t_vertex = matrix.xform(vertex)
-			base_vertices.append(t_vertex + position)
+	var ring = 0
+	while ring < rings:
+		if ring != 0:
+			theta1 += deltaTheta
+			theta2 += deltaTheta
 			
-
-	# based on the number of rings, build the faces.
-	var extrusion_step = total_height / rings
-	var base_extrusion_depth = Vector3()
-	var distance_vec = extrusion_axis * extrusion_step
-	var face_count = 0
-	
-	for i in rings:
-		
-		# Used for Proportional Unwrap methods.
-		var total_edge_length = 0.0
-		
-		# go roooound the extrusion
-		for v_1 in base_vertices.size():
+		var point = 0
+		phi1 = 0.0
+		phi2 = deltaPhi
 			
-			# X--------X  t_1   t_2
-			# |        |
-			# |        |
-			# |        |
-			# X--------X  b_1   b_2
+#		print("thetas: ", theta1, theta2)
+#		print("NEW RING===========")
+		
+		while point <= segments - 1:
+			if point != 0:
+				phi1 += deltaPhi
+				phi2 += deltaPhi
+				
+			#phi2   phi1
+			# |      |
+			# 2------1 -- theta1
+			# |\ _   |
+			# |    \ |
+			# 3------4 -- theta2
+			#
+
+			# Vertices
+			var vertex1 = Vector3(sin(theta2) * cos(phi2) * (x_width/2),  cos(theta2) * (height/2),  sin(theta2) * sin(phi2) * (z_width/2))
 			
-			# Get positions ahead and behind the set we plan on looking at for smooth normals
-			var v_0 = VectorUtils.clamp_int(v_1 - 1, 0, base_vertices.size() - 1)
-			var v_2 = VectorUtils.clamp_int(v_1 + 1, 0, base_vertices.size() - 1)
-			var v_3 = VectorUtils.clamp_int(v_1 + 2, 0, base_vertices.size() - 1)
-
-			var b_0 = base_vertices[v_0]
-			var b_1 = base_vertices[v_1]
-			var b_2 = base_vertices[v_2]
-			var b_3 = base_vertices[v_0]
-
-			b_1 += base_extrusion_depth
-			b_2 += base_extrusion_depth
-			var t_1 = b_1 + distance_vec
-			var t_2 = b_2 + distance_vec
-
-			var vertices = [b_1, t_1, t_2, b_2]
-			var tangents = []
+			var vertex2 = Vector3(sin(theta1) * cos(phi2) * (x_width/2),  cos(theta1) * (height/2),  sin(theta1) * sin(phi2) * (z_width/2))
+			
+			var vertex3 = Vector3(sin(theta1) * cos(phi1) * (x_width/2),  cos(theta1) * (height/2),  sin(theta1) * sin(phi1) * (z_width/2))
+			
+			var vertex4 = Vector3(sin(theta2) * cos(phi1) * (x_width/2),  cos(theta2) * (height/2),  sin(theta2) * sin(phi1) * (z_width/2))
+			
+			vertex1 += position
+			vertex2 += position
+			vertex3 += position
+			vertex4 += position
+			
+			# UV MAPPING
+			var uvs = [Vector2(0.0, 1.0), Vector2(0.0, 0.0), Vector2(1.0, 0.0), Vector2(1.0, 1.0)]
+			
+			# NORMAL MAPPING
 			var normals = []
 			
-			# NORMAL TYPES
+			# If we have smooth normals, we need extra points of detail
 			if smooth_normals == true:
-				var n_1 = VectorUtils.get_triangle_normal([b_0, b_1, t_1])
-				var n_2 = VectorUtils.get_triangle_normal([b_2, b_2, b_3])
-				normals = [n_1, n_1, n_2, n_2]
+				# Get the right circle positions \o/
+				var theta0 = theta1 - deltaTheta
+				var theta3 = theta2 + deltaTheta
+				var phi0 = phi1 - deltaPhi
+				var phi3 = phi2 + deltaPhi
+				
+#				if point == segments - 1:
+#					phi3 = deltaPhi
+#					phi2 = 0
+				
+#				if ring == 0 || ring == height_segments:
+#					theta0 = VectorUtils.clamp_int( (theta1 + PI), 0, PI * 2)
+#					theta3 = VectorUtils.clamp_int( (theta2 + PI), 0, PI * 2)
+					
+#				print("phis - ", phi0, " ", phi1, " ", phi2, " ", phi3)
+				
+				# BUILD EXTRA POINTS
+				var up_1 = Vector3(sin(theta0) * cos(phi1) * (x_width/2),  cos(theta0) * (height/2),  sin(theta0) * sin(phi1) * (z_width/2))
+				var up_2 = Vector3(sin(theta0) * cos(phi2) * (x_width/2),  cos(theta0) * (height/2),  sin(theta0) * sin(phi2) * (z_width/2))
+				var left_1 = Vector3(sin(theta1) * cos(phi3) * (x_width/2),  cos(theta1) * (height/2),  sin(theta1) * sin(phi3) * (z_width/2))
+				var left_2 = Vector3(sin(theta2) * cos(phi3) * (x_width/2),  cos(theta2) * (height/2),  sin(theta2) * sin(phi3) * (z_width/2))
+				var right_1 = Vector3(sin(theta1) * cos(phi0) * (x_width/2),  cos(theta1) * (height/2),  sin(theta1) * sin(phi0) * (z_width/2))
+				var right_2 = Vector3(sin(theta2) * cos(phi0) * (x_width/2),  cos(theta2) * (height/2),  sin(theta2) * sin(phi0) * (z_width/2))
+				var down_1 = Vector3(sin(theta3) * cos(phi1) * (x_width/2),  cos(theta3) * (height/2),  sin(theta3) * sin(phi1) * (z_width/2))
+				var down_2 = Vector3(sin(theta3) * cos(phi2) * (x_width/2),  cos(theta3) * (height/2),  sin(theta3) * sin(phi2) * (z_width/2))
+				
+				# GET NORMALS
+				var n_0_0 = VectorUtils.get_triangle_normal([vertex1, up_1, right_1])
+				var n_1_0 = VectorUtils.get_triangle_normal([vertex2, up_2, vertex1])
+				var n_2_0 = VectorUtils.get_triangle_normal([left_1, up_2, vertex2])
+				
+				var n_0_1 = VectorUtils.get_triangle_normal([vertex4, vertex1, right_2])
+				var n_1_1 = VectorUtils.get_triangle_normal([vertex3, vertex2, vertex4])
+				var n_2_1 = VectorUtils.get_triangle_normal([left_2, vertex2, vertex3])
+				
+				var n_0_2 = VectorUtils.get_triangle_normal([down_1, vertex4, right_2])
+				var n_1_2 = VectorUtils.get_triangle_normal([down_2, vertex3, vertex4])
+				var n_2_2 = VectorUtils.get_triangle_normal([left_2, vertex3, down_2])
+				
+				# COMBINE FOR EACH VERTEX
+				var normal_1 = (n_0_0 + n_1_0 + n_0_1 + n_1_1).normalized()
+				var normal_2 = (n_1_0 + n_2_0 + n_1_1 + n_2_1).normalized()
+				var normal_3 = (n_1_1 + n_2_1 + n_1_2 + n_2_2).normalized()
+				var normal_4 = (n_0_1 + n_1_1 + n_0_2 + n_1_2).normalized()
+				
+				normals = [normal_1, normal_2, normal_3, normal_4]
+#				print(normals)
+#				if point == 0 || point == segments - 1:
+#					print(normals)
+					
 			else:
-				var normal = VectorUtils.get_triangle_normal([b_1, t_1, b_2])
+				var normal = VectorUtils.get_triangle_normal([vertex3, vertex2, vertex4])
 				normals = [normal, normal, normal, normal]
-				
-			var uvs = []
-
-			# UNWRAP METHOD 1 - PROPORTIONAL OVERLAP
-			# Unwraps evenly across all rings, scaling based on vertex position.
-			if unwrap_method == 0:
-				var base_width = (b_2 - b_1).length()
-				var base_height = (t_1 - b_1).length()
-				
-				uvs = [Vector2(total_edge_length, b_1.y), Vector2(total_edge_length, t_1.y), 
-				Vector2(total_edge_length + base_width, t_1.y), Vector2(total_edge_length + base_width, b_1.y)]
-				
-				total_edge_length += base_width
-				
-			# UNWRAP METHOD 1 - PROPORTIONAL OVERLAP SEGMENTS
-			# Proportionally unwraps horizontally, but applies the same unwrap coordinates to all rings.
-			elif unwrap_method == 1:
-				var base_width = (b_2 - b_1).length()
-				var base_height = (t_1 - b_1).length()
-				
-				uvs = [Vector2(total_edge_length, 0.0), Vector2(total_edge_length, base_height), 
-				Vector2(total_edge_length + base_width, base_height), Vector2(total_edge_length + base_width, 0.0)]
-				
-				total_edge_length += base_width
-				
-			# UNWRAP METHOD 0 - Per-Face Mapping
-			elif unwrap_method == 2:
-				uvs = [Vector2(0.0, 1.0), Vector2(0.0, 0.0), Vector2(1.0, 0.0), Vector2(1.0, 1.0)]
-				
-			# ADD FACE
-			new_onyx_mesh.add_ngon(vertices, [], tangents, uvs, normals)
-			face_count += 1
 			
-
-		base_extrusion_depth += distance_vec
-		
-	# now render the top and bottom caps
-	var v_cap_bottom = []
-	var v_cap_top = []
-	var total_extrusion_vec = extrusion_axis * total_height
-	
-	for i in base_vertices.size():
-		
-		var vertex = base_vertices[i]
-		v_cap_bottom.append( vertex )
-		v_cap_top.append( vertex + total_extrusion_vec )
-		
-	v_cap_top.invert()
-	
-	#var bottom_normals = [extrusion_axis.inverse(), extrusion_axis.inverse(), extrusion_axis.inverse(), extrusion_axis.inverse()]
-	#var top_normals = [extrusion_axis, extrusion_axis, extrusion_axis, extrusion_axis]
-	
-	# UVS
-	var utils = VectorUtils.new()
-	var top_bounds = utils.get_vector3_ranges(v_cap_top)
-	var bottom_bounds = utils.get_vector3_ranges(v_cap_bottom)
-	
-	var top_range = top_bounds['max'] - top_bounds['min']
-	var bottom_range = bottom_bounds['max'] - bottom_bounds['min']
-	
-	var top_uvs = []
-	var bottom_uvs = []
-	
-		
-	# UNWRAP METHOD - PROPORTIONAL OVERLAP AND SEGMENTS
-	# Unwraps evenly across all rings, scaling based on vertex position.
-	if unwrap_method == 0 || unwrap_method == 1:
-		for vector in v_cap_top:
-			top_uvs.append(Vector2(vector.x, vector.z))
-		for vector in v_cap_bottom:
-			bottom_uvs.append(Vector2(vector.x, vector.z))
+			# CAP RENDERING
+			if ring == -1:
+				uvs = [Vector2(0.0, 1.0), Vector2(0.5, 1.0), Vector2(1.0, 1.0)]
+				normals.remove(1)
+				new_onyx_mesh.add_tri([vertex1, vertex3, vertex4], [], [], uvs, normals)
 			
+			if ring == rings:
+				uvs = [Vector2(0.0, 1.0), Vector2(0.5, 1.0), Vector2(1.0, 1.0)]
+				normals.remove(3)
+				new_onyx_mesh.add_tri([vertex3, vertex1, vertex2], [], [], uvs, normals)
 			
-	# UNWRAP METHOD - Per-Face Mapping
-	elif unwrap_method == 2:
-		for vector in v_cap_top:
-			var uv = Vector2(vector.x / top_range.x, vector.z / top_range.z)
-			uv = uv + Vector2(0.5, 0.5)
-			top_uvs.append(uv)
-		
-		for vector in v_cap_bottom:
-			var uv = Vector2(vector.x / bottom_range.x, vector.z / bottom_range.z)
-			uv = uv + Vector2(0.5, 0.5)
-			bottom_uvs.append(uv)
-		
-		
-	new_onyx_mesh.add_ngon(v_cap_top, [], [], top_uvs, [])
-	new_onyx_mesh.add_ngon(v_cap_bottom, [], [], bottom_uvs, [])
+			else:
+				new_onyx_mesh.add_ngon([vertex1, vertex2, vertex3, vertex4], [], [], uvs, normals)
+				
+			point += 1
+			
+		ring += 1
 	
 	
 	return new_onyx_mesh
@@ -634,32 +568,32 @@ func _update_origin_mode():
 	
 	# based on the current position and properties, work out how much to move the origin.
 	var diff = Vector3(0, 0, 0)
-	
+
 	match previous_origin_mode:
-		
+
 		OriginPosition.CENTER:
 			match origin_mode:
-				
+
 				OriginPosition.BASE:
-					diff = Vector3(0, -height_min, 0)
+					diff = Vector3(0, -height / 2, 0)
 				OriginPosition.BASE_CORNER:
-					diff = Vector3(-x_width, -height_min, -z_width)
-			
+					diff = Vector3(-x_width / 2, -height / 2, -z_width / 2)
+
 		OriginPosition.BASE:
 			match origin_mode:
-				
+
 				OriginPosition.CENTER:
-					diff = Vector3(0, height_max / 2, 0)
+					diff = Vector3(0, height / 2, 0)
 				OriginPosition.BASE_CORNER:
-					diff = Vector3(-x_width, 0, -z_width)
-					
+					diff = Vector3(-x_width / 2, 0, -z_width / 2)
+
 		OriginPosition.BASE_CORNER:
 			match origin_mode:
-				
+
 				OriginPosition.BASE:
-					diff = Vector3(x_width, 0, z_width)
+					diff = Vector3(x_width / 2, 0, z_width / 2)
 				OriginPosition.CENTER:
-					diff = Vector3(x_width, height_max / 2, z_width)
+					diff = Vector3(x_width / 2, height / 2, z_width / 2)
 					
 	
 	_process_origin_move(diff)
@@ -680,19 +614,18 @@ func _update_origin_position():
 	
 #	print("[OnyxGenerator] ", self.name, " - _update_origin_position()")
 	
-	# Find what the current location should be
 	var diff = Vector3()
-	var mid_height = height_max - height_min
-		
+	
+	# redundant, keeping it here for structural reasons.
 	match origin_mode:
 		OriginPosition.CENTER:
-			diff = Vector3(0, mid_height / 2, 0)
+			diff = Vector3(0, 0, 0)
 		
 		OriginPosition.BASE:
-			diff = Vector3(0, -height_min, 0)
+			diff = Vector3(0, 0, 0)
 		
 		OriginPosition.BASE_CORNER:
-			diff = Vector3(0, -height_min, 0)
+			diff = Vector3(0, 0, 0)
 	
 	
 	_process_origin_move(diff)
@@ -716,15 +649,10 @@ func build_control_points():
 	if Engine.editor_hint == false:
 		return
 	
-	var height_max = ControlPoint.new(self, "get_gizmo_undo_state", 
+	var height = ControlPoint.new(self, "get_gizmo_undo_state", 
 			"get_gizmo_redo_state", "restore_state", "restore_state")
-	height_max.control_name = 'height_max'
-	height_max.set_type_axis(false, "modify_control", "commit_control", Vector3(0, 1, 0))
-	
-	var height_min = ControlPoint.new(self, "get_gizmo_undo_state", 
-			"get_gizmo_redo_state", "restore_state", "restore_state")
-	height_min.control_name = 'height_min'
-	height_min.set_type_axis(false, "modify_control", "commit_control", Vector3(0, -1, 0))
+	height.control_name = 'height'
+	height.set_type_axis(false, "modify_control", "commit_control", Vector3(0, 1, 0))
 	
 	var x_width = ControlPoint.new(self, "get_gizmo_undo_state", 
 			"get_gizmo_redo_state", "restore_state", "restore_state")
@@ -735,10 +663,9 @@ func build_control_points():
 			"get_gizmo_redo_state", "restore_state", "restore_state")
 	z_width.control_name = 'z_width'
 	z_width.set_type_axis(false, "modify_control", "commit_control", Vector3(0, 0, 1))
-	
+
 	# populate the dictionary
-	active_controls["height_max"] = height_max
-	active_controls["height_min"] = height_min
+	active_controls["height"] = height
 	active_controls["x_width"] = x_width
 	active_controls["z_width"] = z_width
 	
@@ -771,26 +698,25 @@ func refresh_control_data():
 	
 #	print("[OnyxCube] ", self.get_name(), " - refresh_control_data()")
 	
-	var height_mid = (height_max - height_min) / 2
-	
 	match origin_mode:
 		OriginPosition.CENTER:
-			active_controls["height_max"].control_position = Vector3(0, height_max, 0)
-			active_controls["height_min"].control_position = Vector3(0, -height_min, 0)
-			active_controls["x_width"].control_position = Vector3(x_width, 0, 0)
-			active_controls["z_width"].control_position = Vector3(0, 0, z_width)
+			active_controls["height"].control_position = Vector3(0, height / 2, 0)
+			active_controls["x_width"].control_position = Vector3(x_width / 2, 0, 0)
+			active_controls["z_width"].control_position = Vector3(0, 0, z_width / 2)
 			
 		OriginPosition.BASE:
-			active_controls["height_max"].control_position = Vector3(0, height_max, 0)
-			active_controls["height_min"].control_position = Vector3(0, -height_min, 0)
-			active_controls["x_width"].control_position = Vector3(x_width, height_mid, 0)
-			active_controls["z_width"].control_position = Vector3(0, height_mid, z_width)
+			active_controls["height"].control_position = Vector3(0, height, 0)
+			active_controls["x_width"].control_position = Vector3(x_width / 2, height / 2, 0)
+			active_controls["z_width"].control_position = Vector3(0, height / 2, z_width / 2)
 			
 		OriginPosition.BASE_CORNER:
-			active_controls["height_max"].control_position = Vector3(x_width, height_max, z_width)
-			active_controls["height_min"].control_position = Vector3(x_width, -height_min, z_width)
-			active_controls["x_width"].control_position = Vector3(x_width * 2, height_mid, z_width)
-			active_controls["z_width"].control_position = Vector3(x_width, height_mid, z_width * 2)
+			active_controls["height"].control_position = Vector3(x_width / 2, 
+					height, z_width / 2)
+			active_controls["x_width"].control_position = Vector3(x_width, 
+					height / 2, z_width / 2)
+			active_controls["z_width"].control_position = Vector3(x_width / 2, 
+					height / 2, z_width)
+
 
 	
 
@@ -802,36 +728,30 @@ func update_control_from_gizmo(control):
 	
 	var coordinate = control.control_position
 		
+	var target_val = 0.0
 	match control.control_name:
-		'height_max': height_max = max(coordinate.y, -height_min)
-		'height_min': height_min = min(coordinate.y, height_max) * -1
-		'x_width': x_width = max(coordinate.x, 0)
-		'z_width': z_width = max(coordinate.z, 0)
-		
-	# Keep width proportional with gizmos if true
-	if control.control_name == 'x_width'  || control.control_name == 'z_width':
-		var final_x = coordinate.x
-		var final_z = coordinate.z
-		
-		if origin_mode == OriginPosition.BASE_CORNER:
-			final_x = coordinate.x / 2
-			final_z = coordinate.z / 2
-		
-		# If the width is proportional, balance it
-		if keep_width_proportional == true:
-			if control.control_name == 'x_width':
-				x_width = max(final_x, 0)
-				z_width = max(final_x, 0)
-			else:
-				x_width = max(final_z, 0)
-				z_width = max(final_z, 0)
-				
-		# Otherwise directly assign it.
-		else:
-			if control.control_name == 'x_width':
-				x_width = max(final_x, 0)
-			else:
-				z_width = max(final_z, 0)
+			'height': target_val = max(coordinate.y, 0)
+			'x_width': target_val = max(coordinate.x, 0)
+			'z_width': target_val = max(coordinate.z, 0)
+
+	# Multiply the target depending on where the origin is (to adjust for different handle scales).
+	if origin_mode == OriginPosition.CENTER:
+		target_val = target_val * 2
+	elif origin_mode == OriginPosition.BASE && control.control_name != 'height':
+		target_val = target_val * 2
+
+	# If proportional shape toggle is on, apply to all values
+	if keep_shape_proportional == true:
+		height = target_val
+		x_width = target_val
+		z_width = target_val
+
+	# Otherwise apply selectively.
+	else:
+		match control.control_name:
+			'height': height = target_val
+			'x_width': x_width = target_val
+			'z_width': z_width = target_val
 		
 	refresh_control_data()
 	
@@ -839,18 +759,18 @@ func update_control_from_gizmo(control):
 # Applies the current handle values to the shape attributes
 func apply_control_attributes():
 	
-#	print("[OnyxCube] ", self.get_name(), " - apply_control_attributes()")
-	
-	# If the base corner is the current origin, we need to deal with widths differently.
+	if origin_mode == OriginPosition.CENTER:
+		height = active_controls["height"].control_position.y * 2
+		x_width = active_controls["x_width"].control_position.x * 2
+		z_width = active_controls["z_width"].control_position.z * 2
+
+	if origin_mode == OriginPosition.BASE:
+		height = active_controls["height"].control_position.y
+		x_width = active_controls["x_width"].control_position.x * 2
+		z_width = active_controls["z_width"].control_position.z * 2
+
 	if origin_mode == OriginPosition.BASE_CORNER:
-		height_max = active_controls["height_max"].control_position.y
-		height_min = active_controls["height_min"].control_position.y * -1
-		x_width = active_controls["x_width"].control_position.x / 2
-		z_width = active_controls["z_width"].control_position.z / 2
-		
-	else:
-		height_max = active_controls["height_max"].control_position.y
-		height_min = active_controls["height_min"].control_position.y * -1
+		height = active_controls["height"].control_position.y
 		x_width = active_controls["x_width"].control_position.x
 		z_width = active_controls["z_width"].control_position.z
 
@@ -858,23 +778,7 @@ func apply_control_attributes():
 # Only called during Gizmo movements for origin auto-updating.
 func balance_control_data():
 	
-#	print("[OnyxCube] ", self.get_name(), " - balance_control_data()")
-	
-	var height_diff = height_max + height_min
-
-	# balance handles here
-	match origin_mode:
-		OriginPosition.CENTER:
-			height_max = height_diff / 2
-			height_min = height_diff / 2
-			
-		OriginPosition.BASE:
-			height_max = height_diff
-			height_min = 0
-			
-		OriginPosition.BASE_CORNER:
-			height_max = height_diff
-			height_min = 0
+	pass
 		
 
 # ////////////////////////////////////////////////////////////
@@ -885,6 +789,3 @@ func editor_select():
 
 func editor_deselect():
 	pass
-
-
-

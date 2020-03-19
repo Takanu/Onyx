@@ -37,8 +37,8 @@ enum ShapeType {
 	BOX, 
 	ROUNDED_BOX,
 	CYLINDER,
-# 	SPHERE,
-# 	WEDGE,
+	SPHERE,
+	WEDGE,
 # 	STAIRS,
 # 	RAMP,
 #
@@ -55,6 +55,8 @@ const GENERATOR_SCRIPTS = {
 	ShapeType.BOX : "res://addons/onyx/nodes/onyx/onyx_gen_box.gd",
 	ShapeType.ROUNDED_BOX : "res://addons/onyx/nodes/onyx/onyx_gen_roundedbox.gd",
 	ShapeType.CYLINDER : "res://addons/onyx/nodes/onyx/onyx_gen_cylinder.gd",
+	ShapeType.SPHERE : "res://addons/onyx/nodes/onyx/onyx_gen_sphere.gd",
+	ShapeType.WEDGE : "res://addons/onyx/nodes/onyx/onyx_gen_wedge.gd",
 }
 
 # ////////////////////////////////////
