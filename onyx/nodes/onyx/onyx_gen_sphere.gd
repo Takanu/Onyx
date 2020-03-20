@@ -191,7 +191,7 @@ func _set(property, value):
 		
 		# HOLLOW MARGINS /////
 		
-		"_height_max_hollow":
+		"_height_hollow":
 			_height_hollow = value
 		
 		"_x_width_hollow":
@@ -284,7 +284,7 @@ func get_shape_properties() -> Dictionary:
 			"hint" : PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
 		}
 		
-		return props
+	return props
 
 
 # Returns a set of custom properties used to tell the owner general aspects of it's
@@ -365,7 +365,7 @@ func update_geometry() -> OnyxMesh:
 	if Engine.editor_hint == false:
 		return OnyxMesh.new()
 	
-	return build_geometry(height * 2, x_width * 2, z_width * 2)
+	return build_geometry(height, x_width, z_width)
 
 
 # Creates new geometry to reflect the hollow shapes current properties, 
@@ -387,7 +387,8 @@ func update_hollow_geometry() -> OnyxMesh:
 
 
 # Performs the process of building a set of mesh data and returning it to the caller.
-func build_geometry(height : float,  x_size : float,  z_size : float):
+func build_geometry(geom_height : float,  geom_x_size : float,  
+		geom_z_size : float):
 	
 #	print('trying to build geometry...')
 	
@@ -402,9 +403,9 @@ func build_geometry(height : float,  x_size : float,  z_size : float):
 		OriginPosition.CENTER:
 			position = Vector3(0, 0, 0)
 		OriginPosition.BASE:
-			position = Vector3(0, height / 2, 0)
+			position = Vector3(0, geom_height / 2, 0)
 		OriginPosition.BASE_CORNER:
-			position = Vector3(x_width / 2, height / 2, z_width / 2)
+			position = Vector3(geom_x_size / 2, geom_height / 2, geom_z_size / 2)
 	
 	# The increments that vertex plotting will be broken up into
 	var deltaTheta = PI/rings
@@ -445,13 +446,21 @@ func build_geometry(height : float,  x_size : float,  z_size : float):
 			#
 
 			# Vertices
-			var vertex1 = Vector3(sin(theta2) * cos(phi2) * (x_width/2),  cos(theta2) * (height/2),  sin(theta2) * sin(phi2) * (z_width/2))
+			var vertex1 = Vector3(sin(theta2) * cos(phi2) * (geom_x_size/2),  
+					cos(theta2) * (geom_height/2),  
+					sin(theta2) * sin(phi2) * (geom_z_size/2))
 			
-			var vertex2 = Vector3(sin(theta1) * cos(phi2) * (x_width/2),  cos(theta1) * (height/2),  sin(theta1) * sin(phi2) * (z_width/2))
+			var vertex2 = Vector3(sin(theta1) * cos(phi2) * (geom_x_size/2),  
+					cos(theta1) * (geom_height/2),  
+					sin(theta1) * sin(phi2) * (geom_z_size/2))
 			
-			var vertex3 = Vector3(sin(theta1) * cos(phi1) * (x_width/2),  cos(theta1) * (height/2),  sin(theta1) * sin(phi1) * (z_width/2))
+			var vertex3 = Vector3(sin(theta1) * cos(phi1) * (geom_x_size/2),  
+					cos(theta1) * (geom_height/2),  
+					sin(theta1) * sin(phi1) * (geom_z_size/2))
 			
-			var vertex4 = Vector3(sin(theta2) * cos(phi1) * (x_width/2),  cos(theta2) * (height/2),  sin(theta2) * sin(phi1) * (z_width/2))
+			var vertex4 = Vector3(sin(theta2) * cos(phi1) * (geom_x_size/2),  
+					cos(theta2) * (geom_height/2),  
+					sin(theta2) * sin(phi1) * (geom_z_size/2))
 			
 			vertex1 += position
 			vertex2 += position
@@ -483,14 +492,37 @@ func build_geometry(height : float,  x_size : float,  z_size : float):
 #				print("phis - ", phi0, " ", phi1, " ", phi2, " ", phi3)
 				
 				# BUILD EXTRA POINTS
-				var up_1 = Vector3(sin(theta0) * cos(phi1) * (x_width/2),  cos(theta0) * (height/2),  sin(theta0) * sin(phi1) * (z_width/2))
-				var up_2 = Vector3(sin(theta0) * cos(phi2) * (x_width/2),  cos(theta0) * (height/2),  sin(theta0) * sin(phi2) * (z_width/2))
-				var left_1 = Vector3(sin(theta1) * cos(phi3) * (x_width/2),  cos(theta1) * (height/2),  sin(theta1) * sin(phi3) * (z_width/2))
-				var left_2 = Vector3(sin(theta2) * cos(phi3) * (x_width/2),  cos(theta2) * (height/2),  sin(theta2) * sin(phi3) * (z_width/2))
-				var right_1 = Vector3(sin(theta1) * cos(phi0) * (x_width/2),  cos(theta1) * (height/2),  sin(theta1) * sin(phi0) * (z_width/2))
-				var right_2 = Vector3(sin(theta2) * cos(phi0) * (x_width/2),  cos(theta2) * (height/2),  sin(theta2) * sin(phi0) * (z_width/2))
-				var down_1 = Vector3(sin(theta3) * cos(phi1) * (x_width/2),  cos(theta3) * (height/2),  sin(theta3) * sin(phi1) * (z_width/2))
-				var down_2 = Vector3(sin(theta3) * cos(phi2) * (x_width/2),  cos(theta3) * (height/2),  sin(theta3) * sin(phi2) * (z_width/2))
+				var up_1 = Vector3(sin(theta0) * cos(phi1) * (geom_x_size/2),  
+						cos(theta0) * (geom_height/2),  
+						sin(theta0) * sin(phi1) * (geom_z_size/2))
+
+				var up_2 = Vector3(sin(theta0) * cos(phi2) * (geom_x_size/2),  
+						cos(theta0) * (geom_height/2),  
+						sin(theta0) * sin(phi2) * (geom_z_size/2))
+
+				var left_1 = Vector3(sin(theta1) * cos(phi3) * (geom_x_size/2),  
+						cos(theta1) * (geom_height/2),  
+						sin(theta1) * sin(phi3) * (geom_z_size/2))
+
+				var left_2 = Vector3(sin(theta2) * cos(phi3) * (geom_x_size/2),  
+						cos(theta2) * (geom_height/2),  
+						sin(theta2) * sin(phi3) * (geom_z_size/2))
+
+				var right_1 = Vector3(sin(theta1) * cos(phi0) * (geom_x_size/2),  
+						cos(theta1) * (geom_height/2),  
+						sin(theta1) * sin(phi0) * (geom_z_size/2))
+
+				var right_2 = Vector3(sin(theta2) * cos(phi0) * (geom_x_size/2),  
+						cos(theta2) * (geom_height/2),  
+						sin(theta2) * sin(phi0) * (geom_z_size/2))
+
+				var down_1 = Vector3(sin(theta3) * cos(phi1) * (geom_x_size/2),  
+						cos(theta3) * (geom_height/2),  
+						sin(theta3) * sin(phi1) * (geom_z_size/2))
+
+				var down_2 = Vector3(sin(theta3) * cos(phi2) * (geom_x_size/2),  
+						cos(theta3) * (geom_height/2),  
+						sin(theta3) * sin(phi2) * (geom_z_size/2))
 				
 				# GET NORMALS
 				var n_0_0 = VectorUtils.get_triangle_normal([vertex1, up_1, right_1])

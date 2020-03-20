@@ -292,7 +292,7 @@ func get_shape_properties() -> Dictionary:
 			"hint" : PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
 		}
 		
-		return props
+	return props
 
 
 # Returns a set of custom properties used to tell the owner general aspects of it's
@@ -374,7 +374,7 @@ func update_geometry() -> OnyxMesh:
 	if Engine.editor_hint == false:
 		return OnyxMesh.new()
 	
-	return build_geometry(height_max, height_min, x_width * 2, z_width * 2)
+	return build_geometry(height_max, height_min, x_width, z_width)
 
 
 # Creates new geometry to reflect the hollow shapes current properties, 
@@ -386,6 +386,8 @@ func update_hollow_geometry() -> OnyxMesh:
 		return OnyxMesh.new()
 	
 #	print("[OnyxCube] - update_hollow_geometry()")
+
+	print(_height_max_hollow, _height_min_hollow, _x_width_hollow, _z_width_hollow)
 	
 	var height_max_diff = height_max - _height_max_hollow
 	var height_min_diff = height_min - _height_min_hollow
@@ -398,8 +400,8 @@ func update_hollow_geometry() -> OnyxMesh:
 
 
 # Performs the process of building a set of mesh data and returning it to the caller.
-func build_geometry(height_max : float,  height_min : float,  x_size : float,  
-	z_size : float):
+func build_geometry(geom_height_max : float,  geom_height_min : float,  
+		x_size : float,  z_size : float):
 	
 #	print('trying to build geometry...')
 	
@@ -409,15 +411,15 @@ func build_geometry(height_max : float,  height_min : float,  x_size : float,
 
 	var new_onyx_mesh = OnyxMesh.new()
 
-	var total_height = height_max - -height_min
+	var total_height = geom_height_max - -geom_height_min
 	var position = Vector3(0, 0, 0)
 	match origin_mode:
 		OriginPosition.CENTER:
-			position = Vector3(0, -height_min, 0)
+			position = Vector3(0, -geom_height_min, 0)
 		OriginPosition.BASE:
-			position = Vector3(0, -height_min, 0)
+			position = Vector3(0, -geom_height_min, 0)
 		OriginPosition.BASE_CORNER:
-			position = Vector3(x_width, -height_min, z_width)
+			position = Vector3(x_size, -geom_height_min, z_size)
 	
 	# generate the initial circle as a series of 2D points
 	var angle_step = (2.0 * PI) / sides
@@ -428,8 +430,8 @@ func build_geometry(height_max : float,  height_min : float,  x_size : float,
 	while current_angle < 2 * PI:
 		
 		# get coordinates
-		var x = x_width * cos(current_angle)
-		var y = z_width * sin(current_angle)
+		var x = x_size * cos(current_angle)
+		var y = z_size * sin(current_angle)
 		circle_points.append(Vector2(x, y))
 		
 		current_angle += angle_step
@@ -696,6 +698,20 @@ func _update_origin_position():
 	
 	
 	_process_origin_move(diff)
+
+# Returns the origin point that the hollow object should be set at.
+func get_hollow_origin():
+
+	match origin_mode:
+		OriginPosition.CENTER:
+			return Vector3(0, 0, 0)
+		
+		OriginPosition.BASE:
+			return Vector3(0, 0, 0)
+		
+		OriginPosition.BASE_CORNER:
+			return Vector3(_x_width_hollow, 0, _z_width_hollow)
+	
 	
 
 

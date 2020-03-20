@@ -43,11 +43,9 @@ enum ShapeType {
 	RAMP,
 #
 #	# Placeholders for future releases
-#	STAR,
 #	CAPSULE,
 # 	DONUT,
 # 	TUBE_BOX,
-# 	HALF_SPHERE,
 }
 
 # The dictionary used to find the script for each ShapeType.
@@ -703,6 +701,10 @@ func _update_hollow_geometry():
 	helper.commit_to_surface(mesh)
 	hollow_object.set_mesh(mesh)
 	hollow_mesh = mesh
+
+	# Set the transform
+	var new_location = _generator.get_hollow_origin()
+	hollow_object.translation = new_location
 	
 	update_gizmo()
 

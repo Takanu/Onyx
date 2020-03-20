@@ -271,7 +271,7 @@ func get_shape_properties() -> Dictionary:
 		"stair_length_percentage" : {	
         
             "name" : "stair_length_percentage",
-            "type" : TYPE_INT,
+            "type" : TYPE_VECTOR2,
             "usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
 		},
 		
