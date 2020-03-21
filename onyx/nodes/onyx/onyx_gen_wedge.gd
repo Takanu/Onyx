@@ -113,6 +113,27 @@ var smooth_normals = false
 # to function.
 var previous_origin_mode = OriginPosition.BASE
 
+# Used with keep_point_proportional to work out how to move the point position
+# when it is enabled, based on where the point is in the base on the X-Z plane.
+var _point_proportion_vec = Vector2(0.5, 0.5)
+
+# Used with keep_point_proportional to work out how to move the negative point
+# width property when enabled, based on where it lies on the X plane in relation
+# to the base. (No orientation adjustments made)
+var _point_minus_proportion = 0.25
+
+# Used with keep_point_proportional to work out how to move the positive point
+# width property when enabled, based on where it lies on the X plane in relation
+# to the base. (No orientation adjustments made)
+var _point_plus_proportion = 0.75
+
+# Keeps track of whether we have an active property (as in, one being modified by
+# a handle right now.)
+var _has_active_property = false
+
+# Keeps track of what that original value is
+var _last_active_value = 0.0
+
 
 # /////////////////////////////////////////////////////////////////////////////
 # /////////////////////////////////////////////////////////////////////////////
@@ -213,7 +234,7 @@ func _set(property, value):
 
 		# TODO - Reintroduce margins when the margins can be worked out.
 
-
+	_update_point_proportion_vec()
 	_process_property_update()
 	return true
 	
@@ -387,6 +408,7 @@ func load_shape_aspects(aspects : Dictionary):
 #			_z_plus_hollow = hollow_bounds.end.z - shape_bounds.end.x
 	
 	build_control_points()
+	_update_point_proportion_vec()
 
 
 
@@ -816,6 +838,25 @@ func update_control_from_gizmo(control):
 	
 	var control_pos = control.control_position
 
+	# Used to measure absolute property changes for the "Keep Point Proportional" option.
+	if _has_active_property == false:
+		
+		match control.control_name:
+
+			'x_minus_position': 
+				_has_active_property = true
+				_last_active_value = x_minus_position
+			'x_plus_position': 
+				_has_active_property = true
+				_last_active_value = x_plus_position
+			'z_minus_position': 
+				_has_active_property = true
+				_last_active_value = z_minus_position
+			'z_plus_position': 
+				_has_active_property = true
+				_last_active_value = z_plus_position
+	
+
 	if origin_mode == OriginPosition.CENTER:
 		match control.control_name:
 			'point_position':
@@ -829,12 +870,27 @@ func update_control_from_gizmo(control):
 
 			'x_minus_position': 
 				x_minus_position = min(control_pos.x, 0) * -1
+				var diff = x_minus_position - _last_active_value
+				_move_point_width_proportionally(false, diff)
+				_last_active_value = x_minus_position
+
 			'x_plus_position': 
 				x_plus_position = max(control_pos.x, 0)
+				var diff = x_plus_position - _last_active_value
+				_move_point_width_proportionally(true, diff)
+				_last_active_value = x_plus_position
+
 			'z_minus_position': 
 				z_minus_position = min(control_pos.z, 0) * -1
+				var diff = z_minus_position - _last_active_value
+				_move_point_proportionally(false, diff)
+				_last_active_value = z_minus_position
+
 			'z_plus_position': 
 				z_plus_position = max(control_pos.z, 0)
+				var diff = z_plus_position - _last_active_value
+				_move_point_proportionally(true, diff)
+				_last_active_value = z_plus_position
 	
 
 	if origin_mode == OriginPosition.BASE:
@@ -848,12 +904,27 @@ func update_control_from_gizmo(control):
 
 			'x_minus_position': 
 				x_minus_position = min(control_pos.x, 0) * -1
+				var diff = x_minus_position - _last_active_value
+				_move_point_width_proportionally(false, -diff)
+				_last_active_value = x_minus_position
+
 			'x_plus_position': 
 				x_plus_position = max(control_pos.x, 0)
+				var diff = x_plus_position - _last_active_value
+				_move_point_width_proportionally(true, diff)
+				_last_active_value = x_plus_position
+
 			'z_minus_position': 
 				z_minus_position = min(control_pos.z, 0) * -1
+				var diff = z_minus_position - _last_active_value
+				_move_point_proportionally(false, -diff)
+				_last_active_value = z_minus_position
+
 			'z_plus_position': 
 				z_plus_position = max(control_pos.z, 0)
+				var diff = z_plus_position - _last_active_value
+				_move_point_proportionally(true, diff)
+				_last_active_value = z_plus_position
 
 	
 	if origin_mode == OriginPosition.BASE_CORNER:
@@ -870,14 +941,30 @@ func update_control_from_gizmo(control):
 			
 			'x_minus_position': 
 				x_minus_position = min(control_pos.x, 0) * -1
+				var diff = x_minus_position - _last_active_value
+				_move_point_width_proportionally(false, -diff)
+				_last_active_value = x_minus_position
+
 			'x_plus_position': 
 				x_plus_position = max(control_pos.x, 0)
+				var diff = x_plus_position - _last_active_value
+				_move_point_width_proportionally(true, diff)
+				_last_active_value = x_plus_position
+
 			'z_minus_position': 
 				z_minus_position = min(control_pos.z, 0) * -1
+				var diff = z_minus_position - _last_active_value
+				_move_point_proportionally(false, -diff)
+				_last_active_value = z_minus_position
+
 			'z_plus_position': 
 				z_plus_position = max(control_pos.z, 0)
+				var diff = z_plus_position - _last_active_value
+				_move_point_proportionally(true, diff)
+				_last_active_value = z_plus_position
 	
 	refresh_control_data()
+	_update_point_proportion_vec()
 	
 
 # Applies the current handle values to the shape attributes
@@ -922,6 +1009,13 @@ func apply_control_attributes():
 		x_plus_position = active_controls['x_plus_position'].control_position.x
 		z_minus_position = active_controls['z_minus_position'].control_position.z * -1
 		z_plus_position = active_controls['z_plus_position'].control_position.z
+	
+	_update_point_proportion_vec()
+
+	# If we were tracking a property value for proportional editing, finish it.
+	if _has_active_property == true:
+		_has_active_property = false
+		_last_active_value = 0.0
 		
 		
 # Calibrates the stored properties if they need to change before the origin is updated.
@@ -929,7 +1023,113 @@ func apply_control_attributes():
 func balance_control_data():
 	
 	pass
+
+
+# Updates the point proportion vector whenever the point position is moved.
+func _update_point_proportion_vec():
+	
+	var size = Vector2(x_minus_position + x_plus_position,
+			 z_minus_position + z_plus_position)
+
+	# Adjust all the values we're getting proportions for so they have
+	# an origin of (0, 0)
+	var base_point = Vector2(point_position.x + x_minus_position,
+			point_position.z + z_minus_position)
 		
+	var adjusted_minus_width = -point_size_minus + x_minus_position
+	var adjusted_plus_width = point_size_plus + x_minus_position
+
+	_point_proportion_vec = Vector2(
+			base_point.x / size.x, base_point.y / size.y)
+
+	_point_minus_proportion = adjusted_minus_width / size.x
+	_point_plus_proportion = adjusted_plus_width / size.x
+
+
+# Moves the point based on the current _point_proportion_vec based on the amount of movement provided.
+# This node automatically checks if keep_point_proportional is enabled.
+# NOTE - This is for Z-axis movement only.
+func _move_point_proportionally(positively_signed : bool, movement : float):
+	
+	if keep_point_proportional == false || movement == 0:
+		return
+
+	# If positively signed, check for proportion values lower than 0
+	if positively_signed == true && _point_proportion_vec.y < 0:
+		return
+	
+	# If negatively signed, check for proportion values higher than 1
+	if positively_signed == false && _point_proportion_vec.y > 1:
+		return
+	
+	# Now work out the total movement
+	# Movement is limited to a ratio of 1:1 to keep behaviour in line with
+	# proportional width movements.
+	var total_movement = 0.0
+	
+	if positively_signed == true:
+		total_movement = movement * min(_point_proportion_vec.y, 1)
+
+	else:
+		var one_minus = abs(_point_proportion_vec.y - 1)
+		total_movement = movement * min(one_minus, 1)
+	
+	point_position += Vector3(0, 0, total_movement)
+
+
+# Moves the point based on the current _point_proportion_vec based on the amount of movement provided.
+# This node automatically checks if keep_point_proportional is enabled.
+# NOTE - This is for X-axis movement only.
+func _move_point_width_proportionally(positively_signed : bool,  movement : float):
+	
+	if keep_point_proportional == false || movement == 0:
+		return
+
+	print(_point_plus_proportion, _point_minus_proportion)
+
+	if positively_signed == true:
+
+		# If we have to move the point, we need to be careful how we move
+		# everything else as moving the point will move the width points.
+		if _point_proportion_vec.x > 0:
+			var adjusted_move = movement * _point_proportion_vec.x
+			point_position += Vector3(adjusted_move, 0, 0)
+			point_size_minus += adjusted_move
+
+			if _point_plus_proportion > 0:
+				point_size_plus += movement / 2
+		
+		# If not, just move the size proportionally.
+
+		elif _point_plus_proportion > 0:
+			point_size_plus += movement
+		
+		return
+
+	else:
+
+		# If we have to move the point, we need to be careful how we move
+		# everything else as moving the point will move the width points.
+
+		if _point_proportion_vec.x < 1:
+			var one_minus = abs(_point_proportion_vec.x - 1)
+			var adjusted_move = movement * one_minus
+			point_position += Vector3(adjusted_move, 0, 0)
+			point_size_plus -= adjusted_move
+
+			if _point_minus_proportion < 1:
+				point_size_minus -= movement / 2
+
+		# If not, just move the size proportionally.
+
+		elif _point_minus_proportion < 1:
+			point_size_minus -= movement
+		
+		return
+		
+
+		
+
 
 # ////////////////////////////////////////////////////////////
 # BASE UI FUNCTIONS
