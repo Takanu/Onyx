@@ -490,6 +490,14 @@ func build_geometry(geom_height : float,  geom_x_size : float,
 #					theta3 = VectorUtils.clamp_int( (theta2 + PI), 0, PI * 2)
 					
 #				print("phis - ", phi0, " ", phi1, " ", phi2, " ", phi3)
+
+				#phi2   phi1
+				# |      |
+				# 2------1 -- theta1
+				# |\ _   |
+				# |    \ |
+				# 3------4 -- theta2
+				#
 				
 				# BUILD EXTRA POINTS
 				var up_1 = Vector3(sin(theta0) * cos(phi1) * (geom_x_size/2),  
@@ -523,6 +531,16 @@ func build_geometry(geom_height : float,  geom_x_size : float,
 				var down_2 = Vector3(sin(theta3) * cos(phi2) * (geom_x_size/2),  
 						cos(theta3) * (geom_height/2),  
 						sin(theta3) * sin(phi2) * (geom_z_size/2))
+
+				# 	      u2     u1
+				#   N2-0  | N1-0 |  N0-0
+				#         |      | 
+				# l1------2------1------r1
+				#   N2-1  | N1-1 |  N0-1
+				#         |      |
+				# l2------3------4------r2
+				#   N2-2  | N1-2 |  N0-2
+				#         |      |
 				
 				# GET NORMALS
 				var n_0_0 = VectorUtils.get_triangle_normal([vertex1, up_1, right_1])

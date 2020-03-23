@@ -519,6 +519,19 @@ static func get_triangle_normal(tris : Array) -> Vector3:
 	var line_a = (tris[1] - tris[0]).normalized()
 	var line_b = (tris[2] - tris[0]).normalized()
 	return line_a.cross(line_b)
+
+# Returns the averaged normal for a set of 4 points, orientated clockwise.
+static func get_quad_normal(quad : Array) -> Vector3:
+	
+	var line_a = (quad[1] - quad[0]).normalized()
+	var line_b = (quad[2] - quad[0]).normalized()
+	var n_1 = line_a.cross(line_b)
+
+	var line_c = (quad[3] - quad[2]).normalized()
+	var line_d = (quad[0] - quad[2]).normalized()
+	var n_2 = line_c.cross(line_d)
+	
+	return (n_1 + n_2).normalized()
 	
 	
 static func subdivide_edge(start : Vector3, end : Vector3, subdivisions : int) -> Array:
