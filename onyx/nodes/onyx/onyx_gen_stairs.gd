@@ -84,12 +84,18 @@ var stair_width = 6
 # The depth of the ramp.
 var stair_depth = 1
 
-# The number of stairs available.
-var stair_count = 4
-
 # If true, the stair count value is used to define the density of stairs
 # regardless of how long it is.
 var use_count_proportionally = true
+
+# The number of stairs available. (Only active if use_count_proportionally
+# is false)
+var stair_count = 4
+
+# The number of stairs per unit (Only active if use_count_proportionally
+# is true)
+var stairs_per_unit = 0.33
+
 
 # The margins for the size of each step
 var stair_length_percentage = Vector2(1, 1)
@@ -173,7 +179,17 @@ func _set(property, value):
 			stair_count = value
 
 		"use_count_proportionally":
+			if use_count_proportionally == value:
+				return
+
 			use_count_proportionally = value
+			self._process_property_list_change()
+		
+		"stairs_per_unit":
+			if value < 0.1:
+				value = 0.1
+
+			stairs_per_unit = value
 		
 		"stair_length_percentage":
 			if value.x < 0:
@@ -209,102 +225,111 @@ func _set(property, value):
 # Returns the list of custom shape properties that an owner should save and display.
 func get_shape_properties() -> Dictionary:
 
-    var props = {
+	var props = {
 
-        # ORIGIN SETTINGS /////
-        
-        "origin_mode" : {	
-        
-            "name" : "origin_mode",
-            "type" : TYPE_INT,
-            "usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
-            "hint": PROPERTY_HINT_ENUM,
-            "hint_string": "Center, Base, Bottom Corner"
-        },
-        
-        # START AND END POINTS /////
-        
-        "start_position" : {	
-        
-            "name" : "start_position",
-            "type" : TYPE_VECTOR3,
-            "usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
+		# ORIGIN SETTINGS /////
+		
+		"origin_mode" : {	
+		
+			"name" : "origin_mode",
+			"type" : TYPE_INT,
+			"usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
+			"hint": PROPERTY_HINT_ENUM,
+			"hint_string": "Center, Base, Bottom Corner"
+		},
+		
+		# START AND END POINTS /////
+		
+		"start_position" : {	
+		
+			"name" : "start_position",
+			"type" : TYPE_VECTOR3,
+			"usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
 		},
 		
 		"end_position" : {	
-        
-            "name" : "end_position",
-            "type" : TYPE_VECTOR3,
-            "usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
+		
+			"name" : "end_position",
+			"type" : TYPE_VECTOR3,
+			"usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
 		},
 		
 		# SHAPE PROPERTIES /////
-        
-        "stair_width" : {	
-        
-            "name" : "stair_width",
-            "type" : TYPE_REAL,
-            "usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
-        },
-        
-        "stair_depth" : {	
-        
-            "name" : "stair_depth",
-            "type" : TYPE_REAL,
-            "usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
-        },
-        
-        "stair_count" : {	
-        
-            "name" : "stair_count",
-            "type" : TYPE_INT,
-            "usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
+		
+		"stair_width" : {	
+		
+			"name" : "stair_width",
+			"type" : TYPE_REAL,
+			"usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
 		},
 		
-		"use_count_proportionally" : {	
-        
-            "name" : "use_count_proportionally",
-            "type" : TYPE_BOOL,
-            "usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
-		},
+		"stair_depth" : {	
 		
+			"name" : "stair_depth",
+			"type" : TYPE_REAL,
+			"usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
+		},
+
 		"stair_length_percentage" : {	
-        
-            "name" : "stair_length_percentage",
-            "type" : TYPE_VECTOR2,
-            "usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
+		
+			"name" : "stair_length_percentage",
+			"type" : TYPE_VECTOR2,
+			"usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
 		},
+
+		"use_count_proportionally" : {	
+		
+			"name" : "use_count_proportionally",
+			"type" : TYPE_BOOL,
+			"usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
+		},
+		
 		
 		# "ramp_fill_type" : {	
-        
-        #     "name" : "ramp_fill_type",
-        #     "type" : TYPE_INT,
+		
+		#     "name" : "ramp_fill_type",
+		#     "type" : TYPE_INT,
 		# 	"usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
 		# 	"hint": PROPERTY_HINT_ENUM,
-        #     "hint_string": "Proportional Overlap, Per-Face Mapping"
-        # },
-        
-        
-        # UV / NORMALS /////
-        
-        "unwrap_method" : {	
-        
-            "name" : "uv_options/unwrap_method",
-            "type" : TYPE_INT,
-            "usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
-            "hint": PROPERTY_HINT_ENUM,
-            "hint_string": "None, Minus Y, Plus Y"
-        },
-        
-        "smooth_normals" : {	
-        
-            "name" : "uv_options/smooth_normals",
-            "type" : TYPE_BOOL,
-            "usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
-        },
-    }
+		#     "hint_string": "Proportional Overlap, Per-Face Mapping"
+		# },
+		
+		
+		# UV / NORMALS /////
+		
+		"unwrap_method" : {	
+		
+			"name" : "uv_options/unwrap_method",
+			"type" : TYPE_INT,
+			"usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
+			"hint": PROPERTY_HINT_ENUM,
+			"hint_string": "None, Minus Y, Plus Y"
+		},
+		
+		"smooth_normals" : {	
+		
+			"name" : "uv_options/smooth_normals",
+			"type" : TYPE_BOOL,
+			"usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
+		},
+	}
 
-    return props
+	if use_count_proportionally == false:
+		props["stair_count"] = {
+			"name" : "stair_count",
+			"type" : TYPE_INT,
+			"usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
+		}
+
+	else:
+		props["stairs_per_unit"] = {
+			"name" : "stairs_per_unit",
+			"type" : TYPE_REAL,
+			"usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
+		}
+
+
+	return props
 
 
 
@@ -345,7 +370,7 @@ func load_shape_aspects(aspects : Dictionary):
 
 		start_position = Vector3(shape_bounds.size.x / 2, shape_bounds.position.y, 
 				shape_bounds.position.z)
-		start_position = Vector3(shape_bounds.size.x / 2, shape_bounds.end.y, 
+		end_position = Vector3(shape_bounds.size.x / 2, shape_bounds.end.y, 
 				shape_bounds.end.z)
 		
 	
@@ -414,11 +439,20 @@ func build_geometry(geom_start : Vector3,  geom_end : Vector3,  geom_width : flo
 	var mesh_pos = Vector3()
 	var start_tf = Transform(x_axis, y_axis, z_axis, geom_start)
 	#var end_tf = Transform(x_axis, y_axis, z_axis, end_position)
+
+	# Change stair value based on proportional toggle
+	var path_diff = end_position - geom_start
+	var path_length = path_diff.length()
+	var total_stairs = 0
+
+	if use_count_proportionally == false:
+		total_stairs = stair_count
+	else:
+		total_stairs = path_length / stairs_per_unit 
 	
 	# Setup variables
-	var path_diff = end_position - geom_start
-	var length_diff = path_diff.length()
-	var diff_inc = path_diff / stair_count
+	
+	var diff_inc = path_diff / total_stairs
 	
 	# get main 4 vectors
 	var v1 = Vector3(-geom_width/2, geom_depth/2, 0)
@@ -426,8 +460,10 @@ func build_geometry(geom_start : Vector3,  geom_end : Vector3,  geom_width : flo
 	var v3 = Vector3(-geom_width/2, -geom_depth/2, 0)
 	var v4 = Vector3(geom_width/2, -geom_depth/2, 0)
 	
-	var length_percentage_minus = Vector3(0, 0, diff_inc.z/2 * -stair_length_percentage.x)
-	var length_percentage_plus = Vector3(0, 0, diff_inc.z/2 * stair_length_percentage.y)
+	var length_percentage_minus = Vector3(0, 0, 
+			diff_inc.z/2 * -stair_length_percentage.x)
+	var length_percentage_plus = Vector3(0, 0, 
+			diff_inc.z/2 * stair_length_percentage.y)
 	
 	var s1 = v1 + length_percentage_plus
 	var s2 = v2 + length_percentage_plus
@@ -452,20 +488,26 @@ func build_geometry(geom_start : Vector3,  geom_end : Vector3,  geom_width : flo
 		z_minus_uv = wrap;  z_plus_uv = wrap;
 	
 	elif unwrap_method == UnwrapMethod.PROPORTIONAL_OVERLAP:
-		x_minus_uv = [Vector2(e3.z, -e3.y), Vector2(e1.z, -e1.y), Vector2(s1.z, -s1.y), Vector2(s3.z, -s3.y)]
-		x_plus_uv = [Vector2(s4.z, -s4.y), Vector2(s2.z, -s2.y), Vector2(e2.z, -e2.y), Vector2(e4.z, -e4.y)]
+		x_minus_uv = [Vector2(e3.z, -e3.y), Vector2(e1.z, -e1.y), 
+				Vector2(s1.z, -s1.y), Vector2(s3.z, -s3.y)]
+		x_plus_uv = [Vector2(s4.z, -s4.y), Vector2(s2.z, -s2.y), 
+				Vector2(e2.z, -e2.y), Vector2(e4.z, -e4.y)]
 		
-		y_minus_uv = [Vector2(s4.x, -s4.z), Vector2(e4.x, -e4.z), Vector2(e3.x, -e3.z), Vector2(s3.x, -s3.z)]
-		y_plus_uv = [Vector2(-s1.x, -s1.z), Vector2(-e1.x, -e1.z), Vector2(-e2.x, -e2.z), Vector2(-s2.x, -s2.z)]
+		y_minus_uv = [Vector2(s4.x, -s4.z), Vector2(e4.x, -e4.z), 
+				Vector2(e3.x, -e3.z), Vector2(s3.x, -s3.z)]
+		y_plus_uv = [Vector2(-s1.x, -s1.z), Vector2(-e1.x, -e1.z), 
+				Vector2(-e2.x, -e2.z), Vector2(-s2.x, -s2.z)]
 		
-		z_minus_uv = [Vector2(-s3.x, -s3.y), Vector2(-s1.x, -s1.y), Vector2(-s2.x, -s2.y), Vector2(-s4.x, -s4.y)]
-		z_plus_uv = [Vector2(-e4.x, -e4.y), Vector2(-e2.x, -e2.y), Vector2(-e1.x, -e1.y), Vector2(-e3.x, -e3.y)]
+		z_minus_uv = [Vector2(-s3.x, -s3.y), Vector2(-s1.x, -s1.y), 
+				Vector2(-s2.x, -s2.y), Vector2(-s4.x, -s4.y)]
+		z_plus_uv = [Vector2(-e4.x, -e4.y), Vector2(-e2.x, -e2.y), 
+				Vector2(-e1.x, -e1.y), Vector2(-e3.x, -e3.y)]
 	
 	var path_i = start_position + (diff_inc / 2)
 	var i = 0
 	
 	# iterate through path
-	while i < stair_count:
+	while i < total_stairs:
 		var step_start = path_i
 		var step_tf = Transform(Basis(), step_start)
 		
@@ -500,6 +542,7 @@ func build_geometry(geom_start : Vector3,  geom_end : Vector3,  geom_width : flo
 		new_onyx_mesh.add_ngon(y_plus, [], [], y_plus_uv, [])
 		new_onyx_mesh.add_ngon(z_minus, [], [], z_minus_uv, [])
 		new_onyx_mesh.add_ngon(z_plus, [], [], z_plus_uv, [])
+		new_onyx_mesh.push_surface()
 		
 		i += 1
 		path_i += diff_inc

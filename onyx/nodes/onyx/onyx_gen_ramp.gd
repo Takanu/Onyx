@@ -17,7 +17,7 @@ extends "res://addons/onyx/nodes/onyx/onyx_generator.gd"
 # DEPENDENCIES
 
 # 2D and 3D vector math library
-var VectorUtils = load("res://addons/onyx/utilities/vector_utils.gd")
+var VecUtils = load("res://addons/onyx/utilities/vector_utils.gd")
 
 # Helper Object for filling in the gap in functionality that exists with Gizmo handles.
 var ControlPoint = load("res://addons/onyx/gizmos/control_point.gd")
@@ -76,15 +76,22 @@ var origin_mode = OriginPosition.BASE
 var start_position = Vector3(0, 1, 0)
 var start_rotation = Vector3(0, 0, 0)
 
+# The width of the ramp, both the plus and minus points
+var start_ramp_width = Vector2(1, 1)
+
+# The depth of the ramp, both the plus and minus points
+var start_ramp_depth = Vector2(1, 1)
+
 # The end location of the ramp
 var end_position = Vector3(0, 1, 2) 
 var end_rotation = Vector3(0, 0, 0)
 
-# The width of the ramp
-var ramp_width = 6
+# The width of the ramp, both the plus and minus points
+var end_ramp_width = Vector2(1, 1)
 
-# The depth of the ramp.
-var ramp_depth = 1
+# The depth of the ramp, both the plus and minus points
+var end_ramp_depth = Vector2(1, 1)
+
 
 # ???
 var maintain_width = true
@@ -166,20 +173,47 @@ func _set(property, value):
 		
 		"start_rotation":
 			start_rotation = value
+		
+		"start_ramp_width":
+			if value.x < 0:
+				value.x = 0
+			if value.y < 0:
+				value.y = 0
+
+			start_ramp_width = value
+		
+		"start_ramp_depth":
+			if value.x < 0:
+				value.x = 0
+			if value.y < 0:
+				value.y = 0
+				
+			start_ramp_depth = value
 
 		"end_position":
 			end_position = value
 
 		"end_rotation":
 			end_rotation = value
+		
+		"end_ramp_width":
+			if value.x < 0:
+				value.x = 0
+			if value.y < 0:
+				value.y = 0
+				
+			end_ramp_width = value
+		
+		"end_ramp_depth":
+			if value.x < 0:
+				value.x = 0
+			if value.y < 0:
+				value.y = 0
+				
+			end_ramp_depth = value
 
 		# SHAPE PROPERTIES /////
 		
-		"ramp_width":
-			ramp_width = value
-		
-		"ramp_depth":
-			ramp_depth = value
 		
 		"maintain_width":
 			maintain_width = value
@@ -248,47 +282,61 @@ func get_shape_properties() -> Dictionary:
         
         "start_position" : {	
         
-            "name" : "start_position",
+            "name" : "start/start_position",
             "type" : TYPE_VECTOR3,
             "usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
 		},
 		
 		"start_rotation" : {	
         
-            "name" : "start_rotation",
+            "name" : "start/start_rotation",
             "type" : TYPE_VECTOR3,
+            "usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
+		},
+
+		"start_ramp_width" : {	
+        
+            "name" : "start/start_ramp_width",
+            "type" : TYPE_VECTOR2,
+            "usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
+		},
+
+		"start_ramp_depth" : {	
+        
+            "name" : "start/start_ramp_depth",
+            "type" : TYPE_VECTOR2,
             "usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
 		},
 		
 		"end_position" : {	
         
-            "name" : "end_position",
+            "name" : "end/end_position",
             "type" : TYPE_VECTOR3,
             "usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
 		},
 		
 		"end_rotation" : {	
         
-            "name" : "end_rotation",
+            "name" : "end/end_rotation",
             "type" : TYPE_VECTOR3,
+            "usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
+		},
+
+		"end_ramp_width" : {	
+        
+            "name" : "end/end_ramp_width",
+            "type" : TYPE_VECTOR2,
+            "usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
+		},
+
+		"end_ramp_depth" : {	
+        
+            "name" : "end/end_ramp_depth",
+            "type" : TYPE_VECTOR2,
             "usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
 		},
 		
 		# SHAPE PROPERTIES /////
-        
-        "ramp_width" : {	
-        
-            "name" : "ramp_width",
-            "type" : TYPE_REAL,
-            "usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
-        },
-        
-        "ramp_depth" : {	
-        
-            "name" : "ramp_depth",
-            "type" : TYPE_REAL,
-            "usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
-        },
         
         "maintain_width" : {	
         
@@ -361,7 +409,7 @@ func get_shape_aspects() -> Dictionary:
 	var aspects = {}
 
 	var pool = [start_position, end_position]
-	var line_bounds = VectorUtils.get_vertex_pool_aabb(PoolVector3Array(pool))
+	var line_bounds = VecUtils.get_vertex_pool_aabb(PoolVector3Array(pool))
 	
 	var size = Vector3(line_bounds.size.x, line_bounds.size.y, line_bounds.size.z)
 	var origin = Vector3(0, 0, 0)
@@ -388,7 +436,7 @@ func load_shape_aspects(aspects : Dictionary):
 
 		start_position = Vector3(shape_bounds.size.x / 2, shape_bounds.position.y, 
 				shape_bounds.position.z)
-		start_position = Vector3(shape_bounds.size.x / 2, shape_bounds.end.y, 
+		end_position = Vector3(shape_bounds.size.x / 2, shape_bounds.end.y, 
 				shape_bounds.end.z)
 		
 	
@@ -411,7 +459,8 @@ func update_geometry() -> OnyxMesh:
 	if Engine.editor_hint == false:
 		return OnyxMesh.new()
 	
-	return build_geometry(start_position, end_position, ramp_width, ramp_depth)
+	return build_geometry(start_position, end_position, start_ramp_width, 
+			start_ramp_depth, end_ramp_width, end_ramp_depth)
 
 
 # Creates new geometry to reflect the hollow shapes current properties, 
@@ -424,13 +473,15 @@ func update_hollow_geometry() -> OnyxMesh:
 
     # TODO - Implement hollow mode for the wedge shape type.
 
-    return build_geometry(start_position, end_position, ramp_width, ramp_depth)
+    return build_geometry(start_position, end_position, start_ramp_width, 
+			start_ramp_depth, end_ramp_width, end_ramp_depth)
 	
 
 
 # Performs the process of building a set of mesh data and returning it to the caller.
-func build_geometry(geom_start : Vector3,  geom_end : Vector3,  geom_width : float,  
-		geom_depth : float):
+func build_geometry(geom_start : Vector3,  geom_end : Vector3,  
+		geom_start_w_bounds : Vector2,  geom_start_d_bounds : Vector2,
+		geom_end_w_bounds : Vector2,  geom_end_d_bounds : Vector2):
 
 	# Prevents geometry generation if the node hasn't loaded yet
 	if is_inside_tree() == false:
@@ -447,126 +498,88 @@ func build_geometry(geom_start : Vector3,  geom_end : Vector3,  geom_width : flo
 	
 	# GENERATION START
 	
-	#   X---------X  t_e1 t_e2
-	#	|         |  b_e1 b_e2
+	#   X---------X  e_t1 e_t2
+	#	|         |  e_b1 e_b2
 	#	|         |
 	#	|         |
-	#   X---------X  t_s1 t_s2
-	#   X---------X  b_s1 b_s2
+	#   X---------X  s_t1 s_t2
+	#   X---------X  s_b1 s_b2
 	
-	# get main 4 vectors
-	var v1 = Vector3(-geom_width/2, geom_depth/2, 0)
-	var v2 = Vector3(geom_width/2, geom_depth/2, 0)
-	var v3 = Vector3(-geom_width/2, -geom_depth/2, 0)
-	var v4 = Vector3(geom_width/2, -geom_depth/2, 0)
-	
-	# Get the edge loop lists for all 4 variable sides of the ramp.
-	var top_h_verts = VectorUtils.subdivide_edge(v1, v2, vertical_edge_loops)
-	var bottom_h_verts = VectorUtils.subdivide_edge(v3, v4, vertical_edge_loops)
-	var left_verts = VectorUtils.subdivide_edge(v1, v3, depth_edge_loops)
-	var right_verts = VectorUtils.subdivide_edge(v2, v4, depth_edge_loops)
-	
-	# Transform each set to the start and finish
-	var top_start_verts = VectorUtils.transform_vector3_array(top_h_verts, start_tf)
-	var bottom_start_verts = VectorUtils.transform_vector3_array(bottom_h_verts, start_tf)
-	var top_end_verts = VectorUtils.transform_vector3_array(top_h_verts, end_tf)
-	var bottom_end_verts = VectorUtils.transform_vector3_array(bottom_h_verts, end_tf)
+	# get main 8 vectors
+	var base_s_t1 = Vector3(-start_ramp_width.x, start_ramp_depth.y, 0)
+	var base_s_t2 = Vector3(start_ramp_width.y, start_ramp_depth.y, 0)
+	var base_s_b1 = Vector3(-start_ramp_width.x, -start_ramp_depth.x, 0)
+	var base_s_b2 = Vector3(start_ramp_width.y, -start_ramp_depth.x, 0)
 
-	var left_start_verts = VectorUtils.transform_vector3_array(left_verts, start_tf)
-	var right_start_verts = VectorUtils.transform_vector3_array(right_verts, start_tf)
-	var left_end_verts = VectorUtils.transform_vector3_array(left_verts, end_tf)
-	var right_end_verts = VectorUtils.transform_vector3_array(right_verts, end_tf)
-#
-	# ramp fill type conditionals
-	if ramp_fill_type == 1:
-		for i in top_h_verts.size():
-			bottom_end_verts[i].y = bottom_start_verts[i].y
+	var base_e_t1 = Vector3(-end_ramp_width.x, end_ramp_depth.y, 0)
+	var base_e_t2 = Vector3(end_ramp_width.y, end_ramp_depth.y, 0)
+	var base_e_b1 = Vector3(-end_ramp_width.x, -end_ramp_depth.x, 0)
+	var base_e_b2 = Vector3(end_ramp_width.y, -end_ramp_depth.x, 0)
 
-	elif ramp_fill_type == 2:
-		for i in top_h_verts.size():
-			top_start_verts[i].y = top_end_verts[i].y
+	# Transform every base point with the start and end transforms
+	# var tf_s_t1 = Transform(Basis(start_rotation), geom_start + base_s_t1)
+	# var tf_s_t2 = Transform(Basis(start_rotation), geom_start + base_s_t2)
+	# var tf_s_b1 = Transform(Basis(start_rotation), geom_start + base_s_b1)
+	# var tf_s_b2 = Transform(Basis(start_rotation), geom_start + base_s_b2)
+
+	# var tf_e_t1 = Transform(Basis(end_rotation), geom_end + base_e_t1)
+	# var tf_e_t2 = Transform(Basis(end_rotation), geom_end + base_e_t2)
+	# var tf_e_b1 = Transform(Basis(end_rotation), geom_end + base_e_b1)
+	# var tf_e_b2 = Transform(Basis(end_rotation), geom_end + base_e_b2)
+	
+	# Get the subdivided points across every edge
+	var left_top_edges = VecUtils.subdivide_transform_interpolation(base_s_t1, 
+			start_tf, base_e_t1, end_tf, horizontal_edge_loops)
+	var left_bottom_edges = VecUtils.subdivide_transform_interpolation(base_s_t2, 
+			start_tf, base_e_t2, end_tf, horizontal_edge_loops)
+	var right_top_edges = VecUtils.subdivide_transform_interpolation(base_s_b1, 
+			start_tf, base_e_b1, end_tf, horizontal_edge_loops)
+	var right_bottom_edges = VecUtils.subdivide_transform_interpolation(base_s_b2, 
+			start_tf, base_e_b2, end_tf, horizontal_edge_loops)
 
 	# Get any other important pieces of information
-	var cap_tile_width = (top_start_verts[1] - top_start_verts[0]).length()
-	var cap_tile_height = (top_start_verts[0] - bottom_start_verts[0]).length()
-	var cap_width = cap_tile_width * top_h_verts.size() - 1
+	
 	
 
 	# /////////////////////////////////////////
-	# TOP/BOTTOM LIST BUILDING ////////
-
-	# calculate horizontal_edge_loops
-	var total_h_iterations = horizontal_edge_loops + 1
-	var increment = 1.0/float(total_h_iterations)
-	var current_percentage = 0
-	var position_diff = geom_end - geom_start
-	var rotation_diff = end_rotation - start_rotation
-	
-	var cumulative_width = cap_width
-	var cumulative_length = 0
+	# HORIZONTAL STRIP BUILDER ////////
 
 	# Collect all the vertex sets in one array for easy normal smoothing later
-	var htop_vertex_sets = []
-	var hbottom_vertex_sets = []
-	
-	var i = 0
-	for i in range(total_h_iterations + 1):
-		current_percentage = float(i) / total_h_iterations
-		
-		# transform the starts and ends by the interpolation between the start and end transformation
-		var start_percentage = float(i) / total_h_iterations
-		var end_percentage = float(i + 1) / total_h_iterations
-		
-		# Get positions and rotations for transforms
-		var pos = geom_start + (position_diff * current_percentage)
-		var rot = start_rotation + (rotation_diff * current_percentage)
-		var transform = Transform(Basis(rot), pos)
-		
-		# Transform the vertex sets
-		var htop_set = VectorUtils.transform_vector3_array(top_h_verts, transform)
-		var hbottom_set = VectorUtils.transform_vector3_array(bottom_h_verts, transform)
-		htop_vertex_sets.append(htop_set)
-		hbottom_vertex_sets.append(hbottom_set)
-
-
-	# /////////////////////////////////////////
-	# LEFT/RIGHT LIST BUILDING ////////
-
-	increment = 1.0/float(total_h_iterations)
-	current_percentage = 0
-	position_diff = geom_end - geom_start
-	rotation_diff = end_rotation - start_rotation
-
-	# Collect all the vertex sets in one array for easy normal smoothing later
+	var top_vertex_sets = []
+	var bottom_vertex_sets = []
 	var left_vertex_sets = []
 	var right_vertex_sets = []
+	
+	var i = 0
+	for i in range(left_top_edges.size() - 1):
+		
+		var lt_i = left_top_edges[i]
+		var lb_i = left_bottom_edges[i]
+		var rt_i = right_top_edges[i]
+		var rb_i = right_bottom_edges[i]
 
-	for i in range(total_h_iterations + 1):
-		current_percentage = float(i) / total_h_iterations
-		
-		# transform the starts and ends by the interpolation between the start and end transformation
-		var start_percentage = float(i) / total_h_iterations
-		var end_percentage = float(i + 1) / total_h_iterations
-		
-		# Get positions and rotations for transforms
-		var pos = geom_start + (position_diff * current_percentage)
-		var rot = start_rotation + (rotation_diff * current_percentage)
-		var transform = Transform(Basis(rot), pos)
-		
-		# Transform the vertex sets
-		var left_set = VectorUtils.transform_vector3_array(left_verts, transform)
-		var right_set = VectorUtils.transform_vector3_array(right_verts, transform)
-		left_vertex_sets.append(left_set)
-		right_vertex_sets.append(right_set)
+		top_vertex_sets.append(VecUtils.subdivide_edge(lt_i, rt_i, 
+			vertical_edge_loops))
+		bottom_vertex_sets.append(VecUtils.subdivide_edge(lb_i, rb_i, 
+			vertical_edge_loops))
+		left_vertex_sets.append(VecUtils.subdivide_edge(lt_i, lb_i, 
+			depth_edge_loops))
+		right_vertex_sets.append(VecUtils.subdivide_edge(rt_i, rb_i, 
+			depth_edge_loops))
+
 
 	# /////////////////////////////////////////
 	# MESH BUILDER
 
-	build_geometric_surface(new_onyx_mesh, htop_vertex_sets, false, 0)
-	build_geometric_surface(new_onyx_mesh, hbottom_vertex_sets, true, 0)
+	build_geometric_surface(new_onyx_mesh, top_vertex_sets, true, 0)
+	new_onyx_mesh.push_surface()
+	build_geometric_surface(new_onyx_mesh, bottom_vertex_sets, false, 0)
+	new_onyx_mesh.push_surface()
 
-	build_geometric_surface(new_onyx_mesh, left_vertex_sets, true, 0)
-	build_geometric_surface(new_onyx_mesh, right_vertex_sets, false, 0)
+	build_geometric_surface(new_onyx_mesh, left_vertex_sets, false, 0)
+	new_onyx_mesh.push_surface()
+	build_geometric_surface(new_onyx_mesh, right_vertex_sets, true, 0)
+	new_onyx_mesh.push_surface()
 
 
 
@@ -574,41 +587,53 @@ func build_geometry(geom_start : Vector3,  geom_end : Vector3,  geom_width : flo
 	# TOP/BOTTOM CAPS ////////
 	# (these arent as important or complex, they get built last)
 	
-	# Metrics for use in unwrapping operations
-	cumulative_width = cap_width
-	
-	for i in range( top_h_verts.size() - 1 ):
-		var t_s1 = top_start_verts[i]
-		var t_s2 = top_start_verts[i + 1]
-		var b_s1 = bottom_start_verts[i]
-		var b_s2 = bottom_start_verts[i + 1]
-		
-		var t_e1 = top_end_verts[i]
-		var t_e2 = top_end_verts[i + 1]
-		var b_e1 = bottom_end_verts[i]
-		var b_e2 = bottom_end_verts[i + 1]
-		
-		# UVS
-		var front_uvs = []
-		var back_uvs = []
-		
-		if unwrap_method == UnwrapMethod.PER_FACE_MAPPING:
-			front_uvs = [Vector2(1.0, 1.0), Vector2(0.0, 1.0), Vector2(0.0, 0.0), Vector2(1.0, 0.0)]
-			back_uvs = [Vector2(1.0, 1.0), Vector2(0.0, 1.0), Vector2(0.0, 0.0), Vector2(1.0, 0.0)]
-		
-		elif unwrap_method == UnwrapMethod.PROPORTIONAL_OVERLAP:
-			var uv_1 = Vector2(cumulative_width, cap_tile_height)
-			var uv_2 = Vector2(cumulative_width - cap_width, cap_tile_height)
-			var uv_3 = Vector2(cumulative_width - cap_tile_width, 0)
-			var uv_4 = Vector2(cumulative_width, 0)
-			
-			front_uvs = [uv_1, uv_2, uv_3, uv_4]
-			back_uvs = [uv_2, uv_1, uv_4, uv_3]
-			cumulative_width -= cap_tile_width
-			
-		new_onyx_mesh.add_ngon([b_s1, b_s2, t_s2, t_s1], [], [], front_uvs, [])
-		new_onyx_mesh.add_ngon([b_e2, b_e1, t_e1, t_e2], [], [], back_uvs, [])
+	var front_uvs = []
+	var back_uvs = []
 
+	var start_f1 = start_tf.xform(base_s_t1)
+	var start_f2 = start_tf.xform(base_s_t2)
+	var start_f3 = start_tf.xform(base_s_b1)
+	var start_f4 = start_tf.xform(base_s_b2)
+
+	var end_f1 = end_tf.xform(base_e_t1)
+	var end_f2 = end_tf.xform(base_e_t2)
+	var end_f3 = end_tf.xform(base_e_b1)
+	var end_f4 = end_tf.xform(base_e_b2)
+	
+	if unwrap_method == UnwrapMethod.PER_FACE_MAPPING:
+		front_uvs = [Vector2(1.0, 1.0), Vector2(0.0, 1.0), Vector2(0.0, 0.0), Vector2(1.0, 0.0)]
+		back_uvs = [Vector2(1.0, 1.0), Vector2(0.0, 1.0), Vector2(0.0, 0.0), Vector2(1.0, 0.0)]
+	
+	# TODO - TOMORROOOOOW
+	elif unwrap_method == UnwrapMethod.PROPORTIONAL_OVERLAP:
+		pass
+		# var start_cap_width = (start_f1 - start_f2).length()
+		# var start_cap_height = (start_f1 - start_f3).length()
+		# var end_cap_width = ().length()
+		# var end_cap_height = ().length()
+
+		# var start_uv_1 = Vector2(0, cap_tile_height)
+		# var start_uv_2 = Vector2(cap_width, cap_tile_height)
+		# var start_uv_3 = Vector2(0, 0)
+		# var start_uv_4 = Vector2(cap_tile_cap_widthwidth, 0)
+
+		# var end_uv_1 = Vector2(0, cap_tile_height)
+		# var end_uv_2 = Vector2(cap_width, cap_tile_height)
+		# var end_uv_3 = Vector2(0, 0)
+		# var end_uv_4 = Vector2(cap_tile_cap_widthwidth, 0)
+		
+		# front_uvs = [uv_1, uv_3, uv_4, uv_2]
+		# back_uvs = [uv_4, uv_3, uv_1, uv_2]
+
+	var front_v = [start_f1, start_f3, start_f4, start_f2]
+	var back_v = [end_f4, end_f3, end_f1, end_f2]
+		
+	new_onyx_mesh.add_ngon(front_v, [], [], front_uvs, [])
+	new_onyx_mesh.add_ngon(back_v, [], [], back_uvs, [])
+		
+
+
+	new_onyx_mesh.push_surface()
 	return new_onyx_mesh
 	
 
@@ -680,66 +705,66 @@ func build_geometric_surface(onyx_mesh : OnyxMesh, vertex_sets : Array,
 				var b1;  var b2;  var u1;  var u2;
 				var s0;  var e0;  var s3;  var e3;
 
-				# NORMAL OPTIONALS
-				var n0_0 = Vector3();  var n1_0 = Vector3();  var n2_0 = Vector3();
-				var n0_1 = Vector3();  var n1_1 = Vector3();  var n2_1 = Vector3();
-				var n0_2 = Vector3();  var n1_2 = Vector3();  var n2_2 = Vector3();
-
-				n1_1 = VectorUtils.get_quad_normal([s1, e1, e2, s2])
-
-
-				# If we're not the first or last horizontal row, we need to 
-				# grab some extra normals
+				# //////////////////////////////
+				# NORMAL SOLUTION #1
+				var s1_normals = [VecUtils.get_triangle_normal([s1, e1, s2])]
+				var e1_normals = [VecUtils.get_triangle_normal([e1, s1, e2])] 
+				var s2_normals = [VecUtils.get_triangle_normal([s2, e2, s1])]
+				var e2_normals = [VecUtils.get_triangle_normal([e2, e1, s2])]
+				
 				# BOTTOM SIDE
 				if x > 0:
 					var h_0 = vertex_sets[x - 1]
 					b1 = Vector3(h_0[i])
 					b2 = Vector3(h_0[i + 1])
-					n1_2 = VectorUtils.get_triangle_normal([b1, s1, s2])
+					s1_normals.append(VecUtils.get_triangle_normal([s1, b1, s2]))
+					s2_normals.append(VecUtils.get_triangle_normal([s2, b2, s1]))
 
 				# TOP SIDE
 				if x < vertex_sets.size() - 2:
 					var h_3 = vertex_sets[x + 2]
 					u1 = Vector3(h_3[i])
 					u2 = Vector3(h_3[i + 1])
-					n1_0 = VectorUtils.get_triangle_normal([e1, u1, u2])
+					e1_normals.append(VecUtils.get_triangle_normal([e1, u1, e2]))
+					e2_normals.append(VecUtils.get_triangle_normal([e2, u2, e1]))
 
-				# If we're not on the edge, we also need to grab some 
-				# extra normals
 				# LEFT SIDE
 				if i > 0:
 					s0 = Vector3(h_1[i - 1])  
 					e0 = Vector3(h_2[i - 1])
-					n0_1 = VectorUtils.get_triangle_normal([s0, e0, e1])
-				
+					s1_normals.append(VecUtils.get_triangle_normal([s1, s0, e1]))
+					e1_normals.append(VecUtils.get_triangle_normal([e1, e0, s1]))
+
 				# RIGHT SIDE
 				if i < h_1.size() - 2:
 					s3 = Vector3(h_1[i + 2])  
 					e3 = Vector3(h_2[i + 2])
-					n2_1 = VectorUtils.get_triangle_normal([s2, e2, e3])
+					s2_normals.append(VecUtils.get_triangle_normal([s2, s3, e2]))
+					e2_normals.append(VecUtils.get_triangle_normal([e2, e3, s2]))
+				
+				# BOTTOM LEFT
+				if b1 != null && s0 != null:
+					s1_normals.append(VecUtils.get_triangle_normal([s1, s0, b1]))
+				# BOTTOM RIGHT
+				if b2 != null && s3 != null:
+					s2_normals.append(VecUtils.get_triangle_normal([s2, b2, s3]))
+				# TOP LEFT
+				if e0 != null && u1 != null:
+					s2_normals.append(VecUtils.get_triangle_normal([e1, e0, u1]))
+				# TOP RIGHT
+				if u2 != null && e3 != null:
+					s2_normals.append(VecUtils.get_triangle_normal([e2, u2, e3]))
 
-
-				# Find the corner normals if we can.
-				if n1_2 != Vector3() && n0_1 != Vector3():
-					n0_2 = VectorUtils.get_triangle_normal([b1, s0, s1])
+				var normal_s1 = Vector3(); var normal_s2 = Vector3(); 
+				var normal_e1 = Vector3(); var normal_e2 = Vector3(); 
 				
-				if n0_1 != Vector3() && n1_0 != Vector3():
-					n0_2 = VectorUtils.get_triangle_normal([e0, u1, e1])
-				
-				if n1_0 != Vector3() && n2_1 != Vector3():
-					n0_2 = VectorUtils.get_triangle_normal([e2, u2, e3])
-				
-				if n2_1 != Vector3() && n1_2 != Vector3():
-					n0_2 = VectorUtils.get_triangle_normal([s2, s3, b2])
-				
-				# NOW COMBINE THEM FOR EACH VERTEX
-				var normal_s1 = (n0_2 + n1_2 + n0_1 + n1_1).normalized()
-				var normal_s2 = (n1_2 + n2_2 + n1_1 + n2_1).normalized()
-				var normal_e1 = (n0_1 + n1_1 + n0_0 + n1_0).normalized()
-				var normal_e2 = (n1_1 + n2_1 + n1_0 + n2_0).normalized()
+				normal_s1 = VecUtils.get_normal_average(s1_normals)
+				normal_s2 = VecUtils.get_normal_average(s2_normals)
+				normal_e1 = VecUtils.get_normal_average(e1_normals)
+				normal_e2 = VecUtils.get_normal_average(e2_normals)
 
 				if is_positively_signed:
-					normals = [normal_s1, normal_s2, normal_e1, normal_e2]
+					normals = [normal_s1, normal_e1, normal_e2, normal_s2]
 				else:
 					normals = [normal_s1, normal_s2, normal_e2, normal_e1]
 			
@@ -804,15 +829,15 @@ func build_control_points():
 	end_ramp.control_name = 'end_position'
 	end_ramp.set_type_translate(false, "modify_control", "commit_control")
 
-	var ramp_width = ControlPoint.new(self, "get_gizmo_undo_state", 
-			"get_gizmo_redo_state", "restore_state", "restore_state")
-	ramp_width.control_name = 'ramp_width'
-	ramp_width.set_type_axis(false, "modify_control", "commit_control", Vector3(1, 0, 0))
+	# var ramp_width = ControlPoint.new(self, "get_gizmo_undo_state", 
+	# 		"get_gizmo_redo_state", "restore_state", "restore_state")
+	# ramp_width.control_name = 'ramp_width'
+	# ramp_width.set_type_axis(false, "modify_control", "commit_control", Vector3(1, 0, 0))
 
 	# populate the dictionary
 	active_controls[start_ramp.control_name] = start_ramp
 	active_controls[end_ramp.control_name] = end_ramp
-	active_controls[ramp_width.control_name] = ramp_width
+	# active_controls[ramp_width.control_name] = ramp_width
 
 	# need to give it positions in the case of a duplication or scene load.
 	refresh_control_data()
@@ -841,12 +866,12 @@ func refresh_control_data():
 		build_control_points()
 		return
 
-	var depth_mid = Vector3(0, ramp_depth/2, 0)
-	var width_mid =  Vector3(ramp_width/2, 0, 0)
+	# var depth_mid = Vector3(0, ramp_depth/2, 0)
+	# var width_mid =  Vector3(ramp_width/2, 0, 0)
 
 	active_controls["start_position"].control_position = start_position
 	active_controls["end_position"].control_position = end_position
-	active_controls["ramp_width"].control_position = start_position + depth_mid + width_mid
+	# active_controls["ramp_width"].control_position = start_position + depth_mid + width_mid
 
 	
 
@@ -860,7 +885,7 @@ func update_control_from_gizmo(control):
 		# positions
 		'start_position': start_position = coordinate
 		'end_position': end_position = coordinate
-		'ramp_width': ramp_width = (coordinate.x - start_position.x) * 2
+		# 'ramp_width': ramp_width = (coordinate.x - start_position.x) * 2
 	
 	refresh_control_data()
 	
@@ -870,7 +895,7 @@ func apply_control_attributes():
 	
 	start_position = active_controls["start_position"].control_position
 	end_position = active_controls["end_position"].control_position
-	ramp_width = (active_controls["ramp_width"].control_position.x - start_position.x) * 2
+	# ramp_width = (active_controls["ramp_width"].control_position.x - start_position.x) * 2
 
 # Calibrates the stored properties if they need to change before the origin is updated.
 # Only called during Gizmo movements for origin auto-updating.

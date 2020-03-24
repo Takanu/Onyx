@@ -4,8 +4,7 @@ extends CSGMesh
 # /////////////////////////////////////////////////////////////////////////////
 # INFO
 # A container-type that allows for the generation of many different kinds of CSG shapes
-# with customizable UVs, interactive handles, auto-updating origin points and other
-# handy features.
+# that base their shape on a two-dimensional plane of points.
 #
 # Add new generators by subclassing OnyxGenerator.
 
@@ -34,29 +33,30 @@ const BOOLEAN_PREVIEW_OBJECT_NAME = "**BOOLEAN PREVIEW**"
 
 # The generator types.
 enum ShapeType {
-	BOX, 
-	ROUNDED_BOX,
-	CYLINDER,
-	SPHERE,
-	WEDGE,
-	STAIRS,
-	RAMP,
-#
+	POLYGON, 
+	SPIN,
+	OUTLINE,
+	FRAME,
+	PILLAR,
+
 #	# Placeholders for future releases
-#	CAPSULE,
-# 	DONUT,
-# 	TUBE_BOX,
+#	PILLAR2,
+}
+
+# The plane that the shape points rely on
+enum PointPlane {
+	X_Z, 
+	X_Y, 
+	Z_Y
 }
 
 # The dictionary used to find the script for each ShapeType.
 const GENERATOR_SCRIPTS = {
-	ShapeType.BOX : "res://addons/onyx/nodes/onyx/onyx_gen_box.gd",
-	ShapeType.ROUNDED_BOX : "res://addons/onyx/nodes/onyx/onyx_gen_roundedbox.gd",
-	ShapeType.CYLINDER : "res://addons/onyx/nodes/onyx/onyx_gen_cylinder.gd",
-	ShapeType.SPHERE : "res://addons/onyx/nodes/onyx/onyx_gen_sphere.gd",
-	ShapeType.WEDGE : "res://addons/onyx/nodes/onyx/onyx_gen_wedge.gd",
-	ShapeType.STAIRS : "res://addons/onyx/nodes/onyx/onyx_gen_stairs.gd",
-	ShapeType.RAMP : "res://addons/onyx/nodes/onyx/onyx_gen_ramp.gd",
+	# ShapeType.POLYGON : "res://addons/onyx/nodes/onyx/onyx_gen_box.gd",
+	# ShapeType.SPIN : "res://addons/onyx/nodes/onyx/onyx_gen_roundedbox.gd",
+	# ShapeType.OUTLINE : "res://addons/onyx/nodes/onyx/onyx_gen_cylinder.gd",
+	# ShapeType.FRAME : "res://addons/onyx/nodes/onyx/onyx_gen_sphere.gd",
+	# ShapeType.PILLAR : "res://addons/onyx/nodes/onyx/onyx_gen_wedge.gd",
 }
 
 # ////////////////////////////////////
@@ -65,6 +65,11 @@ const GENERATOR_SCRIPTS = {
 
 # Used to select different shapes.
 export(ShapeType) var shape_type = ShapeType.BOX  setget switch_generator
+
+# The points that make up a shape.
+export(Array) var shape_points = []  
+
+# UVS /////
 
 var uv_scale = Vector2(1.0, 1.0)
 var flip_uvs_horizontally = false

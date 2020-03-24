@@ -21,6 +21,16 @@ var VectorUtils = load("res://addons/onyx/utilities/vector_utils.gd")
 
 var tris = []
 
+# TEST - grrr
+var surfaces = []
+
+# Used to push all the geometry drawn so far into a separate surface,
+# Once done it can use separate materials to other surfaces.
+func push_surface():
+	surfaces.append(tris.duplicate())
+	tris.clear()
+
+
 # ////////////////////////////////////////////////////////////
 # ADDITIONS
 
@@ -416,7 +426,8 @@ func render_surface_geometry(material : Material = null, generate_normals = fals
 
 		#var indexes = [0, 1, 2, 2, 3, 0]
 
-		surface.add_triangle_fan(PoolVector3Array(vertices), 
+		surface.add_triangle_fan(
+			PoolVector3Array(vertices), 
 			PoolVector2Array(uvs), 
 			PoolColorArray(colors), 
 			PoolVector2Array(), 
@@ -428,11 +439,134 @@ func render_surface_geometry(material : Material = null, generate_normals = fals
 	if material != null:
 		surface.set_material(material)
 
-	# This generates a lot of errors, not sure why.
-	#surface.generate_tangents()
-
+	surface.generate_tangents()
 	return surface.commit()
 
+
+# TEST!
+func render_individual_surfaces(material : Material = null) -> Array:
+
+	if tris.size() != 0:
+		surfaces.append(tris)
+
+	var meshes = []
+	
+	for surface in surfaces:
+
+		var sf_tool = SurfaceTool.new()
+		sf_tool.begin(Mesh.PRIMITIVE_TRIANGLES)
+
+		for triangle in surface:
+	#		print("rendering triangle = ", triangle)
+			var vertices = triangle[0]
+			var colors = triangle[1]
+			var tangents = triangle[2]
+			var uvs = triangle[3]
+			var normals = triangle[4]
+
+			#var indexes = [0, 1, 2, 2, 3, 0]
+
+			sf_tool.add_triangle_fan(
+				PoolVector3Array(vertices), 
+				PoolVector2Array(uvs), 
+				PoolColorArray(colors), 
+				PoolVector2Array(), 
+				PoolVector3Array(normals),
+				tangents)
+
+		sf_tool.index()
+
+		if material != null:
+			sf_tool.set_material(material)
+
+		sf_tool.generate_tangents()
+		meshes.append(sf_tool.commit())
+
+	return meshes
+
+
+# Renders each surface as an individual ArrayMesh and returns them as an array.
+func render_array_meshes(material : Material):
+
+	if tris.size() != 0:
+		surfaces.append(tris)
+
+	var mesh = ArrayMesh.new()
+	
+	for surface in surfaces:
+		var positions = PoolVector3Array()
+		var normals = PoolVector3Array()
+		var uvs = PoolVector2Array()
+		var indices = PoolIntArray()
+
+		var i = 0
+		for triangle in surface:
+			positions.append(triangle[0][0])
+			positions.append(triangle[0][1])
+			positions.append(triangle[0][2])
+
+			normals.append(triangle[4][0])
+			normals.append(triangle[4][1])
+			normals.append(triangle[4][2])
+
+			uvs.append(triangle[3][0])
+			uvs.append(triangle[3][1])
+			uvs.append(triangle[3][2])
+
+			indices.append(i)
+			indices.append(i + 1)
+			indices.append(i + 2)
+
+			i += 3
+
+		var arrays = []
+		arrays.resize(Mesh.ARRAY_MAX)
+		arrays[Mesh.ARRAY_VERTEX] = positions
+		arrays[Mesh.ARRAY_NORMAL] = normals
+		arrays[Mesh.ARRAY_TEX_UV] = uvs
+		arrays[Mesh.ARRAY_INDEX] = indices
+
+		mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+	
+	mesh.regen_normalmaps()
+	return mesh
+
+
+	# var positions = PoolVector3Array([
+	# 	Vector3(0, 0, 1),
+	# 	Vector3(0, 0, 0),
+	# 	Vector3(0, 1, 0),
+	# 	Vector3(0, 1, 1)
+	# ])
+	# var normals = PoolVector3Array([
+	# 	Vector3(1, 0, 0),
+	# 	Vector3(1, 0, 0),
+	# 	Vector3(1, 0, 0),
+	# 	Vector3(1, 0, 0)
+	# ])
+	# var uvs = PoolVector2Array([
+	# 	Vector2(0, 0),
+	# 	Vector2(0.25, 0),
+	# 	Vector2(0.25, 0.25),
+	# 	Vector2(0, 0.25)
+	# ])
+	# var indices = PoolIntArray([
+	# 	0, 1, 2,
+	# 	0, 2, 3
+	# ])
+	
+	# var arrays = []
+	# arrays.resize(Mesh.ARRAY_MAX)
+	# arrays[Mesh.ARRAY_VERTEX] = positions
+	# arrays[Mesh.ARRAY_NORMAL] = normals
+	# arrays[Mesh.ARRAY_TEX_UV] = uvs
+	# arrays[Mesh.ARRAY_INDEX] = indices
+	
+	# var mesh = ArrayMesh.new()
+	# mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+	
+	# var mi = get_node("MeshInstance")
+	# mi.mesh = mesh
 
 # Renders the available geometry as a wireframe, using a provided ImmediateGeometry node.
 func render_wireframe(geom : ImmediateGeometry, color : Color):

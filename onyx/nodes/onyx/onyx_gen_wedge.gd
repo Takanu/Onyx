@@ -540,10 +540,19 @@ func build_geometry(point_pos : Vector3,  geom_psize_minus : float,  geom_psize_
 		base_uv = [Vector2(base_1.x, base_1.z), Vector2(base_2.x, base_2.z), Vector2(base_4.x, base_4.z), Vector2(base_3.x, base_3.z)]
 
 	new_onyx_mesh.add_tri([base_1, point_2, base_3], [], [], left_triangle_uv, [])
+	new_onyx_mesh.push_surface()
+
 	new_onyx_mesh.add_tri([base_4, point_1, base_2], [], [], right_triangle_uv, [])
+	new_onyx_mesh.push_surface()
+
 	new_onyx_mesh.add_ngon([point_2, point_1, base_4, base_3], [], [], bottom_quad_uv, [])
+	new_onyx_mesh.push_surface()
+
 	new_onyx_mesh.add_ngon([point_1, point_2, base_1, base_2], [], [], top_quad_uv, [])
+	new_onyx_mesh.push_surface()
+	
 	new_onyx_mesh.add_ngon([base_2, base_1, base_3, base_4], [], [], base_uv, [])
+	new_onyx_mesh.push_surface()
 
 
 	return new_onyx_mesh

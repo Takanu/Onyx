@@ -484,3 +484,7 @@ func _process_origin_move(movement_vec : Vector3):
 
 func _process_origin_change(translation : Vector3):
 	emit_signal("request_origin_change", translation)
+
+
+func _process_property_list_change():
+	emit_signal("property_list_changed")

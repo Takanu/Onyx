@@ -573,7 +573,9 @@ func build_geometry(x_minus : float,  x_plus : float,  y_minus : float,  y_plus 
 		
 		
 		new_onyx_mesh.add_ngon(VectorUtils.reverse_array(start_cap), [], [], start_cap_uvs, [])
+		new_onyx_mesh.push_surface()
 		new_onyx_mesh.add_ngon(end_cap, [], [], end_cap_uvs, [])
+		new_onyx_mesh.push_surface()
 		
 		# used for Proportional Unwrap.
 		var total_edge_length = 0.0
@@ -634,7 +636,7 @@ func build_geometry(x_minus : float,  x_plus : float,  y_minus : float,  y_plus 
 			v_1 += 1
 			total_edge_length += (t_2 - t_1).length()
 		
-			
+	new_onyx_mesh.push_surface()
 	
 	return new_onyx_mesh
 

@@ -451,8 +451,8 @@ func build_geometry(x_minus : float,  x_plus : float,  y_minus : float,  y_plus 
 				if i == 0 || i == 1:
 					uvs = VectorUtils.vector3_to_vector2_array(quad[0], 'X', 'Z')
 					uvs = [uvs[2], uvs[3], uvs[0], uvs[1]]
-#					if i == 0:
-#						uvs = VectorUtils.reverse_array(uvs)
+					# if i == 0:
+					# 	uvs = VectorUtils.reverse_array(uvs)
 				elif i == 2 || i == 3:
 					uvs = VectorUtils.vector3_to_vector2_array(quad[0], 'Y', 'X')
 					uvs = [uvs[2], uvs[3], uvs[0], uvs[1]]
@@ -460,35 +460,36 @@ func build_geometry(x_minus : float,  x_plus : float,  y_minus : float,  y_plus 
 				elif i == 4 || i == 5:
 					uvs = VectorUtils.vector3_to_vector2_array(quad[0], 'Z', 'X')
 					uvs = [uvs[2], uvs[3], uvs[0], uvs[1]]
-#					if i == 5:
-#						uvs = VectorUtils.reverse_array(uvs)
+				# 	if i == 5:
+				# 		uvs = VectorUtils.reverse_array(uvs)
 
 				
-#				print(uvs)
+				# print(uvs)
 			
 			# Island Split - UV split up into two thirds.
-#			elif unwrap_method == UnwrapMethod.ISLAND_SPLIT:
-#
-#				# get the max and min
-#				var surface_range = VectorUtils.get_vector3_ranges(vertices)
-#				var max_point = surface_range['max']
-#				var min_point = surface_range['min']
-#				var diff = max_point - min_point
-#
-#				var initial_uvs = []
-#
-#				if i == 0 || i == 1:
-#					initial_uvs = VectorUtils.vector3_to_vector2_array(quad[0], 'X', 'Z')
-#				elif i == 2 || i == 3:
-#					initial_uvs = VectorUtils.vector3_to_vector2_array(quad[0], 'Y', 'X')
-#				elif i == 4 || i == 5:
-#					initial_uvs = VectorUtils.vector3_to_vector2_array(quad[0], 'Z', 'X')
-#
-#				for uv in initial_uvs:
-#					uv
+			# elif unwrap_method == UnwrapMethod.ISLAND_SPLIT:
+
+			# 	# get the max and min
+			# 	var surface_range = VectorUtils.get_vector3_ranges(vertices)
+			# 	var max_point = surface_range['max']
+			# 	var min_point = surface_range['min']
+			# 	var diff = max_point - min_point
+
+			# 	var initial_uvs = []
+
+			# 	if i == 0 || i == 1:
+			# 		initial_uvs = VectorUtils.vector3_to_vector2_array(quad[0], 'X', 'Z')
+			# 	elif i == 2 || i == 3:
+			# 		initial_uvs = VectorUtils.vector3_to_vector2_array(quad[0], 'Y', 'X')
+			# 	elif i == 4 || i == 5:
+			# 		initial_uvs = VectorUtils.vector3_to_vector2_array(quad[0], 'Z', 'X')
+
+			# 	for uv in initial_uvs:
+			# 		uv
 			
 			new_onyx_mesh.add_ngon(quad[0], quad[1], quad[2], uvs, quad[4])
-			
+		
+		new_onyx_mesh.push_surface()
 		i += 1
 	
 	return new_onyx_mesh

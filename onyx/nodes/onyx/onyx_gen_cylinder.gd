@@ -552,6 +552,9 @@ func build_geometry(geom_height_max : float,  geom_height_min : float,
 			
 
 		base_extrusion_depth += distance_vec
+	
+	# PUSH
+	new_onyx_mesh.push_surface()
 		
 	# now render the top and bottom caps
 	var v_cap_bottom = []
@@ -604,7 +607,9 @@ func build_geometry(geom_height_max : float,  geom_height_min : float,
 		
 		
 	new_onyx_mesh.add_ngon(v_cap_top, [], [], top_uvs, [])
+	new_onyx_mesh.push_surface()
 	new_onyx_mesh.add_ngon(v_cap_bottom, [], [], bottom_uvs, [])
+	new_onyx_mesh.push_surface()
 	
 	
 	return new_onyx_mesh

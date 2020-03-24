@@ -3,7 +3,11 @@ extends Node
 
 # ////////////////////////////////////////////////////////////
 # INFO
-# Used to perform additional common operations across 
+# Used to perform common vector math operations including:
+# - AABB Building and Testing
+# - Polygon orientations and intersection testing
+# - Vector array transformations
+# - Triangle testing and operations
 
 
 # Returns the AABB of any given node.  May return nothing if the node provided has no data to extrapolate bounds from.
@@ -532,7 +536,15 @@ static func get_quad_normal(quad : Array) -> Vector3:
 	var n_2 = line_c.cross(line_d)
 	
 	return (n_1 + n_2).normalized()
-	
+
+# Averages all normals provided in the array.  Must be already normalized.
+static func get_normal_average(normals : Array):
+
+	var normal = Vector3()
+	for new_normal in normals:
+		normal += new_normal
+		
+	return normal.normalized()
 	
 static func subdivide_edge(start : Vector3, end : Vector3, subdivisions : int) -> Array:
 	
@@ -550,6 +562,30 @@ static func subdivide_edge(start : Vector3, end : Vector3, subdivisions : int) -
 		
 	results.append(end)
 	return results
+
+# TODO - Move this to PathUtils or something later
+# This function does what subdivide edge does, apart from the fact it also
+# builds the points as if the transform changes gradually from the start point
+# to the end point.
+static func subdivide_transform_interpolation(start_pos : Vector3, 
+		start_tf : Transform, end_pos : Vector3, end_tf : Transform, subdivisions : int):
+	
+	var increment = 1.0/float(subdivisions)
+	var current_percentage = 0
+	var subdivision = []
+
+	for i in range(subdivisions + 1):
+
+		# Get the current TF interpolation
+		current_percentage = float(i) / subdivisions
+		var current_tf = start_tf.interpolate_with(end_tf, current_percentage)
+
+		# Transform the start position and append it.
+		var current_pos = start_pos.linear_interpolate(end_pos, current_percentage)
+		subdivision.append(current_tf.xform(current_pos))
+	
+	subdivision.append(end_pos)
+	return subdivision
 	
 	
 # Projects an array of Vector3 values onto a single Vector3 value and returns the results
