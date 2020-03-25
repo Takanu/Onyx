@@ -615,9 +615,9 @@ func refresh_handle_data():
 			
 			print(x_size)
 			
-			handles['x_size'].control_position = Vector3(x_size / 2, 0, 0)
-			handles['y_size'].control_position = Vector3(0, y_size / 2, 0)
-			handles['z_size'].control_position = Vector3(0, 0, z_size / 2)
+			handles['x_size'].control_pos = Vector3(x_size / 2, 0, 0)
+			handles['y_size'].control_pos = Vector3(0, y_size / 2, 0)
+			handles['z_size'].control_pos = Vector3(0, 0, z_size / 2)
 		
 		AreaShape.CYLINDER:
 			
@@ -625,9 +625,9 @@ func refresh_handle_data():
 			var y_size = area_shape_parameters['y_size']
 			var z_size = area_shape_parameters['z_size']
 			
-			handles['x_size'].control_position = Vector3(x_size / 2, 0, 0)
-			handles['y_size'].control_position = Vector3(0, y_size / 2, 0)
-			handles['z_size'].control_position = Vector3(0, 0, z_size / 2)
+			handles['x_size'].control_pos = Vector3(x_size / 2, 0, 0)
+			handles['y_size'].control_pos = Vector3(0, y_size / 2, 0)
+			handles['z_size'].control_pos = Vector3(0, 0, z_size / 2)
 	
 
 
@@ -635,7 +635,7 @@ func refresh_handle_data():
 func update_handle_from_gizmo(control):
 	
 	print("update_handle_from_gizmo")
-	var coordinate = control.control_position
+	var coordinate = control.control_pos
 	
 	match area_type:
 		AreaShape.BOX:
@@ -657,14 +657,14 @@ func apply_handle_attributes():
 	
 	match area_type:
 		AreaShape.BOX:
-			area_shape_parameters['x_size'] = handles["x_size"].control_position.x * 2
-			area_shape_parameters['y_size'] = handles["y_size"].control_position.y * 2
-			area_shape_parameters['z_size'] = handles["z_size"].control_position.z * 2
+			area_shape_parameters['x_size'] = handles["x_size"].control_pos.x * 2
+			area_shape_parameters['y_size'] = handles["y_size"].control_pos.y * 2
+			area_shape_parameters['z_size'] = handles["z_size"].control_pos.z * 2
 			
 		AreaShape.CYLINDER:
-			area_shape_parameters['x_size'] = handles["x_size"].control_position.x * 2
-			area_shape_parameters['y_size'] = handles["y_size"].control_position.y * 2
-			area_shape_parameters['z_size'] = handles["z_size"].control_position.z * 2
+			area_shape_parameters['x_size'] = handles["x_size"].control_pos.x * 2
+			area_shape_parameters['y_size'] = handles["y_size"].control_pos.y * 2
+			area_shape_parameters['z_size'] = handles["z_size"].control_pos.z * 2
 
 
 # ////////////////////////////////////////////////////////////

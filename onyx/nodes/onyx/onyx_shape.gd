@@ -931,7 +931,7 @@ func _build_runtime_hollow_object():
 func get_gizmo_control_points() -> Array:
 	
 	if _generator != null:
-		return _generator.active_controls.values()
+		return _generator.a_controls.values()
 	else:
 		return []
 

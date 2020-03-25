@@ -21,13 +21,13 @@ var VectorUtils = load("res://addons/onyx/utilities/vector_utils.gd")
 var control_name: String = ""
 
 # The position of the control point.  This is not necessarily the same as the handles that this object renders.
-var control_position: Vector3 = Vector3(0, 0, 0)
+var control_pos: Vector3 = Vector3(0, 0, 0)
 
 # (Optional) The rotation of the control point.  Not all control points will need to store rotation data.
-var control_rotation: Vector3 = Vector3(0, 0, 0)
+var control_rot: Vector3 = Vector3(0, 0, 0)
 
 # (Optional) The scale of the control point.  Not all control points will need to store scale data.
-var control_scale: Vector3 = Vector3(1, 1, 1)
+var control_scl: Vector3 = Vector3(1, 1, 1)
 
 # The previously recorded position.  This can only be accessed while the point is being moved.
 var control_transform_hold = {}
@@ -244,25 +244,25 @@ func get_handle_positions():
 	match handle_type:
 		
 		HandleType.FREE:
-			return [control_position]
+			return [control_pos]
 			
 		HandleType.AXIS:
-			return [control_position]
+			return [control_pos]
 		
 		HandleType.PLANE:
-			return [control_position]
+			return [control_pos]
 			
 		HandleType.TRANSLATE:
-			var handle_x = control_position + Vector3(handle_distance, 0, 0)
-			var handle_y = control_position + Vector3(0, handle_distance, 0)
-			var handle_z = control_position + Vector3(0, 0, handle_distance)
+			var handle_x = control_pos + Vector3(handle_distance, 0, 0)
+			var handle_y = control_pos + Vector3(0, handle_distance, 0)
+			var handle_z = control_pos + Vector3(0, 0, handle_distance)
 			return [handle_x, handle_y, handle_z]
 		
 		
 		# currently pass for rotate and scale until i implement it.
 		
 		HandleType.CLICK:
-			return [control_position]
+			return [control_pos]
 
 # Returns the lines that the gizmo needs to render for this specific control point.
 func get_handle_lines():
@@ -271,13 +271,13 @@ func get_handle_lines():
 		return null
 	
 	if handle_type == HandleType.TRANSLATE:
-		var handle_x = control_position + Vector3(handle_distance, 0, 0)
-		var handle_y = control_position + Vector3(0, handle_distance, 0)
-		var handle_z = control_position + Vector3(0, 0, handle_distance)
+		var handle_x = control_pos + Vector3(handle_distance, 0, 0)
+		var handle_y = control_pos + Vector3(0, handle_distance, 0)
+		var handle_z = control_pos + Vector3(0, 0, handle_distance)
 		
-		var line_1 = [PoolVector3Array( [control_position, handle_x] ), mat_solid_color(1, 0.3, 0.0)]
-		var line_2 = [PoolVector3Array( [control_position, handle_y] ), mat_solid_color(0.3, 1, 0.3)]
-		var line_3 = [PoolVector3Array( [control_position, handle_z] ), mat_solid_color(0.3, 0.3, 1)]
+		var line_1 = [PoolVector3Array( [control_pos, handle_x] ), mat_solid_color(1, 0.3, 0.0)]
+		var line_2 = [PoolVector3Array( [control_pos, handle_y] ), mat_solid_color(0.3, 1, 0.3)]
+		var line_3 = [PoolVector3Array( [control_pos, handle_z] ), mat_solid_color(0.3, 0.3, 1)]
 	
 		return [line_1, line_2, line_3]
 		
@@ -319,9 +319,9 @@ func get_control_data() -> Dictionary:
 	
 	var result = {}
 	result['name'] = control_name
-	result['position'] = control_position
-	result['rotation'] = control_rotation
-	result['scale'] = control_scale
+	result['position'] = control_pos
+	result['rotation'] = control_rot
+	result['scale'] = control_scl
 	result['visible'] = is_control_visible
 	
 	return result
@@ -331,9 +331,9 @@ func set_control_data(data : Dictionary):
 	
 	# TODO : Error handling, make sure the data we receive is the data we wanted.
 	control_name = data['name']
-	control_position = data['position']
-	control_rotation = data['rotation']
-	control_scale = data['scale']
+	control_pos = data['position']
+	control_rot = data['rotation']
+	control_scl = data['scale']
 	is_control_visible = data['visible']
 
 
@@ -368,10 +368,10 @@ func update_handle(index, camera, point):
 				var camera_x_basis = camera.get_camera_transform().basis.x
 				var camera_y_basis = camera.get_camera_transform().basis.y
 				new_position = VectorUtils.project_cursor_to_plane(camera, point, world_matrix, 
-						control_position, camera_x_basis, camera_y_basis)
+						control_pos, camera_x_basis, camera_y_basis)
 			
 			elif handle_type == HandleType.AXIS:
-				new_position = project_point_to_axis(point, camera, control_position, 
+				new_position = project_point_to_axis(point, camera, control_pos, 
 						world_matrix, snap_axis)
 			
 			elif handle_type == HandleType.PLANE:
@@ -393,11 +393,11 @@ func update_handle(index, camera, point):
 				var snap_t = control_point_owner.get_global_transform()
 				new_position = VectorUtils.snap_position(new_position, Vector3(snap_inc, snap_inc, snap_inc), snap_t)
 				
-				control_position = new_position
+				control_pos = new_position
 			
 			# SNAPPING DISABLED
 			else:
-				control_position = new_position
+				control_pos = new_position
 			
 			# CALLBACK
 			match handle_type:
@@ -427,15 +427,15 @@ func update_handle(index, camera, point):
 				
 			#this has no use great job.
 			match index:
-				0: target_position = control_position + Vector3(handle_distance, 0, 0)
-				1: target_position = control_position + Vector3(0, handle_distance, 0)
-				2: target_position = control_position + Vector3(0, 0, handle_distance)
+				0: target_position = control_pos + Vector3(handle_distance, 0, 0)
+				1: target_position = control_pos + Vector3(0, handle_distance, 0)
+				2: target_position = control_pos + Vector3(0, 0, handle_distance)
 			match index:
 				0: handle_offset = Vector3(handle_distance, 0, 0)
 				1: handle_offset = Vector3(0, handle_distance, 0)
 				2: handle_offset = Vector3(0, 0, handle_distance)
 				
-			var new_position = project_point_to_axis(point, camera, control_position, world_matrix, axis)
+			var new_position = project_point_to_axis(point, camera, control_pos, world_matrix, axis)
 			
 			if new_position == null: 
 					return
@@ -443,19 +443,19 @@ func update_handle(index, camera, point):
 			
 			# TODO : Remove when the projection system is fixed.
 			match index:
-				0: control_position.x = new_position.x
-				1: control_position.y = new_position.y
-				2: control_position.z = new_position.z
+				0: control_pos.x = new_position.x
+				1: control_pos.y = new_position.y
+				2: control_pos.z = new_position.z
 			
-			control_position -= handle_offset
+			control_pos -= handle_offset
 			
 			# If snapping is enabled, we have stuff to do.
 			if control_point_owner.get_plugin().snap_gizmo_enabled == true:
 				var snap_inc = control_point_owner.get_plugin().snap_gizmo_increment
 				var snap_t = control_point_owner.get_global_transform()
-				control_position = VectorUtils.snap_position(control_position, Vector3(snap_inc, snap_inc, snap_inc), snap_t)
+				control_pos = VectorUtils.snap_position(control_pos, Vector3(snap_inc, snap_inc, snap_inc), snap_t)
 			
-			# Now we have a valid control_position, perform a callback.
+			# Now we have a valid control_pos, perform a callback.
 #			print("SETTING RAWR")
 			if translate_update_callback != "":
 				control_point_owner.call(translate_update_callback, self)
@@ -474,9 +474,9 @@ func update_handle(index, camera, point):
 # Receives the commit call from the Gizmo, to be handled in different ways depending on the ControlPoint mode.
 func commit_handle(index, restore):
 	
-	control_transform_hold["position"] = control_position
-	control_transform_hold["rotation"] = control_rotation
-	control_transform_hold["scale"] = control_scale
+	control_transform_hold["position"] = control_pos
+	control_transform_hold["rotation"] = control_rot
+	control_transform_hold["scale"] = control_scl
 	
 	# is there anything else to do here?
 	match handle_type:
@@ -575,9 +575,9 @@ func copy() -> Object:
 	
 	# PROPERTIES
 	new_control_point.control_name = self.control_name
-	new_control_point.control_position = self.control_position
-	new_control_point.control_rotation = self.control_rotation
-	new_control_point.control_scale = self.control_scale
+	new_control_point.control_pos = self.control_pos
+	new_control_point.control_rot = self.control_rot
+	new_control_point.control_scl = self.control_scl
 	new_control_point.is_control_visible = self.is_control_visible
 	
 	# DISPLAY
@@ -612,8 +612,8 @@ func restore_base_properties(source):
 	
 	# PROPERTIES
 	self.control_name = source.control_name
-	self.control_position = source.control_position
-	self.control_rotation = source.control_rotation
-	self.control_scale = source.control_scale
+	self.control_pos = source.control_pos
+	self.control_rot = source.control_rot
+	self.control_scl = source.control_scl
 	self.is_control_visible = source.is_control_visible
 	

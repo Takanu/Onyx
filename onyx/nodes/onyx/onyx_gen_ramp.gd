@@ -162,7 +162,7 @@ func _set(property, value):
 			
 			# ensure the origin mode toggle is preserved, and ensure the adjusted handles are saved.
 			previous_origin_mode = origin_mode
-			previous_active_controls = get_control_data()
+			previous_a_controls = get_control_data()
 			
 			return true
 
@@ -819,6 +819,9 @@ func build_control_points():
 	if Engine.editor_hint == false:
 		return
 
+
+	# START AND END POSITIONS
+
 	var start_ramp = ControlPoint.new(self, "get_gizmo_undo_state", 
 			"get_gizmo_redo_state", "restore_state", "restore_state")
 	start_ramp.control_name = 'start_position'
@@ -829,18 +832,79 @@ func build_control_points():
 	end_ramp.control_name = 'end_position'
 	end_ramp.set_type_translate(false, "modify_control", "commit_control")
 
-	# var ramp_width = ControlPoint.new(self, "get_gizmo_undo_state", 
-	# 		"get_gizmo_redo_state", "restore_state", "restore_state")
-	# ramp_width.control_name = 'ramp_width'
-	# ramp_width.set_type_axis(false, "modify_control", "commit_control", Vector3(1, 0, 0))
+	# START BOUNDS
+
+	var start_width_minus = ControlPoint.new(self, "get_gizmo_undo_state", 
+			"get_gizmo_redo_state", "restore_state", "restore_state")
+	start_width_minus.control_name = 'start_width_minus'
+	start_width_minus.set_type_axis(false, "modify_control", 
+		"commit_control", Vector3.RIGHT)
+
+	var start_width_plus = ControlPoint.new(self, "get_gizmo_undo_state", 
+			"get_gizmo_redo_state", "restore_state", "restore_state")
+	start_width_plus.control_name = 'start_width_plus'
+	start_width_plus.set_type_axis(false, "modify_control", 
+		"commit_control", Vector3.RIGHT)
+
+	var start_depth_minus = ControlPoint.new(self, "get_gizmo_undo_state", 
+			"get_gizmo_redo_state", "restore_state", "restore_state")
+	start_depth_minus.control_name = 'start_depth_minus'
+	start_depth_minus.set_type_axis(false, "modify_control", 
+		"commit_control", Vector3.UP)
+
+	var start_depth_plus = ControlPoint.new(self, "get_gizmo_undo_state", 
+			"get_gizmo_redo_state", "restore_state", "restore_state")
+	start_depth_plus.control_name = 'start_depth_plus'
+	start_depth_plus.set_type_axis(false, "modify_control", 
+		"commit_control", Vector3.UP)
+
+	# END BOUNDS
+
+	var end_width_minus = ControlPoint.new(self, "get_gizmo_undo_state", 
+			"get_gizmo_redo_state", "restore_state", "restore_state")
+	end_width_minus.control_name = 'end_width_minus'
+	end_width_minus.set_type_axis(false, "modify_control", 
+		"commit_control", Vector3.RIGHT)
+
+	var end_width_plus = ControlPoint.new(self, "get_gizmo_undo_state", 
+			"get_gizmo_redo_state", "restore_state", "restore_state")
+	end_width_plus.control_name = 'end_width_plus'
+	end_width_plus.set_type_axis(false, "modify_control", 
+		"commit_control", Vector3.RIGHT)
+
+	var end_depth_minus = ControlPoint.new(self, "get_gizmo_undo_state", 
+			"get_gizmo_redo_state", "restore_state", "restore_state")
+	end_depth_minus.control_name = 'end_depth_minus'
+	end_depth_minus.set_type_axis(false, "modify_control", 
+		"commit_control", Vector3.UP)
+
+	var end_depth_plus = ControlPoint.new(self, "get_gizmo_undo_state", 
+			"get_gizmo_redo_state", "restore_state", "restore_state")
+	end_depth_plus.control_name = 'end_depth_plus'
+	end_depth_plus.set_type_axis(false, "modify_control", 
+		"commit_control", Vector3.UP)
+	
 
 	# populate the dictionary
-	active_controls[start_ramp.control_name] = start_ramp
-	active_controls[end_ramp.control_name] = end_ramp
-	# active_controls[ramp_width.control_name] = ramp_width
+	a_controls[start_ramp.control_name] = start_ramp
+	a_controls[end_ramp.control_name] = end_ramp
+
+	a_controls[start_width_minus.control_name] = start_width_minus
+	a_controls[start_width_plus.control_name] = start_width_plus
+	a_controls[start_depth_minus.control_name] = start_depth_minus
+	a_controls[start_depth_plus.control_name] = start_depth_plus
+
+	a_controls[end_width_minus.control_name] = end_width_minus
+	a_controls[end_width_plus.control_name] = end_width_plus
+	a_controls[end_depth_minus.control_name] = end_depth_minus
+	a_controls[end_depth_plus.control_name] = end_depth_plus
+	
 
 	# need to give it positions in the case of a duplication or scene load.
 	refresh_control_data()
+
+	# Set the accurate axes for all bound points.
+	set_bounds_snap_axis()
 	
 
 # Ensures the data in the current control list reflects the shape properties.
@@ -857,7 +921,7 @@ func refresh_control_data():
 
 	# Failsafe for script reloads, BECAUSE I CURRENTLY CAN'T DETECT THEM.
 	# TODO - Migrate this to the new system somehow.
-	if active_controls.size() == 0:
+	if a_controls.size() == 0:
 	#		if gizmo != null:
 	##			print("...attempted to refresh_control_data(), rebuilding handles.")
 	#			gizmo.control_points.clear()
@@ -866,12 +930,35 @@ func refresh_control_data():
 		build_control_points()
 		return
 
-	# var depth_mid = Vector3(0, ramp_depth/2, 0)
-	# var width_mid =  Vector3(ramp_width/2, 0, 0)
+	# Start and end transforms
+	var start_tf = Transform(Basis(start_rotation), start_position)
+	var end_tf = Transform(Basis(end_rotation), end_position)
 
-	active_controls["start_position"].control_position = start_position
-	active_controls["end_position"].control_position = end_position
-	# active_controls["ramp_width"].control_position = start_position + depth_mid + width_mid
+	# Start ramp positions
+	var start_width_minus = start_tf.xform(Vector3(-start_ramp_width.x, 0, 0))
+	var start_width_plus = start_tf.xform(Vector3(start_ramp_width.y, 0, 0))
+	var start_depth_minus = start_tf.xform(Vector3(0, -start_ramp_depth.x, 0))
+	var start_depth_plus = start_tf.xform(Vector3(0, start_ramp_depth.y, 0))
+
+	# End ramp positions
+	var end_width_minus = end_tf.xform(Vector3(-end_ramp_width.x, 0, 0))
+	var end_width_plus = end_tf.xform(Vector3(end_ramp_width.y, 0, 0))
+	var end_depth_minus = end_tf.xform(Vector3(0, -end_ramp_depth.x, 0))
+	var end_depth_plus = end_tf.xform(Vector3(0, end_ramp_depth.y, 0))
+
+
+	a_controls["start_position"].control_pos = start_position
+	a_controls["end_position"].control_pos = end_position
+
+	a_controls["start_width_minus"].control_pos = start_width_minus
+	a_controls["start_width_plus"].control_pos = start_width_plus
+	a_controls["start_depth_minus"].control_pos = start_depth_minus
+	a_controls["start_depth_plus"].control_pos = start_depth_plus
+
+	a_controls["end_width_minus"].control_pos = end_width_minus
+	a_controls["end_width_plus"].control_pos = end_width_plus
+	a_controls["end_depth_minus"].control_pos = end_depth_minus
+	a_controls["end_depth_plus"].control_pos = end_depth_plus
 
 	
 
@@ -879,13 +966,33 @@ func refresh_control_data():
 # handle updates generated by the Gizmo (AKA - When someone moves a control point)
 func update_control_from_gizmo(control):
 	
-	var coordinate = control.control_position
+	var coordinate = control.control_pos
 	
 	match control.control_name:
+
 		# positions
 		'start_position': start_position = coordinate
 		'end_position': end_position = coordinate
-		# 'ramp_width': ramp_width = (coordinate.x - start_position.x) * 2
+		
+		# start bounds
+		'start_width_minus': 
+			start_ramp_width.x = (start_position - coordinate).length()
+		'start_width_plus': 
+			start_ramp_width.y = (start_position - coordinate).length()
+		'start_depth_minus': 
+			start_ramp_depth.x = (start_position - coordinate).length()
+		'start_depth_plus': 
+			start_ramp_depth.y = (start_position - coordinate).length()
+
+		# end bounds
+		'end_width_minus': 
+			end_ramp_width.x = (end_position - coordinate).length()
+		'end_width_plus': 
+			end_ramp_width.y = (end_position - coordinate).length()
+		'end_depth_minus': 
+			end_ramp_depth.x = (end_position - coordinate).length()
+		'end_depth_plus': 
+			end_ramp_depth.y = (end_position - coordinate).length()
 	
 	refresh_control_data()
 	
@@ -893,9 +1000,29 @@ func update_control_from_gizmo(control):
 # Applies the current handle values to the shape attributes
 func apply_control_attributes():
 	
-	start_position = active_controls["start_position"].control_position
-	end_position = active_controls["end_position"].control_position
-	# ramp_width = (active_controls["ramp_width"].control_position.x - start_position.x) * 2
+	start_position = a_controls["start_position"].control_pos
+	end_position = a_controls["end_position"].control_pos
+	
+	start_ramp_width.x = ( a_controls["start_width_minus"].control_pos - 
+			start_position ).length()
+	start_ramp_width.y = ( a_controls["start_width_plus"].control_pos - 
+			start_position ).length()
+	start_ramp_depth.x = ( a_controls["start_depth_minus"].control_pos - 
+			start_position ).length()
+	start_ramp_depth.y = ( a_controls["start_depth_plus"].control_pos - 
+			start_position ).length()
+
+	end_ramp_width.x = ( a_controls["end_width_minus"].control_pos - 
+			end_position ).length()
+	end_ramp_width.y = ( a_controls["end_width_plus"].control_pos - 
+			end_position ).length()
+	end_ramp_depth.x = ( a_controls["end_depth_minus"].control_pos - 
+			end_position ).length()
+	end_ramp_depth.y = ( a_controls["end_depth_plus"].control_pos - 
+			end_position ).length()
+	
+	set_bounds_snap_axis()
+
 
 # Calibrates the stored properties if they need to change before the origin is updated.
 # Only called during Gizmo movements for origin auto-updating.
@@ -903,6 +1030,28 @@ func balance_control_data():
 	
 	pass
 		
+
+# Refreshes the snapping axes that the start and end point boundaries use.
+# Used by build_control_points() and apply_control_attributes()
+func set_bounds_snap_axis():
+
+	a_controls["start_width_minus"].snap_axis = ( a_controls["start_width_minus"].control_pos - 
+			start_position ).normalized()
+	a_controls["start_width_plus"].snap_axis = ( a_controls["start_width_plus"].control_pos - 
+			start_position ).normalized()
+	a_controls["start_depth_minus"].snap_axis = ( a_controls["start_depth_minus"].control_pos - 
+			start_position ).normalized()
+	a_controls["start_depth_plus"].snap_axis = ( a_controls["start_depth_plus"].control_pos - 
+			start_position ).normalized()
+	
+	a_controls["end_width_minus"].snap_axis = ( a_controls["end_width_minus"].control_pos - 
+			end_position ).normalized()
+	a_controls["end_width_plus"].snap_axis = ( a_controls["end_width_plus"].control_pos - 
+			end_position ).normalized()
+	a_controls["end_depth_minus"].snap_axis = ( a_controls["end_depth_minus"].control_pos - 
+			end_position ).normalized()
+	a_controls["end_depth_plus"].snap_axis = ( a_controls["end_depth_plus"].control_pos - 
+			end_position ).normalized()
 
 # ////////////////////////////////////////////////////////////
 # BASE UI FUNCTIONS

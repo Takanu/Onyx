@@ -161,7 +161,7 @@ func _set(property, value):
 			
 			# ensure the origin mode toggle is preserved, and ensure the adjusted handles are saved.
 			previous_origin_mode = origin_mode
-			previous_active_controls = get_control_data()
+			previous_a_controls = get_control_data()
 			
 			return true
 
@@ -578,7 +578,7 @@ func _update_origin_mode():
         return
 
     # Re-add once handles are a thing, otherwise this breaks the origin stuff.
-    if active_controls.size() == 0:
+    if a_controls.size() == 0:
         return
 
     #	print("[OnyxGenerator] ", self.name, " - _update_origin_mode()")
@@ -739,14 +739,14 @@ func build_control_points():
 			Vector3(0, 0, 1))
 
 	# populate the dictionary
-	active_controls[point_position.control_name] = point_position
-	active_controls[point_size_minus.control_name] = point_size_minus
-	active_controls[point_size_plus.control_name] = point_size_plus
+	a_controls[point_position.control_name] = point_position
+	a_controls[point_size_minus.control_name] = point_size_minus
+	a_controls[point_size_plus.control_name] = point_size_plus
 
-	active_controls[x_minus_position.control_name] = x_minus_position
-	active_controls[x_plus_position.control_name] = x_plus_position
-	active_controls[z_minus_position.control_name] = z_minus_position
-	active_controls[z_plus_position.control_name] = z_plus_position
+	a_controls[x_minus_position.control_name] = x_minus_position
+	a_controls[x_plus_position.control_name] = x_plus_position
+	a_controls[z_minus_position.control_name] = z_minus_position
+	a_controls[z_plus_position.control_name] = z_plus_position
 
 	# need to give it positions in the case of a duplication or scene load.
 	refresh_control_data()
@@ -766,7 +766,7 @@ func refresh_control_data():
 
 	# Failsafe for script reloads, BECAUSE I CURRENTLY CAN'T DETECT THEM.
 	# TODO - Migrate this to the new system somehow.
-	if active_controls.size() == 0:
+	if a_controls.size() == 0:
 	#		if gizmo != null:
 	##			print("...attempted to refresh_control_data(), rebuilding handles.")
 	#			gizmo.control_points.clear()
@@ -789,51 +789,51 @@ func refresh_control_data():
 
 	match origin_mode:
 		OriginPosition.CENTER:
-			active_controls["point_position"].control_position = point_position - half_height
-			active_controls['point_size_minus'].control_position = Vector3(
+			a_controls["point_position"].control_pos = point_position - half_height
+			a_controls['point_size_minus'].control_pos = Vector3(
 					point_position.x - point_size_minus, half_height.y, point_position.z)
-			active_controls['point_size_plus'].control_position = Vector3(
+			a_controls['point_size_plus'].control_pos = Vector3(
 					point_position.x + point_size_plus, half_height.y, point_position.z)
 
 			# /////////
 
-			active_controls['x_minus_position'].control_position = Vector3(
+			a_controls['x_minus_position'].control_pos = Vector3(
 					-x_minus_position, 0, 0) - half_height
-			active_controls['x_plus_position'].control_position = Vector3(
+			a_controls['x_plus_position'].control_pos = Vector3(
 					x_plus_position, 0, 0) - half_height
-			active_controls['z_minus_position'].control_position = Vector3(
+			a_controls['z_minus_position'].control_pos = Vector3(
 					0, 0, -z_minus_position) - half_height
-			active_controls['z_plus_position'].control_position = Vector3(
+			a_controls['z_plus_position'].control_pos = Vector3(
 					0, 0, z_plus_position) - half_height
 			
 
 		OriginPosition.BASE:
-			active_controls["point_position"].control_position = point_position
-			active_controls['point_size_minus'].control_position = Vector3(
+			a_controls["point_position"].control_pos = point_position
+			a_controls['point_size_minus'].control_pos = Vector3(
 					point_position.x - point_size_minus, point_position.y, point_position.z)
-			active_controls['point_size_plus'].control_position = Vector3(
+			a_controls['point_size_plus'].control_pos = Vector3(
 					point_position.x + point_size_plus, point_position.y, point_position.z)
 
 			# /////////
 
-			active_controls['x_minus_position'].control_position = Vector3(-x_minus_position, 0, 0)
-			active_controls['x_plus_position'].control_position = Vector3(x_plus_position, 0, 0)
-			active_controls['z_minus_position'].control_position = Vector3(0, 0, -z_minus_position)
-			active_controls['z_plus_position'].control_position = Vector3(0, 0, z_plus_position)
+			a_controls['x_minus_position'].control_pos = Vector3(-x_minus_position, 0, 0)
+			a_controls['x_plus_position'].control_pos = Vector3(x_plus_position, 0, 0)
+			a_controls['z_minus_position'].control_pos = Vector3(0, 0, -z_minus_position)
+			a_controls['z_plus_position'].control_pos = Vector3(0, 0, z_plus_position)
 			
 		OriginPosition.BASE_CORNER:
-			active_controls["point_position"].control_position = point_position + half_base
-			active_controls['point_size_minus'].control_position = Vector3(
+			a_controls["point_position"].control_pos = point_position + half_base
+			a_controls['point_size_minus'].control_pos = Vector3(
 					point_position.x - point_size_minus, point_position.y, point_position.z) + half_base
-			active_controls['point_size_plus'].control_position = Vector3(
+			a_controls['point_size_plus'].control_pos = Vector3(
 					point_position.x + point_size_plus, point_position.y, point_position.z) + half_base
 
 			# /////////
 
-			active_controls['x_minus_position'].control_position = Vector3(-x_minus_position, 0, 0) + half_base
-			active_controls['x_plus_position'].control_position = Vector3(x_plus_position, 0, 0) + half_base
-			active_controls['z_minus_position'].control_position = Vector3(0, 0, -z_minus_position) + half_base
-			active_controls['z_plus_position'].control_position = Vector3(0, 0, z_plus_position) + half_base
+			a_controls['x_minus_position'].control_pos = Vector3(-x_minus_position, 0, 0) + half_base
+			a_controls['x_plus_position'].control_pos = Vector3(x_plus_position, 0, 0) + half_base
+			a_controls['z_minus_position'].control_pos = Vector3(0, 0, -z_minus_position) + half_base
+			a_controls['z_plus_position'].control_pos = Vector3(0, 0, z_plus_position) + half_base
 
 
 
@@ -845,7 +845,7 @@ func refresh_control_data():
 # 
 func update_control_from_gizmo(control):
 	
-	var control_pos = control.control_position
+	var control_pos = control.control_pos
 
 	# Used to measure absolute property changes for the "Keep Point Proportional" option.
 	if _has_active_property == false:
@@ -984,40 +984,40 @@ func apply_control_attributes():
 	var half_base = Vector3(x_plus_position / 2, 0, z_plus_position / 2)
 
 	if origin_mode == OriginPosition.CENTER:
-		point_position.x = active_controls['point_position'].control_position.x
-		point_position.y = active_controls['point_position'].control_position.y * 2
-		point_position.z = active_controls['point_position'].control_position.z
+		point_position.x = a_controls['point_position'].control_pos.x
+		point_position.y = a_controls['point_position'].control_pos.y * 2
+		point_position.z = a_controls['point_position'].control_pos.z
 
-		point_size_minus = (active_controls['point_size_minus'].control_position.x - point_position.x) * -1
-		point_size_plus = (active_controls['point_size_plus'].control_position.x - point_position.x)
+		point_size_minus = (a_controls['point_size_minus'].control_pos.x - point_position.x) * -1
+		point_size_plus = (a_controls['point_size_plus'].control_pos.x - point_position.x)
 
-		x_minus_position = active_controls['x_minus_position'].control_position.x * -1
-		x_plus_position = active_controls['x_plus_position'].control_position.x
-		z_minus_position = active_controls['z_minus_position'].control_position.z * -1
-		z_plus_position = active_controls['z_plus_position'].control_position.z
+		x_minus_position = a_controls['x_minus_position'].control_pos.x * -1
+		x_plus_position = a_controls['x_plus_position'].control_pos.x
+		z_minus_position = a_controls['z_minus_position'].control_pos.z * -1
+		z_plus_position = a_controls['z_plus_position'].control_pos.z
 	
 
 	if origin_mode == OriginPosition.BASE:
-		point_position = active_controls['point_position'].control_position
+		point_position = a_controls['point_position'].control_pos
 		
-		point_size_minus = (active_controls['point_size_minus'].control_position.x - point_position.x) * -1
-		point_size_plus = (active_controls['point_size_plus'].control_position.x - point_position.x)
+		point_size_minus = (a_controls['point_size_minus'].control_pos.x - point_position.x) * -1
+		point_size_plus = (a_controls['point_size_plus'].control_pos.x - point_position.x)
 
-		x_minus_position = active_controls['x_minus_position'].control_position.x * -1
-		x_plus_position = active_controls['x_plus_position'].control_position.x
-		z_minus_position = active_controls['z_minus_position'].control_position.z * -1
-		z_plus_position = active_controls['z_plus_position'].control_position.z
+		x_minus_position = a_controls['x_minus_position'].control_pos.x * -1
+		x_plus_position = a_controls['x_plus_position'].control_pos.x
+		z_minus_position = a_controls['z_minus_position'].control_pos.z * -1
+		z_plus_position = a_controls['z_plus_position'].control_pos.z
 	
 
 	if origin_mode == OriginPosition.BASE_CORNER:
-		point_position.x = active_controls['point_position'].control_position.x - half_base.x
-		point_position.y = active_controls['point_position'].control_position.y
-		point_position.z = active_controls['point_position'].control_position.z - half_base.z
+		point_position.x = a_controls['point_position'].control_pos.x - half_base.x
+		point_position.y = a_controls['point_position'].control_pos.y
+		point_position.z = a_controls['point_position'].control_pos.z - half_base.z
 
-		x_minus_position = active_controls['x_minus_position'].control_position.x * -1
-		x_plus_position = active_controls['x_plus_position'].control_position.x
-		z_minus_position = active_controls['z_minus_position'].control_position.z * -1
-		z_plus_position = active_controls['z_plus_position'].control_position.z
+		x_minus_position = a_controls['x_minus_position'].control_pos.x * -1
+		x_plus_position = a_controls['x_plus_position'].control_pos.x
+		z_minus_position = a_controls['z_minus_position'].control_pos.z * -1
+		z_plus_position = a_controls['z_plus_position'].control_pos.z
 	
 	_update_point_proportion_vec()
 

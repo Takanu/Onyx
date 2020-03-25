@@ -133,10 +133,10 @@ signal request_origin_change
 # var onyx_mesh = OnyxMesh.new()
 
 # The control points that will be displayed in the editor to interact with the node.
-var active_controls : Dictionary = {}
+var a_controls : Dictionary = {}
 
 # Old control points that are saved every time a handle has finished moving.
-var previous_active_controls : Dictionary = {}
+var previous_a_controls : Dictionary = {}
 
 
 # /////////////////////////////////////////////////////////////////////////////
@@ -157,7 +157,7 @@ func _ready():
 	if Engine.editor_hint == true:
 		
 		# Ensure the old_handles variable match the current handles we have for undo/redo.
-		previous_active_controls = get_control_data()
+		previous_a_controls = get_control_data()
 
 
 # Used to perform some basic deallocation where necessary
@@ -316,7 +316,7 @@ func build_controls():
 	if Engine.editor_hint == true:
 		build_control_points()
 		refresh_control_data()
-		previous_active_controls = get_control_data()
+		previous_a_controls = get_control_data()
 
 # Used when this object is deselected to hide the control points.
 func clear_controls():
@@ -324,7 +324,7 @@ func clear_controls():
 #	print("[OnyxGenerator] ", self, " - clear_controls()")
 	
 	if Engine.editor_hint == true:
-		active_controls.clear()
+		a_controls.clear()
 	
 
 # (CONVENIENCE FUNC) Use when creating control points to automate the process
@@ -360,7 +360,7 @@ func commit_control(control):
 	
 	# store current handle points as the old ones, so they can be used later
 	# as an undo point before the next commit.
-	previous_active_controls = get_control_data()
+	previous_a_controls = get_control_data()
 	
 	get_parent().property_list_changed_notify()
 	
@@ -381,7 +381,7 @@ func get_control_data() -> Dictionary:
 #	print("[OnyxGenerator] ", self, " - get_control_data()")
 	
 	var result = {}
-	for control in active_controls.values():
+	for control in a_controls.values():
 		result[control.control_name] = control.get_control_data()
 	
 	return result
@@ -392,7 +392,7 @@ func set_control_data(data : Dictionary):
 #	print("[OnyxGenerator] ", self, " - get_control_data()")
 
 	for data_key in data.keys():
-		active_controls[data_key].set_control_data(data[data_key])
+		a_controls[data_key].set_control_data(data[data_key])
 	
 #	print("Setting done!")
 
@@ -415,13 +415,13 @@ func get_gizmo_redo_state(control_point):
 	
 	# store current handle points as the old ones, so they can be used later
 	# as an undo point before the next commit.
-	previous_active_controls = get_control_data()
+	previous_a_controls = get_control_data()
 
 
 # Returns a state specifically for undo functions in SnapGizmo.
 func get_gizmo_undo_state(control_point):
 	var saved_translation = self.global_transform.origin
-	return [previous_active_controls.duplicate(false), saved_translation]
+	return [previous_a_controls.duplicate(false), saved_translation]
 
 
 # Restores the state of the shape to a previous given state.
@@ -434,7 +434,7 @@ func restore_state(state):
 #	print("RESTORING STATE -", state)
 	
 	set_control_data(new_controls)
-	previous_active_controls = new_controls.duplicate(true)
+	previous_a_controls = new_controls.duplicate(true)
 	apply_control_attributes()
 	
 	_process_origin_change(stored_location)

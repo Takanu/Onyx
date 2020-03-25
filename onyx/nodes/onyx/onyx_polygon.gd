@@ -310,7 +310,7 @@
 # 	var i = 0
 # 	for point in polygon_points:
 # 		var new_control = ControlPoint.new(self, "get_gizmo_undo_state", "get_gizmo_redo_state", "restore_state", "restore_state")
-# 		new_control.control_position = convert_plane_point_to_vector3(point)
+# 		new_control.control_pos = convert_plane_point_to_vector3(point)
 # 		new_control.control_name = POLYGON_CONTROL_NAME + str(i)
 # 		new_control.set_type_plane(false, "handle_change", "handle_commit", plane_info["origin"], plane_info["x_up"], plane_info["y_up"])
 
@@ -341,7 +341,7 @@
 
 # 	var i = 0
 # 	for control in handles.values():
-# 		control.control_position = convert_plane_point_to_vector3(polygon_points[i])
+# 		control.control_pos = convert_plane_point_to_vector3(polygon_points[i])
 # 		i += 1
 
 
@@ -356,7 +356,7 @@
 
 # 	var index = int(control.control_name.replace(POLYGON_CONTROL_NAME, ""))
 # 	if index != null:
-# 		polygon_points[index] = convert_vector3_to_plane_point(control.control_position)
+# 		polygon_points[index] = convert_vector3_to_plane_point(control.control_pos)
 
 # 	refresh_handle_data()
 
@@ -368,7 +368,7 @@
 
 # 	var i = 0
 # 	for control in handles.values():
-# 		polygon_points[i] = convert_vector3_to_plane_point(control.control_position)
+# 		polygon_points[i] = convert_vector3_to_plane_point(control.control_pos)
 # 		i += 1
 
 # 	pass
@@ -534,12 +534,12 @@
 # 		var control_2 = handles[POLYGON_CONTROL_NAME + str(i_2)]
 
 # 		# Get the unit vector in-between these three points.
-# 		var v_1 = control_2.control_position - control_1.control_position
-# 		var v_2 = control_0.control_position - control_1.control_position
+# 		var v_1 = control_2.control_pos - control_1.control_pos
+# 		var v_2 = control_0.control_pos - control_1.control_pos
 # 		var unit = (v_1 + v_2).normalized()
 
 # 		# Pull the hollow control by the unit multiplied by the margin
-# 		hollow_control.control_position = control_1.control_position + (unit * inset)
+# 		hollow_control.control_pos = control_1.control_pos + (unit * inset)
 # 		i += 1
 
 # 	return hollow_controls
@@ -711,7 +711,7 @@
 # 	var plane_info = get_plane_info()
 
 # 	var new_control = ControlPoint.new(self, "get_gizmo_undo_state", "get_gizmo_redo_state", "restore_state", "restore_state")
-# 	new_control.control_position = modified_position
+# 	new_control.control_pos = modified_position
 # 	new_control.control_name = POLYGON_CONTROL_NAME + str(polygon_points.size())
 # 	new_control.set_type_plane(false, "handle_change", "handle_commit", plane_info["origin"], plane_info["x_up"], plane_info["y_up"])
 
@@ -744,8 +744,8 @@
 # 	for control in handles.values():
 # 		var control_i2 = VectorUtils.clamp_int(i + 1, 0, handles.size() - 1)
 # 		var control_2 = handles[POLYGON_CONTROL_NAME + str(control_i2)]
-# 		var control_p1 = control.control_position
-# 		var control_p2 = control_2.control_position
+# 		var control_p1 = control.control_pos
+# 		var control_p2 = control_2.control_pos
 
 # 		var point_p1 = convert_vector3_to_plane_point(control_p1)
 # 		var point_p2 = convert_vector3_to_plane_point(control_p2)
@@ -767,7 +767,7 @@
 # 	var insert_index = int(closest_points[0].control_name.replace(POLYGON_CONTROL_NAME, "")) + 1
 
 # 	var new_control = ControlPoint.new(self, "get_gizmo_undo_state", "get_gizmo_redo_state", "restore_state", "restore_state")
-# 	new_control.control_position = modified_position
+# 	new_control.control_pos = modified_position
 # 	new_control.control_name = POLYGON_CONTROL_NAME + str(insert_index)
 # 	new_control.set_type_plane(false, "handle_change", "handle_commit", plane_info["origin"], plane_info["x_up"], plane_info["y_up"])
 

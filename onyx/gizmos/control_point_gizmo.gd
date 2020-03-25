@@ -122,7 +122,7 @@ func set_handle(index, camera, point):
 # (REQUIRED FOR commit_handle TO WORK, DO NOT REMOVE)
 func get_handle_value(index):
 	var result = get_control_point(index)
-	return result['control'].control_position
+	return result['control'].control_pos
 
 
 # Commits the handle to the property (if not cancelled).

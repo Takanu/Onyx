@@ -129,7 +129,7 @@ func _set(property, value):
 			
 			# ensure the origin mode toggle is preserved, and ensure the adjusted handles are saved.
 			previous_origin_mode = origin_mode
-			previous_active_controls = get_control_data()
+			previous_a_controls = get_control_data()
 			
 			return true
 		
@@ -611,7 +611,7 @@ func _update_origin_mode():
 		return
 	
 	# Re-add once handles are a thing, otherwise this breaks the origin stuff.
-	if active_controls.size() == 0:
+	if a_controls.size() == 0:
 		return
 	
 #	print("[OnyxGenerator] ", self.name, " - _update_origin_mode()")
@@ -715,9 +715,9 @@ func build_control_points():
 	z_width.set_type_axis(false, "modify_control", "commit_control", Vector3(0, 0, 1))
 
 	# populate the dictionary
-	active_controls["height"] = height
-	active_controls["x_width"] = x_width
-	active_controls["z_width"] = z_width
+	a_controls["height"] = height
+	a_controls["x_width"] = x_width
+	a_controls["z_width"] = z_width
 	
 	# need to give it positions in the case of a duplication or scene load.
 	refresh_control_data()
@@ -737,7 +737,7 @@ func refresh_control_data():
 	
 	# Failsafe for script reloads, BECAUSE I CURRENTLY CAN'T DETECT THEM.
 	# TODO - Migrate this to the new system somehow.
-	if active_controls.size() == 0:
+	if a_controls.size() == 0:
 #		if gizmo != null:
 ##			print("...attempted to refresh_control_data(), rebuilding handles.")
 #			gizmo.control_points.clear()
@@ -750,21 +750,21 @@ func refresh_control_data():
 	
 	match origin_mode:
 		OriginPosition.CENTER:
-			active_controls["height"].control_position = Vector3(0, height / 2, 0)
-			active_controls["x_width"].control_position = Vector3(x_width / 2, 0, 0)
-			active_controls["z_width"].control_position = Vector3(0, 0, z_width / 2)
+			a_controls["height"].control_pos = Vector3(0, height / 2, 0)
+			a_controls["x_width"].control_pos = Vector3(x_width / 2, 0, 0)
+			a_controls["z_width"].control_pos = Vector3(0, 0, z_width / 2)
 			
 		OriginPosition.BASE:
-			active_controls["height"].control_position = Vector3(0, height, 0)
-			active_controls["x_width"].control_position = Vector3(x_width / 2, height / 2, 0)
-			active_controls["z_width"].control_position = Vector3(0, height / 2, z_width / 2)
+			a_controls["height"].control_pos = Vector3(0, height, 0)
+			a_controls["x_width"].control_pos = Vector3(x_width / 2, height / 2, 0)
+			a_controls["z_width"].control_pos = Vector3(0, height / 2, z_width / 2)
 			
 		OriginPosition.BASE_CORNER:
-			active_controls["height"].control_position = Vector3(x_width / 2, 
+			a_controls["height"].control_pos = Vector3(x_width / 2, 
 					height, z_width / 2)
-			active_controls["x_width"].control_position = Vector3(x_width, 
+			a_controls["x_width"].control_pos = Vector3(x_width, 
 					height / 2, z_width / 2)
-			active_controls["z_width"].control_position = Vector3(x_width / 2, 
+			a_controls["z_width"].control_pos = Vector3(x_width / 2, 
 					height / 2, z_width)
 
 
@@ -776,7 +776,7 @@ func update_control_from_gizmo(control):
 	
 #	print("[OnyxCube] ", self.get_name(), " - update_control_from_gizmo(control)")
 	
-	var coordinate = control.control_position
+	var coordinate = control.control_pos
 		
 	var target_val = 0.0
 	match control.control_name:
@@ -810,19 +810,19 @@ func update_control_from_gizmo(control):
 func apply_control_attributes():
 	
 	if origin_mode == OriginPosition.CENTER:
-		height = active_controls["height"].control_position.y * 2
-		x_width = active_controls["x_width"].control_position.x * 2
-		z_width = active_controls["z_width"].control_position.z * 2
+		height = a_controls["height"].control_pos.y * 2
+		x_width = a_controls["x_width"].control_pos.x * 2
+		z_width = a_controls["z_width"].control_pos.z * 2
 
 	if origin_mode == OriginPosition.BASE:
-		height = active_controls["height"].control_position.y
-		x_width = active_controls["x_width"].control_position.x * 2
-		z_width = active_controls["z_width"].control_position.z * 2
+		height = a_controls["height"].control_pos.y
+		x_width = a_controls["x_width"].control_pos.x * 2
+		z_width = a_controls["z_width"].control_pos.z * 2
 
 	if origin_mode == OriginPosition.BASE_CORNER:
-		height = active_controls["height"].control_position.y
-		x_width = active_controls["x_width"].control_position.x
-		z_width = active_controls["z_width"].control_position.z
+		height = a_controls["height"].control_pos.y
+		x_width = a_controls["x_width"].control_pos.x
+		z_width = a_controls["z_width"].control_pos.z
 
 # Calibrates the stored properties if they need to change before the origin is updated.
 # Only called during Gizmo movements for origin auto-updating.
