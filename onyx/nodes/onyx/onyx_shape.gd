@@ -703,16 +703,10 @@ func _update_hollow_geometry():
 	
 	new_onyx_mesh.multiply_uvs(transform_vec)
 	
-	# Create new mesh
-	var array_mesh = new_onyx_mesh.render_surface_geometry(hollow_material)
-	var helper = MeshDataTool.new()
-	var mesh = Mesh.new()
-	
-	# Set the new mesh
-	helper.create_from_surface(array_mesh, 0)
-	helper.commit_to_surface(mesh)
-	hollow_object.set_mesh(mesh)
-	hollow_mesh = mesh
+	# Create new mesh(es)
+	var array_mesh = new_onyx_mesh.render_array_meshes(material)
+	hollow_object.set_mesh(array_mesh)
+	hollow_mesh = array_mesh
 
 	# Set the transform
 	var new_location = _generator.get_hollow_origin()
@@ -931,7 +925,7 @@ func _build_runtime_hollow_object():
 func get_gizmo_control_points() -> Array:
 	
 	if _generator != null:
-		return _generator.a_controls.values()
+		return _generator.acv_controls.values()
 	else:
 		return []
 

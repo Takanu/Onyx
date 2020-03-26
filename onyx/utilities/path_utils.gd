@@ -10,6 +10,15 @@ extends Node
 # - Bezier paths
 # - Interpolated paths
 #
+
+
+# ////////////////////////////////////////////////////////////
+# DEPENDENCIES
+
+# 2D and 3D vector math library
+var VecUtils = load("res://addons/onyx/utilities/vector_utils.gd")
+
+
 # ////////////////////////////////////////////////////////////
 # ENUMERATORS
 
@@ -24,3 +33,4 @@ enum PathInterpolationMode {
 # PUBLIC STATIC FUNCTIONS
 
 # This is kind of a placeholder for now, I dont know much about 3D curve math omo
+

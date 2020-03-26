@@ -19,6 +19,9 @@ extends "res://addons/onyx/nodes/onyx/onyx_generator.gd"
 # 2D and 3D vector math library
 var VecUtils = load("res://addons/onyx/utilities/vector_utils.gd")
 
+# 2D and 3D path and tracking library
+var PathUtils = load("res://addons/onyx/utilities/path_utils.gd")
+
 # Helper Object for filling in the gap in functionality that exists with Gizmo handles.
 var ControlPoint = load("res://addons/onyx/gizmos/control_point.gd")
 
@@ -42,10 +45,11 @@ enum OriginPosition {
 # The unwrap methods that can be selected with this generator.
 enum UnwrapMethod {
 
-	# All faces are unwrapped to match world space, overlaps
-	PROPORTIONAL_OVERLAP, 	
 	# Every face is mapped 1:1 with the bounds of UV space, will not extend beyond it
 	PER_FACE_MAPPING,		
+
+	# All faces are unwrapped to match world space, overlaps
+	PROPORTIONAL_OVERLAP, 	
 }
 
 # Decides if the stairway gets a "base fill", and if so which way along the Y
@@ -115,13 +119,17 @@ var ramp_fill_type = RampFillType.NONE
 # Used to determine how much the hollow faces move away from the
 # sides of the current shape.
 
-# TODO - Design something that makes sense, after you improve the shapes handle
-# functionality
+var width_margin = Vector2(0.2, 0.2)
+
+var depth_margin = Vector2(0.2, 0.2)
+
+var cap_margin = Vector2(-1, -1)
+
 
 
 # UV OPTIONS /////
 
-var unwrap_method = UnwrapMethod.PROPORTIONAL_OVERLAP
+var unwrap_method = UnwrapMethod.PER_FACE_MAPPING
 
 # If true, the surfaces of the ramp will have smoothed normals.
 var smooth_normals = true
@@ -162,7 +170,7 @@ func _set(property, value):
 			
 			# ensure the origin mode toggle is preserved, and ensure the adjusted handles are saved.
 			previous_origin_mode = origin_mode
-			previous_a_controls = get_control_data()
+			pre_controls = get_control_data()
 			
 			return true
 
@@ -247,19 +255,22 @@ func _set(property, value):
 
 		# HOLLOW MARGINS /////
 
-		# "_height_max_hollow":
-		#     _height_hollow = value
+		"width_margin":
+			width_margin = value
 
-		# "_x_width_hollow":
-		#     _x_width_hollow = value
+		"depth_margin":
+			depth_margin = value
 
-		# "_z_width_hollow":
-		#     _z_width_hollow = value
+		"cap_margin":
+			value.x = max( min(value.x, 1.01), -0.01)
+			value.y = max( min(value.y, 1.01), -0.01)
+			
+			cap_margin = value
 
 
 	_process_property_update()
 	return true
-	
+
 	
 	
 # Returns the list of custom shape properties that an owner should save and display.
@@ -366,14 +377,7 @@ func get_shape_properties() -> Dictionary:
             "usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
 		},
 		
-		"ramp_fill_type" : {	
-        
-            "name" : "ramp_fill_type",
-            "type" : TYPE_INT,
-			"usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
-			"hint": PROPERTY_HINT_ENUM,
-            "hint_string": "Proportional Overlap, Per-Face Mapping"
-        },
+		
         
         
         # UV / NORMALS /////
@@ -382,9 +386,9 @@ func get_shape_properties() -> Dictionary:
         
             "name" : "uv_options/unwrap_method",
             "type" : TYPE_INT,
-            "usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
-            "hint": PROPERTY_HINT_ENUM,
-            "hint_string": "None, Minus Y, Plus Y"
+			"usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
+			"hint": PROPERTY_HINT_ENUM,
+            "hint_string": "Per-Face Mapping"
         },
         
         "smooth_normals" : {	
@@ -393,6 +397,30 @@ func get_shape_properties() -> Dictionary:
             "type" : TYPE_BOOL,
             "usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
         },
+
+		 # HOLLOW MARGINS /////
+
+		"width_margin" : {	
+        
+            "name" : "hollow_mode/width_margin",
+            "type" : TYPE_VECTOR2,
+            "usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
+		},
+
+		"depth_margin" : {	
+        
+            "name" : "hollow_mode/depth_margin",
+            "type" : TYPE_VECTOR2,
+            "usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
+		},
+
+		"cap_margin" : {	
+        
+            "name" : "hollow_mode/cap_margin",
+            "type" : TYPE_VECTOR2,
+            "usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
+		},
+
     }
 
     return props
@@ -459,41 +487,71 @@ func update_geometry() -> OnyxMesh:
 	if Engine.editor_hint == false:
 		return OnyxMesh.new()
 	
-	return build_geometry(start_position, end_position, start_ramp_width, 
-			start_ramp_depth, end_ramp_width, end_ramp_depth)
+	var start_tf = Transform(Basis(start_rotation), start_position)
+	var end_tf = Transform(Basis(end_rotation), end_position)
+	
+	return build_geometry(start_tf, end_tf, start_ramp_width, 
+			start_ramp_depth, end_ramp_width, end_ramp_depth, 
+			horizontal_edge_loops)
 
 
 # Creates new geometry to reflect the hollow shapes current properties, 
 # then returns it.
 func update_hollow_geometry() -> OnyxMesh:
 
-    # Prevents geometry generation if the node hasn't loaded yet
-    if Engine.editor_hint == false:
-        return OnyxMesh.new()
+	# Prevents geometry generation if the node hasn't loaded yet
+	if Engine.editor_hint == false:
+		return OnyxMesh.new()
 
-    # TODO - Implement hollow mode for the wedge shape type.
+	# Get the width and depth bounds.
+	var start_width_geom = start_ramp_width - width_margin
+	var start_depth_geom  = start_ramp_depth - depth_margin
+	var end_width_geom  = end_ramp_width - width_margin
+	var end_depth_geom  = end_ramp_depth - depth_margin
 
-    return build_geometry(start_position, end_position, start_ramp_width, 
-			start_ramp_depth, end_ramp_width, end_ramp_depth)
-	
+	# Ger the bound difference between the start and end.
+	var width_diff = end_width_geom - start_width_geom
+	var depth_diff = end_depth_geom - start_depth_geom
+
+	# Build a position offset based on the width and depth offsets.
+	var start_tf = Transform(Basis(start_rotation), start_position)
+	var end_tf = Transform(Basis(end_rotation), end_position)
+
+
+	# Work out where the start and end components are (position + TF)
+	var new_start_tf = end_tf.interpolate_with(start_tf, cap_margin.x)
+	var new_end_tf = end_tf.interpolate_with(start_tf, cap_margin.y)
+
+
+	# Interpolate the caps with the bound difference to make sure 
+	# it's offset properly.
+	start_width_geom = end_width_geom + (-width_diff * cap_margin.x)
+	start_depth_geom = end_depth_geom + (-depth_diff * cap_margin.x)
+	end_width_geom -= (width_diff * cap_margin.y )
+	end_depth_geom -= (depth_diff * cap_margin.y )
+
+	# Get the number of edge loops we need based on the percentage of the
+	# actual path this takes up
+	var hollow_v_iterations = round( horizontal_edge_loops *
+		(cap_margin.x - cap_margin.y) )
+
+	return build_geometry(new_start_tf, new_end_tf, start_width_geom, 
+			start_depth_geom, end_width_geom, end_depth_geom, 
+			hollow_v_iterations)
+
 
 
 # Performs the process of building a set of mesh data and returning it to the caller.
-func build_geometry(geom_start : Vector3,  geom_end : Vector3,  
+func build_geometry(start_tf : Transform,  end_tf : Transform,  
 		geom_start_w_bounds : Vector2,  geom_start_d_bounds : Vector2,
-		geom_end_w_bounds : Vector2,  geom_end_d_bounds : Vector2):
+		geom_end_w_bounds : Vector2,  geom_end_d_bounds : Vector2,
+		geom_horizontal_loops : int):
 
 	# Prevents geometry generation if the node hasn't loaded yet
 	if is_inside_tree() == false:
 		return
 	
 	var new_onyx_mesh = OnyxMesh.new()
-
-
-	# Get some basic transform data.
-	var position = Vector3(0, 0, 0)
-	var start_tf = Transform(Basis(start_rotation), geom_start)
-	var end_tf = Transform(Basis(end_rotation), geom_end)
 	
 	
 	# GENERATION START
@@ -506,38 +564,25 @@ func build_geometry(geom_start : Vector3,  geom_end : Vector3,
 	#   X---------X  s_b1 s_b2
 	
 	# get main 8 vectors
-	var base_s_t1 = Vector3(-start_ramp_width.x, start_ramp_depth.y, 0)
-	var base_s_t2 = Vector3(start_ramp_width.y, start_ramp_depth.y, 0)
-	var base_s_b1 = Vector3(-start_ramp_width.x, -start_ramp_depth.x, 0)
-	var base_s_b2 = Vector3(start_ramp_width.y, -start_ramp_depth.x, 0)
+	var base_s_t1 = Vector3(-geom_start_w_bounds.x, geom_start_d_bounds.y, 0)
+	var base_s_t2 = Vector3(geom_start_w_bounds.y, geom_start_d_bounds.y, 0)
+	var base_s_b1 = Vector3(-geom_start_w_bounds.x, -geom_start_d_bounds.x, 0)
+	var base_s_b2 = Vector3(geom_start_w_bounds.y, -geom_start_d_bounds.x, 0)
 
-	var base_e_t1 = Vector3(-end_ramp_width.x, end_ramp_depth.y, 0)
-	var base_e_t2 = Vector3(end_ramp_width.y, end_ramp_depth.y, 0)
-	var base_e_b1 = Vector3(-end_ramp_width.x, -end_ramp_depth.x, 0)
-	var base_e_b2 = Vector3(end_ramp_width.y, -end_ramp_depth.x, 0)
-
-	# Transform every base point with the start and end transforms
-	# var tf_s_t1 = Transform(Basis(start_rotation), geom_start + base_s_t1)
-	# var tf_s_t2 = Transform(Basis(start_rotation), geom_start + base_s_t2)
-	# var tf_s_b1 = Transform(Basis(start_rotation), geom_start + base_s_b1)
-	# var tf_s_b2 = Transform(Basis(start_rotation), geom_start + base_s_b2)
-
-	# var tf_e_t1 = Transform(Basis(end_rotation), geom_end + base_e_t1)
-	# var tf_e_t2 = Transform(Basis(end_rotation), geom_end + base_e_t2)
-	# var tf_e_b1 = Transform(Basis(end_rotation), geom_end + base_e_b1)
-	# var tf_e_b2 = Transform(Basis(end_rotation), geom_end + base_e_b2)
+	var base_e_t1 = Vector3(-geom_end_w_bounds.x, geom_end_d_bounds.y, 0)
+	var base_e_t2 = Vector3(geom_end_w_bounds.y, geom_end_d_bounds.y, 0)
+	var base_e_b1 = Vector3(-geom_end_w_bounds.x, -geom_end_d_bounds.x, 0)
+	var base_e_b2 = Vector3(geom_end_w_bounds.y, -geom_end_d_bounds.x, 0)
 	
 	# Get the subdivided points across every edge
 	var left_top_edges = VecUtils.subdivide_transform_interpolation(base_s_t1, 
-			start_tf, base_e_t1, end_tf, horizontal_edge_loops)
+			start_tf, base_e_t1, end_tf, geom_horizontal_loops)
 	var left_bottom_edges = VecUtils.subdivide_transform_interpolation(base_s_t2, 
-			start_tf, base_e_t2, end_tf, horizontal_edge_loops)
+			start_tf, base_e_t2, end_tf, geom_horizontal_loops)
 	var right_top_edges = VecUtils.subdivide_transform_interpolation(base_s_b1, 
-			start_tf, base_e_b1, end_tf, horizontal_edge_loops)
+			start_tf, base_e_b1, end_tf, geom_horizontal_loops)
 	var right_bottom_edges = VecUtils.subdivide_transform_interpolation(base_s_b2, 
-			start_tf, base_e_b2, end_tf, horizontal_edge_loops)
-
-	# Get any other important pieces of information
+			start_tf, base_e_b2, end_tf, geom_horizontal_loops)
 	
 	
 
@@ -886,18 +931,18 @@ func build_control_points():
 	
 
 	# populate the dictionary
-	a_controls[start_ramp.control_name] = start_ramp
-	a_controls[end_ramp.control_name] = end_ramp
+	acv_controls[start_ramp.control_name] = start_ramp
+	acv_controls[end_ramp.control_name] = end_ramp
 
-	a_controls[start_width_minus.control_name] = start_width_minus
-	a_controls[start_width_plus.control_name] = start_width_plus
-	a_controls[start_depth_minus.control_name] = start_depth_minus
-	a_controls[start_depth_plus.control_name] = start_depth_plus
+	acv_controls[start_width_minus.control_name] = start_width_minus
+	acv_controls[start_width_plus.control_name] = start_width_plus
+	acv_controls[start_depth_minus.control_name] = start_depth_minus
+	acv_controls[start_depth_plus.control_name] = start_depth_plus
 
-	a_controls[end_width_minus.control_name] = end_width_minus
-	a_controls[end_width_plus.control_name] = end_width_plus
-	a_controls[end_depth_minus.control_name] = end_depth_minus
-	a_controls[end_depth_plus.control_name] = end_depth_plus
+	acv_controls[end_width_minus.control_name] = end_width_minus
+	acv_controls[end_width_plus.control_name] = end_width_plus
+	acv_controls[end_depth_minus.control_name] = end_depth_minus
+	acv_controls[end_depth_plus.control_name] = end_depth_plus
 	
 
 	# need to give it positions in the case of a duplication or scene load.
@@ -921,7 +966,7 @@ func refresh_control_data():
 
 	# Failsafe for script reloads, BECAUSE I CURRENTLY CAN'T DETECT THEM.
 	# TODO - Migrate this to the new system somehow.
-	if a_controls.size() == 0:
+	if acv_controls.size() == 0:
 	#		if gizmo != null:
 	##			print("...attempted to refresh_control_data(), rebuilding handles.")
 	#			gizmo.control_points.clear()
@@ -947,18 +992,18 @@ func refresh_control_data():
 	var end_depth_plus = end_tf.xform(Vector3(0, end_ramp_depth.y, 0))
 
 
-	a_controls["start_position"].control_pos = start_position
-	a_controls["end_position"].control_pos = end_position
+	acv_controls["start_position"].control_pos = start_position
+	acv_controls["end_position"].control_pos = end_position
 
-	a_controls["start_width_minus"].control_pos = start_width_minus
-	a_controls["start_width_plus"].control_pos = start_width_plus
-	a_controls["start_depth_minus"].control_pos = start_depth_minus
-	a_controls["start_depth_plus"].control_pos = start_depth_plus
+	acv_controls["start_width_minus"].control_pos = start_width_minus
+	acv_controls["start_width_plus"].control_pos = start_width_plus
+	acv_controls["start_depth_minus"].control_pos = start_depth_minus
+	acv_controls["start_depth_plus"].control_pos = start_depth_plus
 
-	a_controls["end_width_minus"].control_pos = end_width_minus
-	a_controls["end_width_plus"].control_pos = end_width_plus
-	a_controls["end_depth_minus"].control_pos = end_depth_minus
-	a_controls["end_depth_plus"].control_pos = end_depth_plus
+	acv_controls["end_width_minus"].control_pos = end_width_minus
+	acv_controls["end_width_plus"].control_pos = end_width_plus
+	acv_controls["end_depth_minus"].control_pos = end_depth_minus
+	acv_controls["end_depth_plus"].control_pos = end_depth_plus
 
 	
 
@@ -1000,25 +1045,25 @@ func update_control_from_gizmo(control):
 # Applies the current handle values to the shape attributes
 func apply_control_attributes():
 	
-	start_position = a_controls["start_position"].control_pos
-	end_position = a_controls["end_position"].control_pos
+	start_position = acv_controls["start_position"].control_pos
+	end_position = acv_controls["end_position"].control_pos
 	
-	start_ramp_width.x = ( a_controls["start_width_minus"].control_pos - 
+	start_ramp_width.x = ( acv_controls["start_width_minus"].control_pos - 
 			start_position ).length()
-	start_ramp_width.y = ( a_controls["start_width_plus"].control_pos - 
+	start_ramp_width.y = ( acv_controls["start_width_plus"].control_pos - 
 			start_position ).length()
-	start_ramp_depth.x = ( a_controls["start_depth_minus"].control_pos - 
+	start_ramp_depth.x = ( acv_controls["start_depth_minus"].control_pos - 
 			start_position ).length()
-	start_ramp_depth.y = ( a_controls["start_depth_plus"].control_pos - 
+	start_ramp_depth.y = ( acv_controls["start_depth_plus"].control_pos - 
 			start_position ).length()
 
-	end_ramp_width.x = ( a_controls["end_width_minus"].control_pos - 
+	end_ramp_width.x = ( acv_controls["end_width_minus"].control_pos - 
 			end_position ).length()
-	end_ramp_width.y = ( a_controls["end_width_plus"].control_pos - 
+	end_ramp_width.y = ( acv_controls["end_width_plus"].control_pos - 
 			end_position ).length()
-	end_ramp_depth.x = ( a_controls["end_depth_minus"].control_pos - 
+	end_ramp_depth.x = ( acv_controls["end_depth_minus"].control_pos - 
 			end_position ).length()
-	end_ramp_depth.y = ( a_controls["end_depth_plus"].control_pos - 
+	end_ramp_depth.y = ( acv_controls["end_depth_plus"].control_pos - 
 			end_position ).length()
 	
 	set_bounds_snap_axis()
@@ -1035,22 +1080,22 @@ func balance_control_data():
 # Used by build_control_points() and apply_control_attributes()
 func set_bounds_snap_axis():
 
-	a_controls["start_width_minus"].snap_axis = ( a_controls["start_width_minus"].control_pos - 
+	acv_controls["start_width_minus"].snap_axis = ( acv_controls["start_width_minus"].control_pos - 
 			start_position ).normalized()
-	a_controls["start_width_plus"].snap_axis = ( a_controls["start_width_plus"].control_pos - 
+	acv_controls["start_width_plus"].snap_axis = ( acv_controls["start_width_plus"].control_pos - 
 			start_position ).normalized()
-	a_controls["start_depth_minus"].snap_axis = ( a_controls["start_depth_minus"].control_pos - 
+	acv_controls["start_depth_minus"].snap_axis = ( acv_controls["start_depth_minus"].control_pos - 
 			start_position ).normalized()
-	a_controls["start_depth_plus"].snap_axis = ( a_controls["start_depth_plus"].control_pos - 
+	acv_controls["start_depth_plus"].snap_axis = ( acv_controls["start_depth_plus"].control_pos - 
 			start_position ).normalized()
 	
-	a_controls["end_width_minus"].snap_axis = ( a_controls["end_width_minus"].control_pos - 
+	acv_controls["end_width_minus"].snap_axis = ( acv_controls["end_width_minus"].control_pos - 
 			end_position ).normalized()
-	a_controls["end_width_plus"].snap_axis = ( a_controls["end_width_plus"].control_pos - 
+	acv_controls["end_width_plus"].snap_axis = ( acv_controls["end_width_plus"].control_pos - 
 			end_position ).normalized()
-	a_controls["end_depth_minus"].snap_axis = ( a_controls["end_depth_minus"].control_pos - 
+	acv_controls["end_depth_minus"].snap_axis = ( acv_controls["end_depth_minus"].control_pos - 
 			end_position ).normalized()
-	a_controls["end_depth_plus"].snap_axis = ( a_controls["end_depth_plus"].control_pos - 
+	acv_controls["end_depth_plus"].snap_axis = ( acv_controls["end_depth_plus"].control_pos - 
 			end_position ).normalized()
 
 # ////////////////////////////////////////////////////////////

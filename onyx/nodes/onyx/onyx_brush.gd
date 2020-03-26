@@ -64,7 +64,7 @@ const GENERATOR_SCRIPTS = {
 # Made public through property lists 
 
 # Used to select different shapes.
-export(ShapeType) var shape_type = ShapeType.BOX  setget switch_generator
+export(ShapeType) var shape_type = ShapeType.POLYGON  setget switch_generator
 
 # The points that make up a shape.
 export(Array) var shape_points = []  
@@ -936,7 +936,7 @@ func _build_runtime_hollow_object():
 func get_gizmo_control_points() -> Array:
 	
 	if _generator != null:
-		return _generator.a_controls.values()
+		return _generator.acv_controls.values()
 	else:
 		return []
 

@@ -211,7 +211,7 @@ func _set(property, value):
 			
 			# ensure the origin mode toggle is preserved, and ensure the adjusted handles are saved.
 			previous_origin_mode = origin_mode
-			previous_a_controls = get_control_data()
+			pre_controls = get_control_data()
 			
 			return true
 		
@@ -660,7 +660,7 @@ func _update_origin_mode():
 		return
 	
 	# Re-add once handles are a thing, otherwise this breaks the origin stuff.
-	if a_controls.size() == 0:
+	if acv_controls.size() == 0:
 		return
 	
 #	print("[OnyxGenerator] ", self.name, " - _update_origin_mode()")
@@ -798,12 +798,12 @@ func build_control_points():
 	
 	
 	# populate the dictionary
-	a_controls["x_minus"] = x_minus
-	a_controls["x_plus"] = x_plus
-	a_controls["y_minus"] = y_minus
-	a_controls["y_plus"] = y_plus
-	a_controls["z_minus"] = z_minus
-	a_controls["z_plus"] = z_plus
+	acv_controls["x_minus"] = x_minus
+	acv_controls["x_plus"] = x_plus
+	acv_controls["y_minus"] = y_minus
+	acv_controls["y_plus"] = y_plus
+	acv_controls["z_minus"] = z_minus
+	acv_controls["z_plus"] = z_plus
 	
 	# need to give it positions in the case of a duplication or scene load.
 	refresh_control_data()
@@ -823,7 +823,7 @@ func refresh_control_data():
 	
 	# Failsafe for script reloads, BECAUSE I CURRENTLY CAN'T DETECT THEM.
 	# TODO - Migrate this to the new system somehow.
-	if a_controls.size() == 0:
+	if acv_controls.size() == 0:
 #		if gizmo != null:
 ##			print("...attempted to refresh_control_data(), rebuilding handles.")
 #			gizmo.control_points.clear()
@@ -842,12 +842,12 @@ func refresh_control_data():
 	var diff_y = abs(y_plus_position - -y_minus_position)
 	var diff_z = abs(z_plus_position - -z_minus_position)
 
-	a_controls["x_minus"].control_pos = Vector3(-x_minus_position, mid_y, mid_z)
-	a_controls["x_plus"].control_pos = Vector3(x_plus_position, mid_y, mid_z)
-	a_controls["y_minus"].control_pos = Vector3(mid_x, -y_minus_position, mid_z)
-	a_controls["y_plus"].control_pos = Vector3(mid_x, y_plus_position, mid_z)
-	a_controls["z_minus"].control_pos = Vector3(mid_x, mid_y, -z_minus_position)
-	a_controls["z_plus"].control_pos = Vector3(mid_x, mid_y, z_plus_position)
+	acv_controls["x_minus"].control_pos = Vector3(-x_minus_position, mid_y, mid_z)
+	acv_controls["x_plus"].control_pos = Vector3(x_plus_position, mid_y, mid_z)
+	acv_controls["y_minus"].control_pos = Vector3(mid_x, -y_minus_position, mid_z)
+	acv_controls["y_plus"].control_pos = Vector3(mid_x, y_plus_position, mid_z)
+	acv_controls["z_minus"].control_pos = Vector3(mid_x, mid_y, -z_minus_position)
+	acv_controls["z_plus"].control_pos = Vector3(mid_x, mid_y, z_plus_position)
 	
 	
 
@@ -875,12 +875,12 @@ func apply_control_attributes():
 	
 #	print("[OnyxCube] ", self.get_name(), " - apply_control_attributes()")
 	
-	x_minus_position = a_controls["x_minus"].control_pos.x * -1
-	x_plus_position = a_controls["x_plus"].control_pos.x
-	y_minus_position = a_controls["y_minus"].control_pos.y * -1
-	y_plus_position = a_controls["y_plus"].control_pos.y
-	z_minus_position = a_controls["z_minus"].control_pos.z * -1
-	z_plus_position = a_controls["z_plus"].control_pos.z
+	x_minus_position = acv_controls["x_minus"].control_pos.x * -1
+	x_plus_position = acv_controls["x_plus"].control_pos.x
+	y_minus_position = acv_controls["y_minus"].control_pos.y * -1
+	y_plus_position = acv_controls["y_plus"].control_pos.y
+	z_minus_position = acv_controls["z_minus"].control_pos.z * -1
+	z_plus_position = acv_controls["z_plus"].control_pos.z
 
 # Calibrates the stored properties if they need to change before the origin is updated.
 # Only called during Gizmo movements for origin auto-updating.

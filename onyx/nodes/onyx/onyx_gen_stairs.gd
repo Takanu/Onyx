@@ -149,7 +149,7 @@ func _set(property, value):
 			
 			# ensure the origin mode toggle is preserved, and ensure the adjusted handles are saved.
 			previous_origin_mode = origin_mode
-			previous_a_controls = get_control_data()
+			pre_controls = get_control_data()
 			
 			return true
 
@@ -584,9 +584,9 @@ func build_control_points():
 	stair_width.set_type_axis(false, "modify_control", "commit_control", Vector3(1, 0, 0))
 	
 	# populate the dictionary
-	a_controls[start_position.control_name] = start_position
-	a_controls[end_position.control_name] = end_position
-	a_controls[stair_width.control_name] = stair_width
+	acv_controls[start_position.control_name] = start_position
+	acv_controls[end_position.control_name] = end_position
+	acv_controls[stair_width.control_name] = stair_width
 
 	# need to give it positions in the case of a duplication or scene load.
 	refresh_control_data()
@@ -606,7 +606,7 @@ func refresh_control_data():
 
 	# Failsafe for script reloads, BECAUSE I CURRENTLY CAN'T DETECT THEM.
 	# TODO - Migrate this to the new system somehow.
-	if a_controls.size() == 0:
+	if acv_controls.size() == 0:
 	#		if gizmo != null:
 	##			print("...attempted to refresh_control_data(), rebuilding handles.")
 	#			gizmo.control_points.clear()
@@ -619,9 +619,9 @@ func refresh_control_data():
 	var width_mid =  Vector3(stair_width/2, 0, 0)
 	var length_mid = Vector3(0, 0, ((end_position - start_position).length() / stair_count) / 2)
 	
-	a_controls["start_position"].control_pos = start_position 
-	a_controls["end_position"].control_pos = end_position
-	a_controls["stair_width"].control_pos = start_position + depth_mid + width_mid
+	acv_controls["start_position"].control_pos = start_position 
+	acv_controls["end_position"].control_pos = end_position
+	acv_controls["stair_width"].control_pos = start_position + depth_mid + width_mid
 	
 
 # Used by the convenience functions handle_changed and handle_committed to apply
@@ -642,9 +642,9 @@ func update_control_from_gizmo(control):
 # Applies the current handle values to the shape attributes
 func apply_control_attributes():
 	
-	start_position = a_controls["start_position"].control_pos
-	end_position = a_controls["end_position"].control_pos
-	stair_width = (a_controls["stair_width"].control_pos.x - start_position.x) * 2
+	start_position = acv_controls["start_position"].control_pos
+	end_position = acv_controls["end_position"].control_pos
+	stair_width = (acv_controls["stair_width"].control_pos.x - start_position.x) * 2
 
 # Calibrates the stored properties if they need to change before the origin is updated.
 # Only called during Gizmo movements for origin auto-updating.

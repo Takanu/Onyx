@@ -182,7 +182,7 @@ func _set(property, value):
 			
 			# ensure the origin mode toggle is preserved, and ensure the adjusted handles are saved.
 			previous_origin_mode = origin_mode
-			previous_a_controls = get_control_data()
+			pre_controls = get_control_data()
 			
 			return true
 		
@@ -634,7 +634,7 @@ func _update_origin_mode():
 		return
 	
 	# Re-add once handles are a thing, otherwise this breaks the origin stuff.
-	if a_controls.size() == 0:
+	if acv_controls.size() == 0:
 		return
 	
 #	print("[OnyxGenerator] ", self.name, " - _update_origin_mode()")
@@ -758,10 +758,10 @@ func build_control_points():
 	z_width.set_type_axis(false, "modify_control", "commit_control", Vector3(0, 0, 1))
 	
 	# populate the dictionary
-	a_controls["height_max"] = height_max
-	a_controls["height_min"] = height_min
-	a_controls["x_width"] = x_width
-	a_controls["z_width"] = z_width
+	acv_controls["height_max"] = height_max
+	acv_controls["height_min"] = height_min
+	acv_controls["x_width"] = x_width
+	acv_controls["z_width"] = z_width
 	
 	# need to give it positions in the case of a duplication or scene load.
 	refresh_control_data()
@@ -781,7 +781,7 @@ func refresh_control_data():
 	
 	# Failsafe for script reloads, BECAUSE I CURRENTLY CAN'T DETECT THEM.
 	# TODO - Migrate this to the new system somehow.
-	if a_controls.size() == 0:
+	if acv_controls.size() == 0:
 #		if gizmo != null:
 ##			print("...attempted to refresh_control_data(), rebuilding handles.")
 #			gizmo.control_points.clear()
@@ -796,22 +796,22 @@ func refresh_control_data():
 	
 	match origin_mode:
 		OriginPosition.CENTER:
-			a_controls["height_max"].control_pos = Vector3(0, height_max, 0)
-			a_controls["height_min"].control_pos = Vector3(0, -height_min, 0)
-			a_controls["x_width"].control_pos = Vector3(x_width, 0, 0)
-			a_controls["z_width"].control_pos = Vector3(0, 0, z_width)
+			acv_controls["height_max"].control_pos = Vector3(0, height_max, 0)
+			acv_controls["height_min"].control_pos = Vector3(0, -height_min, 0)
+			acv_controls["x_width"].control_pos = Vector3(x_width, 0, 0)
+			acv_controls["z_width"].control_pos = Vector3(0, 0, z_width)
 			
 		OriginPosition.BASE:
-			a_controls["height_max"].control_pos = Vector3(0, height_max, 0)
-			a_controls["height_min"].control_pos = Vector3(0, -height_min, 0)
-			a_controls["x_width"].control_pos = Vector3(x_width, height_mid, 0)
-			a_controls["z_width"].control_pos = Vector3(0, height_mid, z_width)
+			acv_controls["height_max"].control_pos = Vector3(0, height_max, 0)
+			acv_controls["height_min"].control_pos = Vector3(0, -height_min, 0)
+			acv_controls["x_width"].control_pos = Vector3(x_width, height_mid, 0)
+			acv_controls["z_width"].control_pos = Vector3(0, height_mid, z_width)
 			
 		OriginPosition.BASE_CORNER:
-			a_controls["height_max"].control_pos = Vector3(x_width, height_max, z_width)
-			a_controls["height_min"].control_pos = Vector3(x_width, -height_min, z_width)
-			a_controls["x_width"].control_pos = Vector3(x_width * 2, height_mid, z_width)
-			a_controls["z_width"].control_pos = Vector3(x_width, height_mid, z_width * 2)
+			acv_controls["height_max"].control_pos = Vector3(x_width, height_max, z_width)
+			acv_controls["height_min"].control_pos = Vector3(x_width, -height_min, z_width)
+			acv_controls["x_width"].control_pos = Vector3(x_width * 2, height_mid, z_width)
+			acv_controls["z_width"].control_pos = Vector3(x_width, height_mid, z_width * 2)
 
 	
 
@@ -864,16 +864,16 @@ func apply_control_attributes():
 	
 	# If the base corner is the current origin, we need to deal with widths differently.
 	if origin_mode == OriginPosition.BASE_CORNER:
-		height_max = a_controls["height_max"].control_pos.y
-		height_min = a_controls["height_min"].control_pos.y * -1
-		x_width = a_controls["x_width"].control_pos.x / 2
-		z_width = a_controls["z_width"].control_pos.z / 2
+		height_max = acv_controls["height_max"].control_pos.y
+		height_min = acv_controls["height_min"].control_pos.y * -1
+		x_width = acv_controls["x_width"].control_pos.x / 2
+		z_width = acv_controls["z_width"].control_pos.z / 2
 		
 	else:
-		height_max = a_controls["height_max"].control_pos.y
-		height_min = a_controls["height_min"].control_pos.y * -1
-		x_width = a_controls["x_width"].control_pos.x
-		z_width = a_controls["z_width"].control_pos.z
+		height_max = acv_controls["height_max"].control_pos.y
+		height_min = acv_controls["height_min"].control_pos.y * -1
+		x_width = acv_controls["x_width"].control_pos.x
+		z_width = acv_controls["z_width"].control_pos.z
 
 # Calibrates the stored properties if they need to change before the origin is updated.
 # Only called during Gizmo movements for origin auto-updating.

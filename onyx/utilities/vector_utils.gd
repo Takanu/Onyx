@@ -761,6 +761,7 @@ static func clamp_int(input : int, min_value : int, max_value : int) -> int:
 		
 	return result
 	
+	
 # "Bends" the variable above or below either bound by the amount it breached said bounds.
 static func reflect_int(input : int, min_value : int, max_value: int) -> int:
 	
