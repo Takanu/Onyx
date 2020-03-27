@@ -225,13 +225,13 @@ func _set(property, value):
 # Returns the list of custom shape properties that an owner should save and display.
 func get_shape_properties() -> Dictionary:
 
-	var props = {
+	var props = [
 
 		# ORIGIN SETTINGS /////
 		
-		"origin_mode" : {	
-		
+		{	
 			"name" : "origin_mode",
+			"private_name" : "origin_mode",
 			"type" : TYPE_INT,
 			"usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
 			"hint": PROPERTY_HINT_ENUM,
@@ -240,46 +240,46 @@ func get_shape_properties() -> Dictionary:
 		
 		# START AND END POINTS /////
 		
-		"start_position" : {	
-		
+		{	
 			"name" : "start_position",
+			"private_name" : "start_position",
 			"type" : TYPE_VECTOR3,
 			"usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
 		},
 		
-		"end_position" : {	
-		
+		{	
 			"name" : "end_position",
+			"private_name" : "end_position",
 			"type" : TYPE_VECTOR3,
 			"usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
 		},
 		
 		# SHAPE PROPERTIES /////
 		
-		"stair_width" : {	
-		
+		{	
 			"name" : "stair_width",
+			"private_name" : "stair_width",
 			"type" : TYPE_REAL,
 			"usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
 		},
 		
-		"stair_depth" : {	
-		
+		{	
 			"name" : "stair_depth",
+			"private_name" : "stair_depth",
 			"type" : TYPE_REAL,
 			"usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
 		},
 
-		"stair_length_percentage" : {	
-		
+		{	
 			"name" : "stair_length_percentage",
+			"private_name" : "stair_length_percentage",
 			"type" : TYPE_VECTOR2,
 			"usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
 		},
 
-		"use_count_proportionally" : {	
-		
+		{	
 			"name" : "use_count_proportionally",
+			"private_name" : "use_count_proportionally",
 			"type" : TYPE_BOOL,
 			"usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
 		},
@@ -297,36 +297,38 @@ func get_shape_properties() -> Dictionary:
 		
 		# UV / NORMALS /////
 		
-		"unwrap_method" : {	
-		
+		{	
 			"name" : "uv_options/unwrap_method",
+			"private_name" : "unwrap_method",
 			"type" : TYPE_INT,
 			"usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
 			"hint": PROPERTY_HINT_ENUM,
 			"hint_string": "None, Minus Y, Plus Y"
 		},
 		
-		"smooth_normals" : {	
-		
+		{	
 			"name" : "uv_options/smooth_normals",
+			"private_name" : "smooth_normals",
 			"type" : TYPE_BOOL,
 			"usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
 		},
-	}
+	]
 
 	if use_count_proportionally == false:
-		props["stair_count"] = {
+		props.append( {
 			"name" : "stair_count",
+			"private_name" : "stair_count",
 			"type" : TYPE_INT,
 			"usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
-		}
+		} )
 
 	else:
-		props["stairs_per_unit"] = {
+		props.append( {
 			"name" : "stairs_per_unit",
+			"private_name" : "stairs_per_unit",
 			"type" : TYPE_REAL,
 			"usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
-		}
+		} )
 
 
 	return props

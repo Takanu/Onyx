@@ -121,9 +121,9 @@ var ramp_fill_type = RampFillType.NONE
 
 var width_margin = Vector2(0.2, 0.2)
 
-var depth_margin = Vector2(0.2, 0.2)
+var depth_margin = Vector2(0.2, -0.01)
 
-var cap_margin = Vector2(-1, -1)
+var cap_margin = Vector2(1.01, -0.01)
 
 
 
@@ -276,103 +276,103 @@ func _set(property, value):
 # Returns the list of custom shape properties that an owner should save and display.
 func get_shape_properties() -> Dictionary:
 
-    var props = {
+    var props = [
 
         # ORIGIN SETTINGS /////
         
-        "origin_mode" : {	
-        
+        {	
             "name" : "origin_mode",
+			"private_name" : "origin_mode",
             "type" : TYPE_INT,
             "usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
             "hint": PROPERTY_HINT_ENUM,
-            "hint_string": "Center, Base, Bottom Corner"
+            "hint_string": "Center, Base, Bottom Corner",
         },
         
         # START AND END POINTS /////
         
-        "start_position" : {	
-        
+        {	
             "name" : "start/start_position",
+			"private_name" : "start_position",
             "type" : TYPE_VECTOR3,
             "usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
 		},
 		
-		"start_rotation" : {	
-        
+		{	
             "name" : "start/start_rotation",
+			"private_name" : "start_rotation",
             "type" : TYPE_VECTOR3,
             "usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
 		},
 
-		"start_ramp_width" : {	
-        
+		{	
             "name" : "start/start_ramp_width",
+			"private_name" : "start_ramp_width",
             "type" : TYPE_VECTOR2,
             "usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
 		},
 
-		"start_ramp_depth" : {	
-        
+		{	
             "name" : "start/start_ramp_depth",
+			"private_name" : "start_ramp_depth",
             "type" : TYPE_VECTOR2,
             "usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
 		},
 		
-		"end_position" : {	
-        
+		{	
             "name" : "end/end_position",
+			"private_name" : "end_position",
             "type" : TYPE_VECTOR3,
             "usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
 		},
 		
-		"end_rotation" : {	
-        
+		{	
             "name" : "end/end_rotation",
+			"private_name" : "end_rotation",
             "type" : TYPE_VECTOR3,
             "usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
 		},
 
-		"end_ramp_width" : {	
-        
+		{	
             "name" : "end/end_ramp_width",
+			"private_name" : "end_ramp_width",
             "type" : TYPE_VECTOR2,
             "usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
 		},
 
-		"end_ramp_depth" : {	
-        
+		{	
             "name" : "end/end_ramp_depth",
+			"private_name" : "end_ramp_depth",
             "type" : TYPE_VECTOR2,
             "usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
 		},
 		
 		# SHAPE PROPERTIES /////
         
-        "maintain_width" : {	
-        
+        {	
             "name" : "maintain_width",
+			"private_name" : "maintain_width",
             "type" : TYPE_BOOL,
             "usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
 		},
 		
-		"horizontal_edge_loops" : {	
-        
+		{	
             "name" : "horizontal_edge_loops",
+			"private_name" : "horizontal_edge_loops",
             "type" : TYPE_INT,
             "usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
 		},
 		
-		"vertical_edge_loops" : {	
-        
+		{	
             "name" : "vertical_edge_loops",
+			"private_name" : "vertical_edge_loops",
             "type" : TYPE_INT,
             "usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
 		},
 
-		"depth_edge_loops" : {	
-        
+		{	
             "name" : "depth_edge_loops",
+			"private_name" : "depth_edge_loops",
             "type" : TYPE_INT,
             "usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
 		},
@@ -382,46 +382,46 @@ func get_shape_properties() -> Dictionary:
         
         # UV / NORMALS /////
         
-        "unwrap_method" : {	
-        
+        {	
             "name" : "uv_options/unwrap_method",
+			"private_name" : "unwrap_method",
             "type" : TYPE_INT,
 			"usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
 			"hint": PROPERTY_HINT_ENUM,
             "hint_string": "Per-Face Mapping"
         },
         
-        "smooth_normals" : {	
-        
+        {	
             "name" : "uv_options/smooth_normals",
+			"private_name" : "smooth_normals",
             "type" : TYPE_BOOL,
             "usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
         },
 
 		 # HOLLOW MARGINS /////
 
-		"width_margin" : {	
-        
+		{	
             "name" : "hollow_mode/width_margin",
+			"private_name" : "width_margin",
             "type" : TYPE_VECTOR2,
             "usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
 		},
 
-		"depth_margin" : {	
-        
+		{	
             "name" : "hollow_mode/depth_margin",
+			"private_name" : "depth_margin",
             "type" : TYPE_VECTOR2,
             "usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
 		},
 
-		"cap_margin" : {	
-        
+		{	
             "name" : "hollow_mode/cap_margin",
+			"private_name" : "cap_margin",
             "type" : TYPE_VECTOR2,
             "usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
 		},
 
-    }
+	]
 
     return props
 

@@ -243,13 +243,13 @@ func _set(property, value):
 # Returns the list of custom shape properties that an owner should save and display.
 func get_shape_properties() -> Dictionary:
 
-    var props = {
+    var props = [
 
         # ORIGIN SETTINGS /////
         
-        "origin_mode" : {	
-        
+        {	
             "name" : "origin_mode",
+			"private_name" : "origin_mode",
             "type" : TYPE_INT,
             "usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
             "hint": PROPERTY_HINT_ENUM,
@@ -258,58 +258,60 @@ func get_shape_properties() -> Dictionary:
         
         # SHAPE PROPERTIES /////
         
-        "point_position" : {	
-        
+        {	
             "name" : "point_position",
+			"private_name" : "point_position",
             "type" : TYPE_VECTOR3,
             "usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
         },
         
-        "point_size_plus" : {	
+        {	
         
             "name" : "point_size_plus",
+			"private_name" : "point_size_plus",
             "type" : TYPE_REAL,
             "usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
         },
         
-        "point_size_minus" : {	
+        {	
         
             "name" : "point_size_minus",
+			"private_name" : "point_size_minus",
             "type" : TYPE_REAL,
             "usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
         },
         
-        "x_minus_position" : {	
-        
+        {	
             "name" : "x_minus_position",
+			"private_name" : "x_minus_position",
             "type" : TYPE_REAL,
             "usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
         },
 
-		"x_plus_position" : {	
-        
+		{	
             "name" : "x_plus_position",
+			"private_name" : "x_plus_position",
             "type" : TYPE_REAL,
             "usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
         },
 
-		"z_minus_position" : {	
-        
+		{	
             "name" : "z_minus_position",
+			"private_name" : "z_minus_position",
             "type" : TYPE_REAL,
             "usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
         },
 
-		"z_plus_position" : {	
-        
+		{	
             "name" : "z_plus_position",
+			"private_name" : "z_plus_position",
             "type" : TYPE_REAL,
             "usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
         },
         
-        "keep_point_proportional" : {	
-        
+        {	
             "name" : "keep_point_proportional",
+			"private_name" : "keep_point_proportional",
             "type" : TYPE_BOOL,
             "usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
         },
@@ -317,22 +319,22 @@ func get_shape_properties() -> Dictionary:
         
         # UV / NORMALS /////
         
-        "unwrap_method" : {	
-        
+        {	
             "name" : "uv_options/unwrap_method",
+			"private_name" : "unwrap_method",
             "type" : TYPE_INT,
             "usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
             "hint": PROPERTY_HINT_ENUM,
             "hint_string": "Proportional Overlap, Per-Face Mapping"
         },
         
-        "smooth_normals" : {	
-        
+        {	
             "name" : "uv_options/smooth_normals",
+			"private_name" : "smooth_normals",
             "type" : TYPE_BOOL,
             "usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
         },
-    }
+	]
 
     return props
 

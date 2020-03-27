@@ -251,29 +251,29 @@ func _set(property, value):
 # Returns the list of custom shape properties that an owner should save and display.
 func get_shape_properties() -> Dictionary:
 
-	var props = {
+	var props = [
 		
 		# SHAPE PROPERTIES /////
 		
-		"corner_size" : {	
-		
+		{	
 			"name" : "corner_size",
+			"private_name" : "corner_size",
 			"type" : TYPE_REAL,
 			"usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
 		},
 		
-		"corner_faces" : {	
-		
+		{	
 			"name" : "corner_faces",
+			"private_name" : "corner_faces",
 			"type" : TYPE_INT,
 			"usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
 		},
 		
 		# ORIGIN SETTINGS /////
 		
-		"origin_mode" : {	
-		
+		{	
 			"name" : "origin_mode",
+			"private_name" : "origin_mode",
 			"type" : TYPE_INT,
 			"usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
 			"hint": PROPERTY_HINT_ENUM,
@@ -282,23 +282,23 @@ func get_shape_properties() -> Dictionary:
 		
 		# UV / NORMALS /////
 		
-		"unwrap_method" : {	
-		
+		{	
 			"name" : "uv_options/unwrap_method",
+			"private_name" : "unwrap_method",
 			"type" : TYPE_INT,
 			"usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
 			"hint": PROPERTY_HINT_ENUM,
 			"hint_string": "Proportional Overlap, Per-Face Mapping"
 		},
 		
-		"smooth_normals" : {	
-		
+		{	
 			"name" : "uv_options/smooth_normals",
+			"private_name" : "smooth_normals",
 			"type" : TYPE_BOOL,
 			"usage": PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
 		},
 		
-	}
+	]
 	
 	# ///// POSITIONAL PROPERTIES /////
 	
@@ -308,11 +308,12 @@ func get_shape_properties() -> Dictionary:
 		
 		var property_name = position + "_position"
 		
-		props[property_name] = {
+		props.append( {
 			"name" : property_name,
+			"private_name" : property_name,
 			"type" : TYPE_REAL,
 			"hint" : PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
-		}
+		} )
 
 	# ///// HOLLOW MARGIN PROPERTIES /////
 	
@@ -320,11 +321,12 @@ func get_shape_properties() -> Dictionary:
 		
 		var property_name = "_" + margin + "_hollow"
 		
-		props[property_name] = {
+		props.append( {
 			"name" : "hollow_mode/" + margin + "_margin",
+			"private_name" : property_name,
 			"type" : TYPE_REAL,
 			"hint" : PROPERTY_USAGE_STORAGE | PROPERTY_USAGE_EDITOR,
-		}
+		} )
 	
 	return props
 

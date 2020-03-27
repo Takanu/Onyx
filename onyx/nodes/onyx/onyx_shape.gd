@@ -82,9 +82,16 @@ var _onyx_mesh = OnyxMesh.new()
 var _generator : Spatial
 
 # Used to display the properties that the active shape generator makes available.
-var _gen_property_list : Dictionary = {}
+#
+# NOTE - An array is used to ensure that when nodes are loaded from a scene the
+# order of properties displayed remains the same.
+#
+var _gen_property_list : Array = []
 
 # Used to store the properties of the active shape generator for future scene loads.
+#
+# NOTE - Stores the private property names, not the public-facing ones.
+#
 var _gen_property_values : Dictionary = {}
 
 # If true, this node is currently selected in the editor
@@ -105,6 +112,10 @@ var hollow_mesh : Mesh
 
 # Hollow object material storage.
 var hollow_material : Material
+
+# The last-found position for the hollow object.  Used in save loads to 
+# re-position the hollow when no generator exists.
+var hollow_last_position : Vector3 = Vector3()
 
 
 # //////////////////
@@ -139,11 +150,6 @@ func _enter_tree():
 			_update_boolean_mode()
 
 
-	# Required to build hollow data before the scene loads
-	if Engine.editor_hint == false:
-		_build_runtime_hollow_object()
-
-
 # Called when the node is "ready", i.e. when both the node and its children have 
 # entered the scene tree. If the node has children, their _ready() callbacks get triggered 
 # first, and the parent node will receive the ready notification afterwards.
@@ -167,6 +173,10 @@ func _ready():
 		# If hollow mode is on, initialize the data for it.
 		if hollow_enable == true:
 			_create_hollow_object()
+	
+	# Required to build hollow data before the scene loads
+	if Engine.editor_hint == false:
+		_build_runtime_hollow_object()
 
 
 # Called when the node is removed from the scene tree for any reason.
@@ -196,7 +206,7 @@ func _exit_tree():
 # advanced usage but... why.
 
 func _get_property_list():
-#	print("[OnyxShape] ", self.get_name() , " - _get_property_list()")
+	# print("[OnyxShape] ", self.get_name() , " - _get_property_list()")
 	var props = [
 		
 		{
@@ -224,12 +234,18 @@ func _get_property_list():
 		{
 			"name" : "hollow_mode/hollow_material",
 			"type" : TYPE_OBJECT,
-			"hint": PROPERTY_HINT_RESOURCE_TYPE,
+			"hint": PROPERTY_USAGE_STORAGE | PROPERTY_HINT_RESOURCE_TYPE,
 			"hint_string": "Material"
 		},
 		
 		{
 			"name" : "hollow_mode/hollow_mesh",
+			"type" : TYPE_OBJECT,
+			"usage" : PROPERTY_USAGE_STORAGE,
+		},
+
+		{
+			"name" : "hollow_last_position",
 			"type" : TYPE_OBJECT,
 			"usage" : PROPERTY_USAGE_STORAGE,
 		},
@@ -244,7 +260,7 @@ func _get_property_list():
 	]
 	
 	# Load properties from the current generator
-	for property in _gen_property_list.values():
+	for property in _gen_property_list:
 		props.append(property)
 	
 	
@@ -285,16 +301,19 @@ func _set(property, value):
 		"uv_options/uv_scale":
 			uv_scale = value
 			_update_geometry()
+			_update_hollow_geometry()
 			return true
 			
 		"uv_options/flip_uvs_horizontally":
 			flip_uvs_horizontally = value
 			_update_geometry()
+			_update_hollow_geometry()
 			return true
 			
 		"uv_options/flip_uvs_vertically":
 			flip_uvs_vertically = value
 			_update_geometry()
+			_update_hollow_geometry()
 			return true
 		
 		# Hollow Mode /////
@@ -311,6 +330,10 @@ func _set(property, value):
 			hollow_mesh = value
 			return true
 		
+		"hollow_last_position":
+			hollow_last_position = value
+			return true
+		
 		# Generator /////
 		
 		"_gen_property_list":
@@ -320,19 +343,18 @@ func _set(property, value):
 	
 	# Match with a generator property and save internally
 	var i = 0
-	for gen_property in _gen_property_list.values():
+	for gen_property in _gen_property_list:
 		
 		# match it with the property name we wanted to publish.
 		if property == gen_property["name"]:
-			var gen_property_name = _gen_property_list.keys()[i]
-#			print("aaa")
+			var private_name = gen_property["private_name"]
 			
 			if _generator != null:
-				
-				_generator._set(gen_property_name, value)
-				_gen_property_values[gen_property_name] = value
+				_generator._set(private_name, value)
+				_gen_property_values[private_name] = value
+
 			else:
-				_gen_property_values[gen_property_name] = value
+				_gen_property_values[private_name] = value
 			
 			return true
 			
@@ -367,6 +389,8 @@ func _get(property):
 			return hollow_material
 		"hollow_mode/hollow_mesh":
 			return hollow_mesh
+		"hollow_last_position":
+			return hollow_last_position
 		
 		# Generator /////
 		
@@ -376,14 +400,14 @@ func _get(property):
 	
 	# Match with a generator property 
 	var i = 0
-	for gen_property in _gen_property_list.values():
+	for gen_property in _gen_property_list:
 		
 		# match it with the property name we wanted to publish.
 		if property == gen_property["name"]:
-			var gen_property_name = _gen_property_list.keys()[i]
+			var private_name = gen_property["private_name"]
 			
 			if _generator != null:
-				return _generator.get(gen_property_name)
+				return _generator.get(private_name)
 				
 		i += 1
 	
@@ -424,7 +448,6 @@ func activate_node():
 	_generator = script.new()
 	_generator.name = GENERATOR_NODE_NAME
 	self.add_child(_generator)
-	print("New generator - ", _generator)
 	
 	# Send property list data
 	_load_genenerator_properties()
@@ -502,7 +525,7 @@ func load_generator_data():
 # Called as a SET/GETTER by generator_type to change the generator being used
 func switch_generator(new_value):
 	
-	print("received value for switching generator - ", new_value)
+	# print("received value for switching generator - ", new_value)
 
 	if shape_type == new_value:
 		return
@@ -574,18 +597,19 @@ func _rebuild_genenerator_property_values():
 	
 	if Engine.editor_hint == false || is_inside_tree() == false:
 		return
+	
+	# print("[OnyxShape] ", self.get_name() , 
+	# 		" - _rebuild_genenerator_property_values()")
 
 	_gen_property_values.clear()
 	
-	var i = 0
-	var property_keys = _gen_property_list.keys()
+	var property_keys : Array = []
+	for property in _gen_property_list:
+		property_keys.append(property["private_name"])
 	
-	while i < property_keys.size():
-		var property = property_keys[i]
-		var value = _generator.get(property)
-		
-		_gen_property_values[property] = value
-		i += 1
+	for key in property_keys:
+		var value = _generator.get(key)
+		_gen_property_values[key] = value
 
 
 # Feeds the generator all the properties that OnyxShape currently has saved.
@@ -593,6 +617,9 @@ func _load_genenerator_properties():
 	
 	if Engine.editor_hint == false || is_inside_tree() == false:
 		return
+	
+	# print("[OnyxShape] ", self.get_name() , 
+	# 		" - _load_genenerator_properties()")
 	
 	var i = 0
 	var values = _gen_property_values.values()
@@ -683,7 +710,8 @@ func _update_hollow_geometry():
 	
 #	print("[OnyxShape] ", self.get_name() , " - _update_hollow_mesh()")
 	
-	if Engine.editor_hint == false || hollow_object == null || hollow_enable == false:
+	if ( Engine.editor_hint == false || hollow_object == null || 
+			hollow_enable == false ):
 		return
 	
 	# Get the geometry from the generator.
@@ -711,6 +739,7 @@ func _update_hollow_geometry():
 	# Set the transform
 	var new_location = _generator.get_hollow_origin()
 	hollow_object.translation = new_location
+	hollow_last_position = new_location
 	
 	update_gizmo()
 
@@ -791,11 +820,11 @@ func _update_boolean_geometry():
 			boolean_material = load("res://addons/onyx/materials/wireframes/onyx_wireframe_sub.material")
 		
 		# Set the new mesh using the current mesh
-		var helper = MeshDataTool.new()
-		var boolean_mesh = Mesh.new()
-		helper.create_from_surface(mesh, 0)
-		helper.set_material(boolean_material)
-		helper.commit_to_surface(boolean_mesh)
+		var boolean_mesh : Mesh = mesh.duplicate(false)
+		var surface_count = boolean_mesh.get_surface_count()
+
+		for i in range(surface_count):
+			boolean_mesh.surface_set_material(i, boolean_material)
 		
 		boolean_preview_node.set_mesh(boolean_mesh)
 		
@@ -835,8 +864,10 @@ func _update_hollow_enable(value):
 # Setter for hollow materials
 func _update_hollow_material(value):
 	
-	if Engine.editor_hint == false || hollow_material == value:
+	if hollow_material == value:
 		return
+	
+	# print("[Onyx] ", self.get_name() , " - _update_hollow_material()")
 		
 	hollow_material = value
 	
@@ -851,10 +882,12 @@ func _create_hollow_object():
 	
 	# REMEMBER THAT RE-SAVING A SCRIPT CAUSES IT TO BE RELOADED, MUST HAVE INSURANCE POLICY
 	if Engine.editor_hint == false || hollow_object != null:
-#			print("Hollow object already found, returning!")
+		print("Hollow object already found, returning!")
 		return
 	
 	if has_node(HOLLOW_OBJECT_NAME):
+		print("""Hollow object already exists in the scene, 
+				assigning and returning!""")
 		hollow_object = self.get_node(HOLLOW_OBJECT_NAME)
 		return
 	
@@ -870,7 +903,12 @@ func _create_hollow_object():
 		_update_hollow_geometry()
 	
 	# Set the origin and operation mode
-	_generator.get_hollow_origin()
+	if _generator != null:
+		hollow_object.translation = _generator.get_hollow_origin()
+	else:
+		hollow_object.translation = hollow_last_position
+	
+	# Set the operation mode to subtract
 	hollow_object.operation = 2
 	
 	# If the parent has a material, let the child inherit it.
@@ -879,7 +917,7 @@ func _create_hollow_object():
 	elif material != null:
 		hollow_material = self.material
 	
-	print("new hollow object - ", hollow_object)
+	# print("new hollow object - ", hollow_object)
 
 
 # Deletes the hollow object node and defaults all hollow data.
@@ -902,21 +940,18 @@ func _delete_hollow_object():
 # Creates a hollow object node when it is loaded at runtime.
 func _build_runtime_hollow_object():
 	
-#	print("[Onyx] ", self.get_name() , " - _build_runtime_hollow_object()")
+	# print("[Onyx] ", self.get_name() , " - _build_runtime_hollow_object()")
 	
 	if Engine.editor_hint == false:
 		if hollow_mesh != null:
-			
-			print("buildin dat hollow - ", hollow_mesh)
+
 			hollow_object = CSGMesh.new()
 			hollow_object.set_name(HOLLOW_OBJECT_NAME)
 			add_child(hollow_object)
 			
 			hollow_object.operation = 2
-			hollow_object.material = hollow_material
 			hollow_object.set_mesh(hollow_mesh)
-			
-			print(hollow_object.mesh)
+			hollow_object.material = hollow_material
 
 # ////////////////////////////////////////////////////////////
 # GIZMO INTERFACE

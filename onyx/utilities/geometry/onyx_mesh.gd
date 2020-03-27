@@ -380,71 +380,44 @@ func add_tri_array(vertices : Array):
 # Rendering as this type is good for dynamic objects whose shape is to be updated at run-time, when no collision is needed.
 func render_immediate_geometry(geom : ImmediateGeometry):
 
-	geom.clear()
+	print("RENDERING AS IMMEDIATE GEOMETRY WONT WORK RN, DO THIS AGAIN.")
+	return
 
-	for triangle in tris:
-		var vertices = triangle[0]
-		var colors = triangle[1]
-		var tangents = triangle[2]
-		var uvs = triangle[3]
-		var normals = triangle[4]
+	# geom.clear()
 
-		geom.begin(Mesh.PRIMITIVE_TRIANGLES, null)
+	# for triangle in tris:
+	# 	var vertices = triangle[0]
+	# 	var colors = triangle[1]
+	# 	var tangents = triangle[2]
+	# 	var uvs = triangle[3]
+	# 	var normals = triangle[4]
 
-		for i in vertices.size():
+	# 	geom.begin(Mesh.PRIMITIVE_TRIANGLES, null)
 
-			if colors[i] != null:
-				geom.set_color(colors[i])
+	# 	for i in vertices.size():
 
-			if tangents[i] != null:
-				geom.set_tangent(tangents[i])
+	# 		if colors[i] != null:
+	# 			geom.set_color(colors[i])
 
-			if uvs[i] != null:
-				geom.set_uv(uvs[i])
+	# 		if tangents[i] != null:
+	# 			geom.set_tangent(tangents[i])
 
-			if normals[i] != null:
-				geom.set_normal(normals[i])
+	# 		if uvs[i] != null:
+	# 			geom.set_uv(uvs[i])
 
-			geom.add_vertex(vertices[i])
+	# 		if normals[i] != null:
+	# 			geom.set_normal(normals[i])
 
-		geom.end()
+	# 		geom.add_vertex(vertices[i])
 
-# Renders available face geometry using SurfaceTool and returns a mesh.
-# Rendering as this type is good for static objects, it's just... easier.
-func render_surface_geometry(material : Material = null, generate_normals = false) -> ArrayMesh:
-
-	var surface = SurfaceTool.new()
-	surface.begin(Mesh.PRIMITIVE_TRIANGLES)
-
-	for triangle in tris:
-#		print("rendering triangle = ", triangle)
-		var vertices = triangle[0]
-		var colors = triangle[1]
-		var tangents = triangle[2]
-		var uvs = triangle[3]
-		var normals = triangle[4]
-
-		#var indexes = [0, 1, 2, 2, 3, 0]
-
-		surface.add_triangle_fan(
-			PoolVector3Array(vertices), 
-			PoolVector2Array(uvs), 
-			PoolColorArray(colors), 
-			PoolVector2Array(), 
-			PoolVector3Array(normals),
-			tangents)
-
-	surface.index()
-
-	if material != null:
-		surface.set_material(material)
-
-	surface.generate_tangents()
-	return surface.commit()
+	# 	geom.end()
 
 
-# TEST!
-func render_individual_surfaces(material : Material = null) -> Array:
+# Renders available face geometry using SurfaceTool and returns an 
+# array of ArrayMeshes.
+#
+# NOTE - Uses the SurfaceTool, this is basically a depracated function
+func render_surfacetool_arrays(material : Material = null) -> Array:
 
 	if tris.size() != 0:
 		surfaces.append(tris)
@@ -571,29 +544,32 @@ func render_array_meshes(material : Material):
 # Renders the available geometry as a wireframe, using a provided ImmediateGeometry node.
 func render_wireframe(geom : ImmediateGeometry, color : Color):
 
-	geom.clear()
+	print("RENDERING AS WIREFRAME WONT WORK RN, DO THIS AGAIN.")
+	return
 
-	for triangle in tris:
-		var vertices = triangle[0]
+	# geom.clear()
 
-		geom.begin(Mesh.PRIMITIVE_LINES, null)
+	# for triangle in tris:
+	# 	var vertices = triangle[0]
 
-		geom.set_color(color)
-		geom.add_vertex(vertices[0])
-		geom.set_color(color)
-		geom.add_vertex(vertices[1])
+	# 	geom.begin(Mesh.PRIMITIVE_LINES, null)
 
-		geom.set_color(color)
-		geom.add_vertex(vertices[1])
-		geom.set_color(color)
-		geom.add_vertex(vertices[2])
+	# 	geom.set_color(color)
+	# 	geom.add_vertex(vertices[0])
+	# 	geom.set_color(color)
+	# 	geom.add_vertex(vertices[1])
 
-		geom.set_color(color)
-		geom.add_vertex(vertices[2])
-		geom.set_color(color)
-		geom.add_vertex(vertices[0])
+	# 	geom.set_color(color)
+	# 	geom.add_vertex(vertices[1])
+	# 	geom.set_color(color)
+	# 	geom.add_vertex(vertices[2])
 
-		geom.end()
+	# 	geom.set_color(color)
+	# 	geom.add_vertex(vertices[2])
+	# 	geom.set_color(color)
+	# 	geom.add_vertex(vertices[0])
+
+	# 	geom.end()
 
 
 # ////////////////////////////////////////////////////////////
@@ -602,39 +578,45 @@ func render_wireframe(geom : ImmediateGeometry, color : Color):
 # Flips all the normals for each vertex.
 func flip_normals():
 
-	for tri in tris:
-		var normals = tri[4]
-		var new_normals = []
+	for surface in surfaces:
+		for tris in surface:
 
-		for normal in normals:
-			new_normals.append(normal * -1)
+			var normals = tris[4]
+			var new_normals = []
 
-		tri[4] = new_normals
+			for normal in normals:
+				new_normals.append(normal * -1)
+
+			tris[4] = new_normals
 
 
 # Flips the draw order for all triangles.
+# TODO - Why do i need this right now?
+#
 func flip_draw_order():
 
-	for tri in tris:
-		var split_vertices = separate_vertices(tri)
-		tri[0] = [split_vertices[0][0], split_vertices[2][0], split_vertices[1][0]]
-		tri[1] = [split_vertices[0][1], split_vertices[2][1], split_vertices[1][1]]
-		tri[2] = [split_vertices[0][2], split_vertices[2][2], split_vertices[1][2]]
-		tri[3] = [split_vertices[0][3], split_vertices[2][3], split_vertices[1][3]]
-		tri[4] = [split_vertices[0][4], split_vertices[2][4], split_vertices[1][4]]
+	for surface in surfaces:
+		for tri in surface:
+			var split_vertices = separate_vertices(tri)
+			tri[0] = [split_vertices[0][0], split_vertices[2][0], split_vertices[1][0]]
+			tri[1] = [split_vertices[0][1], split_vertices[2][1], split_vertices[1][1]]
+			tri[2] = [split_vertices[0][2], split_vertices[2][2], split_vertices[1][2]]
+			tri[3] = [split_vertices[0][3], split_vertices[2][3], split_vertices[1][3]]
+			tri[4] = [split_vertices[0][4], split_vertices[2][4], split_vertices[1][4]]
 
 # Multiplies all UVs with the given vector
 func multiply_uvs(transform : Vector2):
 
-	for tri in tris:
-		var uvs = tri[3]
-		var new_uvs = []
+	for surface in surfaces:
+		for tri in surface:
+			var uvs = tri[3]
+			var new_uvs = []
 
-		for uv in uvs:
-			if uv != null:
-				new_uvs.append(uv * transform)
+			for uv in uvs:
+				if uv != null:
+					new_uvs.append(uv * transform)
 
-		tri[3] = new_uvs
+			tri[3] = new_uvs
 
 
 # Bevels hard edges of the mesh.
