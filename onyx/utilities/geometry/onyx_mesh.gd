@@ -505,71 +505,38 @@ func render_array_meshes(material : Material):
 	return mesh
 
 
-	# var positions = PoolVector3Array([
-	# 	Vector3(0, 0, 1),
-	# 	Vector3(0, 0, 0),
-	# 	Vector3(0, 1, 0),
-	# 	Vector3(0, 1, 1)
-	# ])
-	# var normals = PoolVector3Array([
-	# 	Vector3(1, 0, 0),
-	# 	Vector3(1, 0, 0),
-	# 	Vector3(1, 0, 0),
-	# 	Vector3(1, 0, 0)
-	# ])
-	# var uvs = PoolVector2Array([
-	# 	Vector2(0, 0),
-	# 	Vector2(0.25, 0),
-	# 	Vector2(0.25, 0.25),
-	# 	Vector2(0, 0.25)
-	# ])
-	# var indices = PoolIntArray([
-	# 	0, 1, 2,
-	# 	0, 2, 3
-	# ])
-	
-	# var arrays = []
-	# arrays.resize(Mesh.ARRAY_MAX)
-	# arrays[Mesh.ARRAY_VERTEX] = positions
-	# arrays[Mesh.ARRAY_NORMAL] = normals
-	# arrays[Mesh.ARRAY_TEX_UV] = uvs
-	# arrays[Mesh.ARRAY_INDEX] = indices
-	
-	# var mesh = ArrayMesh.new()
-	# mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
-	
-	# var mi = get_node("MeshInstance")
-	# mi.mesh = mesh
+# Renders the available geometry as a wireframe.  Combines all surfaces
+# and returns an ArrayMesh suitable for wireframe rendering.
+#
+# TODO - This doesn't work T _ T
+#
+func render_wireframe(material : Material) -> ArrayMesh:
 
-# Renders the available geometry as a wireframe, using a provided ImmediateGeometry node.
-func render_wireframe(geom : ImmediateGeometry, color : Color):
+	if tris.size() != 0:
+		surfaces.append(tris)
 
-	print("RENDERING AS WIREFRAME WONT WORK RN, DO THIS AGAIN.")
-	return
+	var mesh = ArrayMesh.new()
+	var positions = PoolVector3Array()
 
-	# geom.clear()
+	for surface in surfaces:
 
-	# for triangle in tris:
-	# 	var vertices = triangle[0]
+		var i = 0
+		for triangle in surface:
+			positions.push_back(triangle[0][0])
+			positions.push_back(triangle[0][1])
+			positions.push_back(triangle[0][1])
+			positions.push_back(triangle[0][2])
 
-	# 	geom.begin(Mesh.PRIMITIVE_LINES, null)
+			i += 3
 
-	# 	geom.set_color(color)
-	# 	geom.add_vertex(vertices[0])
-	# 	geom.set_color(color)
-	# 	geom.add_vertex(vertices[1])
+	var arrays = []
+	arrays.resize(Mesh.ARRAY_MAX)
+	arrays[Mesh.ARRAY_VERTEX] = positions
 
-	# 	geom.set_color(color)
-	# 	geom.add_vertex(vertices[1])
-	# 	geom.set_color(color)
-	# 	geom.add_vertex(vertices[2])
-
-	# 	geom.set_color(color)
-	# 	geom.add_vertex(vertices[2])
-	# 	geom.set_color(color)
-	# 	geom.add_vertex(vertices[0])
-
-	# 	geom.end()
+	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_LINES, arrays)
+	mesh.surface_set_material(0, material)
+		
+	return mesh
 
 
 # ////////////////////////////////////////////////////////////
@@ -934,10 +901,75 @@ func raycast_point_convex_hull(point):
 	
 	#print("point inside hull!")
 	return true
-	
+
 
 # ////////////////////////////////////////////////////////////
 # MANAGEMENT
 
 func clear():
 	tris.clear()
+
+
+# ////////////////////////////////////////////////////////////
+# STATIC MESH FUNCTIONS
+
+# Extracts a aesthetically-pleasing wireframe from an existing Mesh asset.
+# Thanks to this following Reddit conversation!
+# https://www.reddit.com/r/godot/comments/fb2tmh/experiment_with_vertex_shader_animation/
+#
+static func extract_wireframe_from_mesh(mesh : Mesh, 
+		material : Material) -> ArrayMesh:
+
+	var array = mesh.surface_get_arrays(0)
+
+	var wire_array = []
+	wire_array.resize(ArrayMesh.ARRAY_MAX)
+
+	var mesh_data_tool = MeshDataTool.new()
+	mesh_data_tool.create_from_surface(mesh, 0)
+	var vertices = PoolVector3Array()
+	
+	for j in range(mesh_data_tool.get_face_count()):
+		var vert_0 = mesh_data_tool.get_face_vertex(j, 0)
+		var vert_1 = mesh_data_tool.get_face_vertex(j, 1)
+		var vert_2 = mesh_data_tool.get_face_vertex(j, 2)
+		
+		var pos_0 = mesh_data_tool.get_vertex(vert_0)
+		var pos_1 = mesh_data_tool.get_vertex(vert_1)
+		var pos_2 = mesh_data_tool.get_vertex(vert_2)
+
+		var dist_01 = (pos_0 - pos_1).length()
+		var dist_12 = (pos_1 - pos_2).length()
+		var dist_20 = (pos_2 - pos_0).length()
+		
+		var valid_vec = []
+		
+		if dist_01 > dist_12 and dist_01 > dist_20:
+			valid_vec.push_back(pos_1)
+			valid_vec.push_back(pos_2)
+			valid_vec.push_back(pos_2)
+			valid_vec.push_back(pos_0)
+
+		elif dist_12 > dist_01 and dist_12 > dist_20:
+			valid_vec.push_back(pos_0)
+			valid_vec.push_back(pos_1)
+			valid_vec.push_back(pos_2)
+			valid_vec.push_back(pos_0)
+
+		else:
+			valid_vec.push_back(pos_0)
+			valid_vec.push_back(pos_1)
+			valid_vec.push_back(pos_1)
+			valid_vec.push_back(pos_2)
+				
+		for vertex in valid_vec:
+			vertices.push_back(vertex)
+
+	wire_array[ArrayMesh.ARRAY_VERTEX] = vertices
+	
+	var new_mesh = ArrayMesh.new()
+	new_mesh.add_surface_from_arrays(Mesh.PRIMITIVE_LINES, wire_array)
+	new_mesh.surface_set_material(0, material)
+
+	return new_mesh
+

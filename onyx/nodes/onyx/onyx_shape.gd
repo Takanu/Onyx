@@ -29,8 +29,11 @@ const GENERATOR_NODE_NAME = "**GENERATOR NODE**"
 # The name given to hollow objects
 const HOLLOW_OBJECT_NAME = "**HOLLOW ONYX OBJECT**"
 
-# The name for the node used to preview non-union boolean modes.
-const BOOLEAN_PREVIEW_OBJECT_NAME = "**BOOLEAN PREVIEW**"
+# The name for the node used to preview non-union boolean modes as a solid.
+const BOOLEAN_PREVIEW_SOLID_NAME = "**BOOLEAN SOLID PREVIEW**"
+
+# The name for the node used to preview non-union boolean modes as a wire.
+const BOOLEAN_PREVIEW_WIRE_NAME = "**BOOLEAN WIRE PREVIEW**"
 
 # The generator types.
 enum ShapeType {
@@ -122,8 +125,13 @@ var hollow_last_position : Vector3 = Vector3()
 # BOOLEAN PREVIEW
 
 # A node created in edit-mode to visualize shapes involved in boolean operations.
+# TODO - Do i need this?
+#
 var boolean_preview_node = null
 
+# Using these for live material tests, not for user releases.
+# export(Material) var boolean_wire_material : Material = null 
+# export(Material) var boolean_solid_material : Material = null
 
 
 # /////////////////////////////////////////////////////////////////////////////
@@ -168,7 +176,8 @@ func _ready():
 		else:
 			load_generator_data()
 		
-		_create_boolean_preview()
+		# Called to ask the boolean preview code if we need a new boolean shape or not.
+		_update_boolean_mode()
 		
 		# If hollow mode is on, initialize the data for it.
 		if hollow_enable == true:
@@ -663,10 +672,10 @@ func _update_geometry():
 	if Engine.editor_hint == false:
 		return
 	
-#	print("[OnyxShape] ", self.get_name() , " - _update_geometry()")
+	# print("[OnyxShape] ", self.get_name() , " - _update_geometry()")
 	
 	# Get the geometry from the generator.
-	var new_onyx_mesh = _generator.update_geometry()
+	_onyx_mesh = _generator.update_geometry()
 	
 	# Optional UV Modifications
 	var transform_vec = uv_scale
@@ -680,10 +689,10 @@ func _update_geometry():
 	if flip_uvs_horizontally == true:
 		transform_vec.x = transform_vec.x * -1.0
 	
-	new_onyx_mesh.multiply_uvs(transform_vec)
+	_onyx_mesh.multiply_uvs(transform_vec)
 	
 	# Create new mesh(es)
-	var array_mesh = new_onyx_mesh.render_array_meshes(material)
+	var array_mesh = _onyx_mesh.render_array_meshes(material)
 	set_mesh(array_mesh)
 	
 	# var helper = MeshDataTool.new()
@@ -715,7 +724,7 @@ func _update_hollow_geometry():
 		return
 	
 	# Get the geometry from the generator.
-	var new_onyx_mesh = _generator.update_hollow_geometry()
+	var hollow_onyx_mesh = _generator.update_hollow_geometry()
 	
 	# Optional UV Modifications
 	var transform_vec = uv_scale
@@ -729,10 +738,10 @@ func _update_hollow_geometry():
 	if flip_uvs_horizontally == true:
 		transform_vec.x = transform_vec.x * -1.0
 	
-	new_onyx_mesh.multiply_uvs(transform_vec)
+	hollow_onyx_mesh.multiply_uvs(transform_vec)
 	
 	# Create new mesh(es)
-	var array_mesh = new_onyx_mesh.render_array_meshes(material)
+	var array_mesh = hollow_onyx_mesh.render_array_meshes(material)
 	hollow_object.set_mesh(array_mesh)
 	hollow_mesh = array_mesh
 
@@ -751,34 +760,64 @@ func _update_boolean_mode():
 	
 	if Engine.editor_hint == false || is_inside_tree() == false:
 		return
+
+	var is_parent_combiner = get_parent().is_class("CSGCombiner")
+	var is_parent_csg = get_parent().is_class("CSGShape")
 	
-#	print("[OnyxShape] ", self.get_name() , " - _switch_boolean_mode()")
 	
-	# if we were at 0 or we no longer have a CSG parent, abandon!
-	if operation == 0 || get_parent().is_class("CSGShape") == false:
+	print("[OnyxShape] ", self.get_name() , " - _update_boolean_mode()")
+	
+	# DELETIONS /////
+	# If the parent is neither CSG nor Combiner, we should never enable preview
+	if is_parent_combiner == false && is_parent_csg == false:
 		_delete_boolean_preview()
+		return
+
+	# if we were at 0 or we no longer have a CSG parent, abandon!
+	if operation == 0 && is_parent_csg == true :
+		_delete_boolean_preview()
+		return
 	
+	# IF THE PARENT IS A COMBINER AND HAS AN OPERATION OF 0, also delete.
+	if is_parent_combiner:
+		if get_parent().operation == 0:
+			_delete_boolean_preview()
+			return
+
+
+	# CREATIONS /////
 	# OTHERWISE create a boolean if needed and give the geometry with a new material
-	elif operation != 0 && get_parent().is_class("CSGShape") == true:
+	if operation != 0 && is_parent_csg:
 		_create_boolean_preview()
+		return
+
+	# OTHERWISE IF WE HAVE A COMBINER PARENT, we need to see what it does first
+	if is_parent_combiner:
+		if get_parent().operation != 0:
+			_create_boolean_preview()
+			return
 
 
 # Used to create a node used for previewing the mesh when using a non-union boolean mode.
+# DO NOT DIRECTLY CALL THIS, USE _UPDATE_BOOLEAN_PREVIEW() AS VERIFICATION.
 func _create_boolean_preview():
 	
 	if Engine.editor_hint == false || is_inside_tree() == false:
 		return
 	
-	# If we're in Union mode, nope.
-	if self.operation == 0:
-		return
-	
 #	print("[OnyxShape] ", self.get_name() , " - _create_boolean_preview()")
 	
-	if has_node(BOOLEAN_PREVIEW_OBJECT_NAME) == false:
+	# Create the solid
+	if has_node(BOOLEAN_PREVIEW_SOLID_NAME) == false:
 		boolean_preview_node = MeshInstance.new()
-		boolean_preview_node.set_name(BOOLEAN_PREVIEW_OBJECT_NAME)
+		boolean_preview_node.set_name(BOOLEAN_PREVIEW_SOLID_NAME)
 		add_child(boolean_preview_node)
+	
+	# Create the wire
+	if has_node(BOOLEAN_PREVIEW_WIRE_NAME) == false:
+		var boolean_wire = MeshInstance.new()
+		boolean_wire.set_name(BOOLEAN_PREVIEW_WIRE_NAME)
+		add_child(boolean_wire)
 		
 	_update_boolean_geometry()
 
@@ -792,12 +831,19 @@ func _delete_boolean_preview():
 	
 #	print("[OnyxShape] ", self.get_name() , " - _delete_boolean_preview()")
 	
-	if has_node(BOOLEAN_PREVIEW_OBJECT_NAME) == true:
-		boolean_preview_node = get_node(BOOLEAN_PREVIEW_OBJECT_NAME)
+	if has_node(BOOLEAN_PREVIEW_SOLID_NAME) == true:
+		boolean_preview_node = get_node(BOOLEAN_PREVIEW_SOLID_NAME)
 		
 		remove_child(boolean_preview_node)
 		boolean_preview_node.free()
 		boolean_preview_node = null
+	
+	if has_node(BOOLEAN_PREVIEW_WIRE_NAME) == true:
+		var boolean_wire = get_node(BOOLEAN_PREVIEW_WIRE_NAME)
+		
+		remove_child(boolean_wire)
+		boolean_wire.free()
+		boolean_wire = null
 
 
 # Used to render the boolean preview.
@@ -809,26 +855,44 @@ func _update_boolean_geometry():
 #	print("[OnyxShape] ", self.get_name() , " - _update_boolean_geometry()")
 	
 	# If we have a boolean preview, decide what to do.
-	if has_node(BOOLEAN_PREVIEW_OBJECT_NAME) == true:
-		boolean_preview_node = get_node(BOOLEAN_PREVIEW_OBJECT_NAME)
-		
-		var boolean_material = null
-		
-		if operation == 1:
-			boolean_material = load("res://addons/onyx/materials/wireframes/onyx_wireframe_int.material")
-		elif operation == 2:
-			boolean_material = load("res://addons/onyx/materials/wireframes/onyx_wireframe_sub.material")
-		
-		# Set the new mesh using the current mesh
-		var boolean_mesh : Mesh = mesh.duplicate(false)
-		var surface_count = boolean_mesh.get_surface_count()
+	if has_node(BOOLEAN_PREVIEW_SOLID_NAME) == true:
+		boolean_preview_node = get_node(BOOLEAN_PREVIEW_SOLID_NAME)
+		var boolean_wire = get_node(BOOLEAN_PREVIEW_WIRE_NAME)
+
+		# Get the materials
+		var wire_mat : Material
+		var solid_mat : Material
+
+		# IF the parent is the CSGCombiner, inherit it's operation mode.
+		var current_op : int
+		if get_parent().is_class("CSGCombiner"):
+			current_op = get_parent().operation
+		else:
+			current_op = self.operation
+
+		if current_op == 1:
+			wire_mat = get_plugin().get("bpreview_int_wire_mat")
+			solid_mat = get_plugin().get("bpreview_int_solid_mat")
+		elif current_op == 2:
+			wire_mat = get_plugin().get("bpreview_sub_wire_mat")
+			solid_mat = get_plugin().get("bpreview_sub_solid_mat")
+
+		print(wire_mat, solid_mat)
+
+		# SOLID /////
+		# # Set the solid mesh using the current mesh
+		var solid_mesh : Mesh = mesh.duplicate(false)
+		var surface_count = solid_mesh.get_surface_count()
 
 		for i in range(surface_count):
-			boolean_mesh.surface_set_material(i, boolean_material)
+			solid_mesh.surface_set_material(i, solid_mat)
+		boolean_preview_node.set_mesh(solid_mesh)
 		
-		boolean_preview_node.set_mesh(boolean_mesh)
-		
-#		print("Boolean preview rendered")
+		# WIRE /////
+		# var mat = get_plugin().get("boolean_preview_wire_mat")
+		var wire_mesh = OnyxMesh.extract_wireframe_from_mesh(solid_mesh, 
+				wire_mat)
+		boolean_wire.set_mesh(wire_mesh)
 
 
 # /////////////////////////////////////////////////////////////////////////////
@@ -989,9 +1053,11 @@ func _move_origin(movement_vec : Vector3):
 	global_translate(new_translation)
 	translate_children(new_translation * -1)
 	
-	if boolean_preview_node != null:
-		boolean_preview_node.set_translation(Vector3(0, 0, 0))
-	
+	# Boolean Preview Overrides
+	if has_node(BOOLEAN_PREVIEW_SOLID_NAME) == true:
+		get_node(BOOLEAN_PREVIEW_SOLID_NAME).set_translation(Vector3(0, 0, 0))
+	if has_node(BOOLEAN_PREVIEW_WIRE_NAME) == true:
+		get_node(BOOLEAN_PREVIEW_WIRE_NAME).set_translation(Vector3(0, 0, 0))
 
 
 # Called when the shape has changed and the origin needs to move
@@ -1009,8 +1075,11 @@ func _replace_origin(new_loc : Vector3):
 	global_translate(new_translation)
 	translate_children(new_translation * -1)
 	
-	if boolean_preview_node != null:
-		boolean_preview_node.set_translation(Vector3(0, 0, 0))
+	# Boolean Preview Overrides
+	if has_node(BOOLEAN_PREVIEW_SOLID_NAME) == true:
+		get_node(BOOLEAN_PREVIEW_SOLID_NAME).set_translation(Vector3(0, 0, 0))
+	if has_node(BOOLEAN_PREVIEW_WIRE_NAME) == true:
+		get_node(BOOLEAN_PREVIEW_WIRE_NAME).set_translation(Vector3(0, 0, 0))
 	
 
 

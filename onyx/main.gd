@@ -19,13 +19,15 @@ const NodeStrings = ['OnyxShape']
 const OnyxGizmoPlugin = preload("res://addons/Onyx/gizmos/onyx_gizmo_plugin.gd")
 var gizmo_plugin : OnyxGizmoPlugin
 
-
-# Wireframe material types
-const WireframeCollision_Selected = Color(1, 1, 0, 0.8)
-const WireframeCollision_Unselected = Color(1, 1, 0, 0.1)
-
-const WireframeUtility_Selected = Color(0, 1, 1, 0.6)
-const WireframeUtility_Unselected = Color(0, 1, 1, 0.05)
+# Boolean Preview Materials
+var bpreview_sub_wire_mat : Material = load(
+		"res://addons/onyx/materials/wireframes/bpreview_sub_wire.tres")
+var bpreview_sub_solid_mat : Material = load(
+		"res://addons/onyx/materials/wireframes/bpreview_sub_solid.tres")
+var bpreview_int_wire_mat : Material = load(
+		"res://addons/onyx/materials/wireframes/bpreview_int_wire.tres")
+var bpreview_int_solid_mat : Material = load(
+		"res://addons/onyx/materials/wireframes/bpreview_int_solid.tres")
 
 
 # Selection management
