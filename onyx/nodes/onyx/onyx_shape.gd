@@ -762,7 +762,7 @@ func _update_boolean_mode():
 		return
 
 	var is_parent_combiner = get_parent().is_class("CSGCombiner")
-	var is_parent_csg = get_parent().is_class("CSGShape")
+	var is_parent_csg = (get_parent().is_class("CSGShape") && !is_parent_combiner)
 	
 	
 	print("[OnyxShape] ", self.get_name() , " - _update_boolean_mode()")
@@ -770,17 +770,20 @@ func _update_boolean_mode():
 	# DELETIONS /////
 	# If the parent is neither CSG nor Combiner, we should never enable preview
 	if is_parent_combiner == false && is_parent_csg == false:
+		print("1")
 		_delete_boolean_preview()
 		return
 
 	# if we were at 0 or we no longer have a CSG parent, abandon!
 	if operation == 0 && is_parent_csg == true :
+		print("2")
 		_delete_boolean_preview()
 		return
 	
 	# IF THE PARENT IS A COMBINER AND HAS AN OPERATION OF 0, also delete.
 	if is_parent_combiner:
 		if get_parent().operation == 0:
+			print("3")
 			_delete_boolean_preview()
 			return
 
@@ -788,12 +791,14 @@ func _update_boolean_mode():
 	# CREATIONS /////
 	# OTHERWISE create a boolean if needed and give the geometry with a new material
 	if operation != 0 && is_parent_csg:
+		print("4")
 		_create_boolean_preview()
 		return
 
 	# OTHERWISE IF WE HAVE A COMBINER PARENT, we need to see what it does first
 	if is_parent_combiner:
 		if get_parent().operation != 0:
+			print("5")
 			_create_boolean_preview()
 			return
 
