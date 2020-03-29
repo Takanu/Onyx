@@ -1,9 +1,25 @@
 ## Onyx
-Onyx is a Godot plugin that provides series of custom 3D level design tools that can be used to develop advanced level designs.  They leverage Godot's unique design strengths with the goal of keeping as much of the level design process in-engine where it is immediately interactable and testable.
+Onyx is a Godot plugin that provides series of custom 3D level design tools that can be used to develop advanced level designs, with a focus on architectural design and man-made structures.  They leverage Godot's unique design strengths and CSG boolean tech to make building complex structures and layouts simple.
 
-The first set of tools included are a series of versatile Constructive Solid Geometry (CSG) primitives you can use to block out levels.  Unlike the primitive shapes included with the engine, these let you customise far more shape parameters, offers better origin management and viewport handle controls, and comes with excellent UV mapping by default.
+### What is this for?
+Apart from various private game engine tools developed in-house, a lot of level design still revolves around either reusing blocky assets which restricts your ability to be artistic, or using a 3D modelling engine to carve bespoke shapes and structures which prevents you from iterating on game design quickly and effectively as the logic, function and shading of a level becomes separated.
 
-Other toolsets will be included in the future that all work together seamlessly, expanding the possibilities of 3D level design in Godot.
+With next-gen consoles focusing heavily on SSDs to stream level content in almost instantaneously and tools like Media Molecule's Dreams demonstrating the potential of being able to work on all aspects of game design holistically, Onyx is my attempt to develop a tool *that lets you develop 3D levels in a way that lets you build as an Environment Artist and Level Designer simultaneously*, leaving the 3D modelling app for important visual elements. 
+
+
+### What's included?
+The first tool included is a node called *OnyxShape* that acts as a replacement for CSG shapes.  It uses the same CSG tech but with many improvements:
+
+- Integrates several parametric shapes into a single node, letting you quickly copy, paste, switch and adjust to fill out a scene organically.
+- Precise 3D controls with grid snap support and various meta-key actions, letting you adjust shapes with less clicks.
+- Auto-Updating Origins on most parametric shapes, ensuring the origin is always positioned relative to the shape, where it makes sense.
+- Proportional unwraps on almost all shapes by default, with additional UV options available
+- Hollow Mode lets you quickly create compound shapes that adjust as the shape does.
+- Better Boolean Preview wireframes that get out of the way when you need them to.
+
+
+The next tool to be finished soon is *OnyxBrush*, a powerful replacement for CSGPolygon that builds its shape based on a series of polygonal points you define, but will offer many of the same features as *OnyxShape* and more.
+
 
 ## Installation Instructions
 - Create a folder called 'addons' in the main folder of your project.
@@ -12,20 +28,6 @@ Other toolsets will be included in the future that all work together seamlessly,
 - Activate Onyx by clicking on the Status dropdown and changing it to 'Active'.
 
 Once done, all the extra nodes this plugin provides will be available for you to add in your scenes.
-
-
-
-## Current Tools Included
-
-### Onyx Set
-7 Constructive Solid Geometry (CSG) primitives for constructing and whiteblocking level prototypes.  These are designed to be the best and most versatile primitives you could hope for with smart handle movement, handle snapping, auto-updating origin points and versatile UV options.
-- OnyxCube
-- OnyxRoundedCube
-- OnyxSphere
-- OnyxCylinder
-- OnyxWedge
-- OnyxRamp
-- OnyxStairs
 
 
 
