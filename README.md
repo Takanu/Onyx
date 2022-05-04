@@ -1,7 +1,7 @@
 #### low-key 2022 readme update
 *Hey there, this plugin has been abandoned for a while as I stopped using Godot but the idea still lives on, i've instead adapted these ideas into a set of tools that utilize Blender which i'll be releasing soon.  While this certainly contradicts the things I said about not wanting to use 3D modelling programs for environment design, Blender didn't have the powerful Geometry Nodes feature in 2019 and i've since been able to make a really tight workflow that quickly gets content out of Blender ready for any game engine you wish to use.*
 
-*This plugin might be usable but it comes as is.*
+*This plugin might still be useful but I can't provide any support or assistance*
 
 
 ----
