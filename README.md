@@ -1,4 +1,13 @@
-## Onyx
+#### low-key 2022 readme update
+*Hey there, this plugin has been abandoned for a while as I stopped using Godot but the idea still lives on, i've instead adapted these ideas into a set of tools that utilize Blender which i'll be releasing soon.  While this certainly contradicts the things I said about not wanting to use 3D modelling programs for environment design, Blender didn't have the powerful Geometry Nodes feature in 2019 and i've since been able to make a really tight workflow that quickly gets content out of Blender ready for any game engine you wish to use.*
+
+*This plugin might be usable but it comes as is.*
+
+
+----
+
+
+## What is Onyx?
 Onyx is a Godot plugin that provides series of custom 3D level design tools that can be used to develop advanced level designs, with a focus on architectural design and man-made structures.  They leverage Godot's unique design strengths and CSG boolean tech to make building complex structures and layouts simple.
 
 ### What is this for?
